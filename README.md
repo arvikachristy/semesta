@@ -1,4 +1,11 @@
 # Semesta
+semesta means universe in Bahasa Indonesia. My mother tongue.
+embarking my creative journey leveraging my background in Frontend engineering 
+into interactive digital arts✨
+
+each semesta will be a personal space journey telling hidden stories but at the same time embedding a real app that i build on spare time
+
+# Let's begin
 
 An experimental personal portfolio exploring graphical interfaces, creative frontend engineering and interactive systems.
 
