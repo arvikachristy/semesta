@@ -1,4 +1,11 @@
-# Three Playground
+# Semesta
+semesta means universe in Bahasa Indonesia. My mother tongue.
+embarking my creative journey leveraging my background in Frontend engineering 
+into interactive digital arts✨
+
+each semesta will be a personal space journey telling hidden stories but at the same time embedding a real app that i build on spare time
+
+# Let's begin
 
 A minimal Three.js learning workspace inside Semesta. React renders the canvas; raw Three.js draws one burgundy box in a pale pink world. Built with Vite, TypeScript and plain CSS.
 
