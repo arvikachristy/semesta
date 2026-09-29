@@ -7,7 +7,8 @@ import type { TCountryCode } from './three/flags';
 export const App = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playgroundRef = useRef<ReturnType<typeof startPlayground> | null>(null);
-  const [country, setCountry] = useState<TCountryCode>('ID');
+  const [leftCountry, setLeftCountry] = useState<TCountryCode>('ID');
+  const [rightCountry, setRightCountry] = useState<TCountryCode>('FR');
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
@@ -18,7 +19,7 @@ export const App = () => {
 
     const playground = startPlayground(canvas);
     playgroundRef.current = playground;
-    void playground.setCountry('ID').catch(() => setLoadError(true));
+    void playground.setCountries('ID', 'FR').catch(() => setLoadError(true));
 
     return () => {
       playgroundRef.current = null;
@@ -26,25 +27,46 @@ export const App = () => {
     };
   }, []);
 
-  const onCountryChange = (event: ChangeEvent<HTMLSelectElement>) => {
+  const onLeftCountryChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const selectedCountry = event.target.value as TCountryCode;
-    setCountry(selectedCountry);
+    setLeftCountry(selectedCountry);
     setLoadError(false);
-    void playgroundRef.current?.setCountry(selectedCountry).catch(() => setLoadError(true));
+    void playgroundRef.current?.setCountries(selectedCountry, rightCountry).catch(() => setLoadError(true));
+  };
+
+  const onRightCountryChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const selectedCountry = event.target.value as TCountryCode;
+    setRightCountry(selectedCountry);
+    setLoadError(false);
+    void playgroundRef.current?.setCountries(leftCountry, selectedCountry).catch(() => setLoadError(true));
   };
 
   return (
     <main>
-      <label className="country-selector">
-        Flag
-        <select value={country} onChange={onCountryChange}>
-          {Object.values(flags).map(({ code, name }) => (
-            <option key={code} value={code}>
-              {name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="country-selector left-country">
+        <label>
+          Left Flag
+          <select value={leftCountry} onChange={onLeftCountryChange}>
+            {Object.values(flags).map(({ code, name }) => (
+              <option key={code} value={code}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <div className="country-selector right-country">
+        <label>
+          Right Flag
+          <select value={rightCountry} onChange={onRightCountryChange}>
+            {Object.values(flags).map(({ code, name }) => (
+              <option key={code} value={code}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
       {loadError && (
         <span className="load-error" role="alert">
           Could not load the flag.

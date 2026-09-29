@@ -16,8 +16,14 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
   const { camera, cameraTarget, cameraOffset, adjustZoom } = createCamera();
   const { ambientLight, directionalLight } = createLights();
   const floor = createFloor();
-  const flag = createFlag();
-  const box = flag.object;
+  const leftFlag = createFlag();
+  const rightFlag = createFlag();
+  const box = new THREE.Group();
+  leftFlag.object.position.set(-1.6, 0.5, 0.8);
+  leftFlag.object.rotation.y = -Math.PI / 1.5;
+  rightFlag.object.position.set(1.6, 0.5, 0.8);
+  rightFlag.object.rotation.y = Math.PI / 1.5;
+  box.add(leftFlag.object, rightFlag.object);
   scene.add(ambientLight, directionalLight, floor, box);
 
   const { updatePointer, isOverBox } = createRaycasting(canvas, camera, box);
@@ -71,7 +77,8 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
     window.removeEventListener('resize', onResize);
     canvas.removeEventListener('wheel', onWheel);
     unbind();
-    flag.dispose();
+    leftFlag.dispose();
+    rightFlag.dispose();
     floor.geometry.dispose();
     floor.material.dispose();
     renderer.dispose();
@@ -79,5 +86,13 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
     canvas.style.cursor = '';
   };
 
-  return { setCountry: flag.setCountry, dispose };
+  return {
+    setCountries: async (
+      leftCountry: Parameters<typeof leftFlag.setCountry>[0],
+      rightCountry: Parameters<typeof rightFlag.setCountry>[0],
+    ) => {
+      await Promise.all([leftFlag.setCountry(leftCountry), rightFlag.setCountry(rightCountry)]);
+    },
+    dispose,
+  };
 };

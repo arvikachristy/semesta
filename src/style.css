@@ -32,12 +32,24 @@ canvas {
 .country-selector {
   position: absolute;
   top: 1rem;
-  left: 1rem;
   z-index: 1;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
   font: inherit;
+}
+
+.left-country {
+  left: 1rem;
+}
+
+.right-country {
+  right: 1rem;
+}
+
+.country-selector label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .country-selector select {
