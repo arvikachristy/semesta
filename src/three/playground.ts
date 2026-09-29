@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { createCamera } from './camera';
-import { createFlag } from './flag';
+import { blockHeight, createFlagBlock } from './flag-block';
 import { createFloor } from './floor';
 import { createLights } from './lights';
 import { bindPointerEvents } from './pointer';
@@ -13,20 +13,20 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
   // React supplies the canvas. These are the raw Three.js pieces inside it.
   const renderer = createRenderer(canvas);
   const scene = createScene();
-  const { camera, cameraTarget, cameraOffset, adjustZoom } = createCamera();
+  const { camera, cameraTarget, cameraOffset, adjustZoom, fitViewport } = createCamera();
   const { ambientLight, directionalLight } = createLights();
   const floor = createFloor();
-  const leftFlag = createFlag();
-  const rightFlag = createFlag();
+  const leftFlag = createFlagBlock();
+  const rightFlag = createFlagBlock();
   const box = new THREE.Group();
-  leftFlag.object.position.set(-1.6, 0.5, 0.8);
+  leftFlag.object.position.set(-1.6, blockHeight / 2, 0.8);
   leftFlag.object.rotation.y = -Math.PI / 1.5;
-  rightFlag.object.position.set(1.6, 0.5, 0.8);
+  rightFlag.object.position.set(1.6, blockHeight / 2, 0.8);
   rightFlag.object.rotation.y = Math.PI / 1.5;
   box.add(leftFlag.object, rightFlag.object);
   scene.add(ambientLight, directionalLight, floor, box);
 
-  const { updatePointer, isOverBox } = createRaycasting(canvas, camera, box);
+  const { updatePointer, isOverBox, isOverObject } = createRaycasting(canvas, camera, box);
   const { interaction, unbind } = bindPointerEvents({
     canvas,
     box,
@@ -34,7 +34,10 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
     updatePointer,
     isOverBox,
   });
-  const onResize = () => resize(renderer, camera);
+  const onResize = () => {
+    resize(renderer, camera);
+    fitViewport();
+  };
   const onWheel = (event: WheelEvent) => {
     event.preventDefault();
     adjustZoom(event.deltaY * 0.02);
@@ -42,7 +45,7 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
   window.addEventListener('resize', onResize);
   canvas.addEventListener('wheel', onWheel, { passive: false });
 
-  // The render loop keeps the camera, hover, and box rotation in sync.
+  // The render loop keeps the camera, hover, and composition rotation in sync.
   let previousTime = performance.now();
   let frameId = 0;
 
@@ -61,9 +64,12 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
     const hovered = interaction.pointerVisible && !dragging && isOverBox();
     canvas.style.cursor = dragging ? 'grabbing' : hovered ? 'pointer' : 'grab';
 
-    const scale = THREE.MathUtils.lerp(box.scale.x, hovered ? 1.08 : 1, easing);
-    box.scale.setScalar(scale);
-    box.position.y = scale / 2;
+    for (const block of [leftFlag, rightFlag]) {
+      const overBlock = hovered && isOverObject(block.object);
+      const scale = THREE.MathUtils.lerp(block.object.scale.x, overBlock ? 1.04 : 1, easing);
+      block.object.scale.setScalar(scale);
+      block.object.position.y = (blockHeight * scale) / 2;
+    }
     box.rotation.y = THREE.MathUtils.lerp(box.rotation.y, interaction.targetRotation, easing);
 
     renderer.render(scene, camera);

@@ -8,7 +8,7 @@ each semesta will be a personal space journey telling hidden stories but at the 
 
 # Let's begin
 
-A minimal Three.js learning workspace inside Semesta. React renders the canvas and country selectors; raw Three.js draws two flag-shaped solids in a pale pink world. Built with Vite, TypeScript and plain CSS.
+A minimal Three.js learning workspace inside Semesta. React renders the canvas and country selectors; raw Three.js draws two flag-in-resin objects in a pale pink world. Built with Vite, TypeScript and plain CSS.
 
 ```sh
 npm install
@@ -17,9 +17,11 @@ npm run dev
 
 The same playground is available at `/` and `/countryjellies/`.
 
-Select Indonesia, France, or Nepal for either flag. Hover either solid to enlarge the composition, click or tap it to rotate the composition, and drag the empty background to move the camera across the X/Z plane. The flags stay in world space.
+Select Indonesia, France, or Nepal for either flag. Hover either block to gently enlarge that block, click or tap it to rotate the composition, and drag the empty background to move the camera across the X/Z plane. The flags stay in world space.
 
 The outline in `flags.ts` determines the actual shape of the solid. `flag.ts` turns that outline into a `Shape` and gives it thickness with `ExtrudeGeometry`. The SVG artwork is mapped directly onto the front and back faces; the extruded edges have their own material. There is no separate image plane in front of the object. Adding another flag means adding its artwork and outline data, then using the same builder.
+
+`flag-block.ts` surrounds each existing flag with a rounded 2.4 × 1.6 × 0.85 volume. Its `MeshPhysicalMaterial` uses transmission for transparency, IOR and thickness for subtle refraction, and roughness for frostiness. The flag stays centred at local Z = 0, leaving 0.3 units between each flag face and the outer block face. There is no animated distortion or physics.
 
 ## How the files fit together
 
@@ -31,8 +33,10 @@ flowchart TD
   main --> app["src/app.tsx"]
   app -->|mounts canvas and selects country| playground["src/three/playground.ts"]
   playground --> scene["scene.ts · camera.ts · lights.ts"]
-  playground --> objects["floor.ts · flag.ts"]
-  objects --> data["flags.ts · SVG artwork"]
+  playground --> floor["floor.ts"]
+  playground --> block["flag-block.ts · rounded resin shell"]
+  block --> flag["flag.ts · existing extruded flag"]
+  flag --> data["flags.ts · SVG artwork"]
   playground --> input["pointer.ts · raycasting.ts"]
   playground --> output["renderer.ts · resize.ts"]
   input -->|changes camera target and box angle| playground
@@ -54,6 +58,7 @@ flowchart TD
 | `src/three/lights.ts`                      | Creates the ambient and directional lights.                                                                                                                  |
 | `src/three/floor.ts`                       | Creates the large, flat pink plane.                                                                                                                          |
 | `src/three/flags.ts`                       | Holds each flag's artwork URL, proportions, outline, and edge color.                                                                                         |
+| `src/three/flag-block.ts`                  | Groups the existing flag with rounded geometry and its translucent physical material.                                                                        |
 | `src/three/flag.ts`                        | Extrudes the selected outline into a solid and maps artwork onto its front and back.                                                                         |
 | `src/assets/flags/`                        | Holds local reference SVGs; the current flag definitions load URLs. Nepal's SVG is adapted from [flag-icons](https://github.com/lipis/flag-icons) under MIT. |
 | `src/three/raycasting.ts`                  | Converts pointer position to a ray and checks whether it hits the box.                                                                                       |

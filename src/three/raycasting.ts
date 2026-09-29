@@ -17,12 +17,14 @@ export const createRaycasting = (
     );
   };
 
-  const isOverBox = () => {
+  const isOverObject = (object: THREE.Object3D) => {
     camera.updateMatrixWorld();
-    box.updateMatrixWorld();
+    object.updateWorldMatrix(true, true);
     raycaster.setFromCamera(pointer, camera);
-    return raycaster.intersectObject(box, true).length > 0;
+    return raycaster.intersectObject(object, true).length > 0;
   };
 
-  return { updatePointer, isOverBox };
+  const isOverBox = () => isOverObject(box);
+
+  return { updatePointer, isOverBox, isOverObject };
 };

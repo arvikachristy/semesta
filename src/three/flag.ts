@@ -40,7 +40,8 @@ const createFlagMesh = (definition: IFlagDefinition, texture: THREE.Texture) => 
   }
 
   return new THREE.Mesh(geometry, [
-    new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide }),
+    // Alpha testing keeps the existing artwork in the opaque pass used by transmission.
+    new THREE.MeshBasicMaterial({ map: texture, alphaTest: 0.01, side: THREE.DoubleSide }),
     new THREE.MeshLambertMaterial({ color: definition.edgeColor }),
   ]);
 };
