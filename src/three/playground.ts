@@ -69,6 +69,7 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
       const scale = THREE.MathUtils.lerp(block.object.scale.x, overBlock ? 1.04 : 1, easing);
       block.object.scale.setScalar(scale);
       block.object.position.y = (blockHeight * scale) / 2;
+      block.update(now / 1000, (scale - 1) / 0.04);
     }
     box.rotation.y = THREE.MathUtils.lerp(box.rotation.y, interaction.targetRotation, easing);
 

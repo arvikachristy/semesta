@@ -21,7 +21,14 @@ Select Indonesia, France, or Nepal for either flag. Hover either block to gently
 
 The outline in `flags.ts` determines the actual shape of the solid. `flag.ts` turns that outline into a `Shape` and gives it thickness with `ExtrudeGeometry`. The SVG artwork is mapped directly onto the front and back faces; the extruded edges have their own material. There is no separate image plane in front of the object. Adding another flag means adding its artwork and outline data, then using the same builder.
 
-`flag-block.ts` surrounds each existing flag with a rounded 2.4 × 1.6 × 0.85 volume. Its `MeshPhysicalMaterial` uses transmission for transparency, IOR and thickness for subtle refraction, and roughness for frostiness. The flag stays centred at local Z = 0, leaving 0.3 units between each flag face and the outer block face. There is no animated distortion or physics.
+`flag-block.ts` wraps each unchanged flag in a rounded, gently inflated resin shell. The flag stays at local Z = 0 with clearance on both sides. Only the shell breathes; the flag artwork and geometry stay still inside it.
+
+Tune the look in that file:
+
+- **Shape:** `RoundedBoxGeometry` corner radius (`0.3`) and `bulge` (`0.26`). Welded vertices give the inflated shell smooth normals.
+- **Material:** `ior: 1.32` and `thickness: 0.38` control refraction; `roughness: 0.12` controls frostiness. Material thickness is an optical setting, separate from geometry depth.
+- **Holographic edges:** native `iridescence` plus a small Fresnel rim in `onBeforeCompile`. `edgeStrength` controls this artistic tint; it fades out towards the centre. No environment map or extra rendering pass is added.
+- **Motion:** `update()` gently changes only the shell scale (0.6% breathing amplitude) and anchors its bottom to the floor. Hover adds a little depth. `playground.ts` calls it from the existing render loop.
 
 ## How the files fit together
 
