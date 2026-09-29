@@ -31,34 +31,93 @@ canvas {
 
 .country-selector {
   position: absolute;
-  top: 1rem;
+  top: clamp(1rem, 2.5vw, 1.75rem);
   z-index: 1;
-  display: flex;
-  align-items: center;
-  font: inherit;
+  width: min(11rem, calc((100vw - 3rem) / 2));
 }
 
 .left-country {
-  left: 1rem;
+  left: clamp(1rem, 2.5vw, 1.75rem);
 }
 
 .right-country {
-  right: 1rem;
+  right: clamp(1rem, 2.5vw, 1.75rem);
 }
 
 .country-selector label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  position: relative;
+  display: grid;
+  gap: 0.4rem;
+  color: #63323a;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.country-selector label::after {
+  position: absolute;
+  right: 1rem;
+  bottom: 1.2rem;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  content: '';
+  pointer-events: none;
+  transform: rotate(45deg);
 }
 
 .country-selector select {
-  font: inherit;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.65rem 2.25rem 0.65rem 0.9rem;
+  appearance: none;
+  border: 1px solid #ad8589;
+  border-radius: 999px;
+  background: #fff9f8;
+  color: #402329;
+  cursor: pointer;
+  font:
+    500 0.9rem/1.2 system-ui,
+    sans-serif;
+  letter-spacing: normal;
+  text-transform: none;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+.country-selector select:hover {
+  border-color: #63323a;
+  background: #fff;
+}
+
+.country-selector select:focus-visible {
+  outline: 2px solid #63323a;
+  outline-offset: 2px;
 }
 
 .load-error {
   position: absolute;
-  top: 3.5rem;
-  left: 1rem;
+  top: 6rem;
+  left: clamp(1rem, 2.5vw, 1.75rem);
   z-index: 1;
+  color: #63323a;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 500px) {
+  .country-selector {
+    top: 0.75rem;
+    width: calc((100vw - 2.25rem) / 2);
+  }
+
+  .left-country {
+    left: 0.75rem;
+  }
+
+  .right-country {
+    right: 0.75rem;
+  }
 }

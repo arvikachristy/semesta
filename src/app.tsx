@@ -31,14 +31,18 @@ export const App = () => {
     const selectedCountry = event.target.value as TCountryCode;
     setLeftCountry(selectedCountry);
     setLoadError(false);
-    void playgroundRef.current?.setCountries(selectedCountry, rightCountry).catch(() => setLoadError(true));
+    void playgroundRef.current
+      ?.setCountries(selectedCountry, rightCountry)
+      .catch(() => setLoadError(true));
   };
 
   const onRightCountryChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const selectedCountry = event.target.value as TCountryCode;
     setRightCountry(selectedCountry);
     setLoadError(false);
-    void playgroundRef.current?.setCountries(leftCountry, selectedCountry).catch(() => setLoadError(true));
+    void playgroundRef.current
+      ?.setCountries(leftCountry, selectedCountry)
+      .catch(() => setLoadError(true));
   };
 
   return (
