@@ -8,14 +8,16 @@ each semesta will be a personal space journey telling hidden stories but at the 
 
 # Let's begin
 
-A minimal Three.js learning workspace inside Semesta. React renders the canvas and country selector; raw Three.js draws one flag-shaped solid in a pale pink world. Built with Vite, TypeScript and plain CSS.
+A minimal Three.js learning workspace inside Semesta. React renders the canvas and country selectors; raw Three.js draws two flag-shaped solids in a pale pink world. Built with Vite, TypeScript and plain CSS.
 
 ```sh
 npm install
 npm run dev
 ```
 
-Select Indonesia or Nepal. Hover the flag solid to enlarge it, click or tap it to rotate, and drag the empty background to move the camera across the X/Z plane. The object stays in world space.
+The same playground is available at `/` and `/countryjellies/`.
+
+Select Indonesia, France, or Nepal for either flag. Hover either solid to enlarge the composition, click or tap it to rotate the composition, and drag the empty background to move the camera across the X/Z plane. The flags stay in world space.
 
 The outline in `flags.ts` determines the actual shape of the solid. `flag.ts` turns that outline into a `Shape` and gives it thickness with `ExtrudeGeometry`. The SVG artwork is mapped directly onto the front and back faces; the extruded edges have their own material. There is no separate image plane in front of the object. Adding another flag means adding its artwork and outline data, then using the same builder.
 
@@ -25,7 +27,7 @@ Follow the arrows from the browser entry point to the canvas. `playground.ts` cr
 
 ```mermaid
 flowchart TD
-  html["index.html"] --> main["src/main.tsx"]
+  html["index.html · countryjellies/index.html"] --> main["src/main.tsx"]
   main --> app["src/app.tsx"]
   app -->|mounts canvas and selects country| playground["src/three/playground.ts"]
   playground --> scene["scene.ts · camera.ts · lights.ts"]
@@ -39,24 +41,24 @@ flowchart TD
 
 ## File guide
 
-| File                      | What it does                                                                                                          |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `index.html`              | Gives React its root element and loads the TypeScript entry point.                                                    |
-| `src/main.tsx`            | Creates the React root and loads the global CSS.                                                                      |
-| `src/app.tsx`             | Renders the canvas and country selector, then starts/stops Three.js with a React effect.                              |
-| `src/style.css`           | Makes the canvas fill the viewport and prevents touch scrolling on it.                                                |
-| `src/three/playground.ts` | Assembles the scene, runs the visible animation loop, and cleans up resources. Start here to trace the Three.js code. |
-| `src/three/renderer.ts`   | Creates the WebGL renderer for React's canvas and caps pixel ratio.                                                   |
-| `src/three/scene.ts`      | Creates the scene and sets its pink background.                                                                       |
-| `src/three/camera.ts`     | Creates the perspective camera, look target, and fixed viewing offset.                                                |
-| `src/three/lights.ts`     | Creates the ambient and directional lights.                                                                           |
-| `src/three/floor.ts`      | Creates the large, flat pink plane.                                                                                   |
-| `src/three/flags.ts`      | Holds each flag's artwork URL, proportions, outline, and edge color.                                                  |
-| `src/three/flag.ts`       | Extrudes the selected outline into a solid and maps artwork onto its front and back.                                  |
-| `src/assets/flags/`       | Holds local SVG artwork. Nepal's artwork is adapted from [flag-icons](https://github.com/lipis/flag-icons) under MIT. |
-| `src/three/raycasting.ts` | Converts pointer position to a ray and checks whether it hits the box.                                                |
-| `src/three/pointer.ts`    | Handles mouse/touch hover, tap, click, and bounded background drag.                                                   |
-| `src/three/resize.ts`     | Updates the camera projection and renderer when the viewport changes.                                                 |
+| File                                       | What it does                                                                                                                                                 |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `index.html` / `countryjellies/index.html` | Provide the same React entry point at `/` and `/countryjellies/`.                                                                                            |
+| `src/main.tsx`                             | Creates the React root and loads the global CSS.                                                                                                             |
+| `src/app.tsx`                              | Renders the canvas and country selector, then starts/stops Three.js with a React effect.                                                                     |
+| `src/style.css`                            | Makes the canvas fill the viewport and prevents touch scrolling on it.                                                                                       |
+| `src/three/playground.ts`                  | Assembles the scene, runs the visible animation loop, and cleans up resources. Start here to trace the Three.js code.                                        |
+| `src/three/renderer.ts`                    | Creates the WebGL renderer for React's canvas and caps pixel ratio.                                                                                          |
+| `src/three/scene.ts`                       | Creates the scene and sets its pink background.                                                                                                              |
+| `src/three/camera.ts`                      | Creates the perspective camera, look target, and fixed viewing offset.                                                                                       |
+| `src/three/lights.ts`                      | Creates the ambient and directional lights.                                                                                                                  |
+| `src/three/floor.ts`                       | Creates the large, flat pink plane.                                                                                                                          |
+| `src/three/flags.ts`                       | Holds each flag's artwork URL, proportions, outline, and edge color.                                                                                         |
+| `src/three/flag.ts`                        | Extrudes the selected outline into a solid and maps artwork onto its front and back.                                                                         |
+| `src/assets/flags/`                        | Holds local reference SVGs; the current flag definitions load URLs. Nepal's SVG is adapted from [flag-icons](https://github.com/lipis/flag-icons) under MIT. |
+| `src/three/raycasting.ts`                  | Converts pointer position to a ray and checks whether it hits the box.                                                                                       |
+| `src/three/pointer.ts`                     | Handles mouse/touch hover, tap, click, and bounded background drag.                                                                                          |
+| `src/three/resize.ts`                      | Updates the camera projection and renderer when the viewport changes.                                                                                        |
 
 The project files configure the tools around that runtime code:
 
