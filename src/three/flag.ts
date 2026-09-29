@@ -69,6 +69,7 @@ export const createFlag = () => {
 
     const loading = (async () => {
       const image = new Image();
+      image.crossOrigin = 'anonymous';
       image.src = flags[code].artwork;
       await image.decode();
 

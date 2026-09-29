@@ -1,7 +1,4 @@
-import indonesiaArtwork from '../assets/flags/id.svg?url';
-import nepalArtwork from '../assets/flags/np.svg?url';
-
-export type TCountryCode = 'ID' | 'NP';
+export type TCountryCode = 'ID' | 'NP' | 'FR';
 
 export interface IFlagDefinition {
   code: TCountryCode;
@@ -17,9 +14,22 @@ export const flags: Record<TCountryCode, IFlagDefinition> = {
   ID: {
     code: 'ID',
     name: 'Indonesia',
-    artwork: indonesiaArtwork,
+    artwork: 'https://cdn.jsdelivr.net/gh/hampusborgos/country-flags@main/svg/id.svg',
     aspectRatio: 1.5,
     edgeColor: '#ce1126',
+    outline: [
+      [0, 0],
+      [1, 0],
+      [1, 1],
+      [0, 1],
+    ],
+  },
+  FR: {
+    code: 'FR',
+    name: 'France',
+    artwork: 'https://cdn.jsdelivr.net/gh/hampusborgos/country-flags@main/svg/fr.svg',
+    aspectRatio: 1.5,
+    edgeColor: '#000b69',
     outline: [
       [0, 0],
       [1, 0],
@@ -30,7 +40,7 @@ export const flags: Record<TCountryCode, IFlagDefinition> = {
   NP: {
     code: 'NP',
     name: 'Nepal',
-    artwork: nepalArtwork,
+    artwork: 'https://cdn.jsdelivr.net/gh/hampusborgos/country-flags@main/svg/np.svg',
     aspectRatio: 363.94 / 467.82,
     edgeColor: '#000063',
     outline: [
