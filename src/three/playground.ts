@@ -14,7 +14,9 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
   const renderer = createRenderer(canvas);
   const scene = createScene();
   const { camera, cameraTarget, cameraOffset, adjustZoom, fitViewport } = createCamera();
-  const { ambientLight, directionalLight } = createLights();
+  const lighting = createLights(renderer);
+  const { ambientLight, directionalLight } = lighting;
+  scene.environment = lighting.environment;
   const floor = createFloor();
   const leftFlag = createFlagBlock();
   const rightFlag = createFlagBlock();
@@ -88,6 +90,7 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
     rightFlag.dispose();
     floor.geometry.dispose();
     floor.material.dispose();
+    lighting.dispose();
     renderer.dispose();
     scene.clear();
     canvas.style.cursor = '';

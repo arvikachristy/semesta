@@ -21,14 +21,15 @@ Select Indonesia, France, or Nepal for either flag. Hover either block to gently
 
 The outline in `flags.ts` determines the actual shape of the solid. `flag.ts` turns that outline into a `Shape` and gives it thickness with `ExtrudeGeometry`. The SVG artwork is mapped directly onto the front and back faces; the extruded edges have their own material. There is no separate image plane in front of the object. Adding another flag means adding its artwork and outline data, then using the same builder.
 
-`flag-block.ts` wraps each unchanged flag in a rounded, gently inflated resin shell. The flag stays at local Z = 0 with clearance on both sides. Only the shell breathes; the flag artwork and geometry stay still inside it.
+`flag-block.ts` wraps each unchanged flag in a close-fitting pink resin shell. Its width follows the selected flag's aspect ratio, with a 0.18-unit margin on each side. The flag stays at local Z = 0 inside the 0.72-deep shell; only the shell breathes.
 
 Tune the look in that file:
 
-- **Shape:** `RoundedBoxGeometry` corner radius (`0.3`) and `bulge` (`0.26`). Welded vertices give the inflated shell smooth normals.
-- **Material:** `ior: 1.32` and `thickness: 0.38` control refraction; `roughness: 0.12` controls frostiness. Material thickness is an optical setting, separate from geometry depth.
-- **Holographic edges:** native `iridescence` plus a small Fresnel rim in `onBeforeCompile`. `edgeStrength` controls this artistic tint; it fades out towards the centre. No environment map or extra rendering pass is added.
-- **Motion:** `update()` gently changes only the shell scale (0.6% breathing amplitude) and anchors its bottom to the floor. Hover adds a little depth. `playground.ts` calls it from the existing render loop.
+- **Shape:** `RoundedBoxGeometry` corner radius (`0.14`), `bulge` (`0.1`), and the small edge `ripple`. Welded vertices give the shell smooth normals.
+- **Material:** `ior: 1.46` and `thickness: 0.22` control refraction; `roughness: 0.035` keeps the centre glossy and readable. Material thickness is an optical setting, separate from geometry depth.
+- **Pink edges:** `attenuationColor` and `attenuationDistance` tint light travelling through the resin. Clearcoat and native iridescence catch highlights; there is no painted rim shader.
+- **Reflections:** `lights.ts` generates a small 128-pixel environment map from light panels once at startup. These panels are invisible in the main scene. Their sizes/positions and the material's `envMapIntensity` control the broad highlights. No downloaded HDR image or postprocessing is used.
+- **Motion:** `update()` changes only the shell scale (0.6% breathing amplitude), anchoring its bottom to the floor. Hover adds a little depth. `playground.ts` calls it from the existing render loop.
 
 ## How the files fit together
 
@@ -62,7 +63,7 @@ flowchart TD
 | `src/three/renderer.ts`                    | Creates the WebGL renderer for React's canvas and caps pixel ratio.                                                                                          |
 | `src/three/scene.ts`                       | Creates the scene and sets its pink background.                                                                                                              |
 | `src/three/camera.ts`                      | Creates the perspective camera, look target, and fixed viewing offset.                                                                                       |
-| `src/three/lights.ts`                      | Creates the ambient and directional lights.                                                                                                                  |
+| `src/three/lights.ts`                      | Creates ambient/key lights and the small reflection map for the resin.                                                                                       |
 | `src/three/floor.ts`                       | Creates the large, flat pink plane.                                                                                                                          |
 | `src/three/flags.ts`                       | Holds each flag's artwork URL, proportions, outline, and edge color.                                                                                         |
 | `src/three/flag-block.ts`                  | Groups the existing flag with rounded geometry and its translucent physical material.                                                                        |
