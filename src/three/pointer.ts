@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 interface IPointerOptions {
   canvas: HTMLCanvasElement;
-  box: THREE.Mesh;
+  box: THREE.Object3D;
   cameraTarget: THREE.Vector3;
   updatePointer: (event: PointerEvent) => void;
   isOverBox: () => boolean;
@@ -90,6 +90,10 @@ export const bindPointerEvents = ({
 
     updatePointer(event);
     moved ||= Math.hypot(event.clientX - dragStart.x, event.clientY - dragStart.y) > tapTolerance;
+
+    if (interaction.pressedBox && !moved && isOverBox()) {
+      interaction.targetRotation += Math.PI / 2;
+    }
 
     const bounds = canvas.getBoundingClientRect();
     interaction.pointerVisible =

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { createBox } from './box';
 import { createCamera } from './camera';
+import { createFlag } from './flag';
 import { createFloor } from './floor';
 import { createLights } from './lights';
 import { bindPointerEvents } from './pointer';
@@ -16,7 +16,8 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
   const { camera, cameraTarget, cameraOffset, adjustZoom } = createCamera();
   const { ambientLight, directionalLight } = createLights();
   const floor = createFloor();
-  const box = createBox();
+  const flag = createFlag();
+  const box = flag.object;
   scene.add(ambientLight, directionalLight, floor, box);
 
   const { updatePointer, isOverBox } = createRaycasting(canvas, camera, box);
@@ -65,17 +66,18 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
   animate();
 
   // React calls this when the canvas unmounts (and during Strict Mode checks).
-  return () => {
+  const dispose = () => {
     cancelAnimationFrame(frameId);
     window.removeEventListener('resize', onResize);
     canvas.removeEventListener('wheel', onWheel);
     unbind();
-    box.geometry.dispose();
-    box.material.dispose();
+    flag.dispose();
     floor.geometry.dispose();
     floor.material.dispose();
     renderer.dispose();
     scene.clear();
     canvas.style.cursor = '';
   };
+
+  return { setCountry: flag.setCountry, dispose };
 };

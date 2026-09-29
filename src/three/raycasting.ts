@@ -4,7 +4,7 @@ import * as THREE from 'three';
 export const createRaycasting = (
   canvas: HTMLCanvasElement,
   camera: THREE.PerspectiveCamera,
-  box: THREE.Mesh,
+  box: THREE.Object3D,
 ) => {
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
@@ -21,7 +21,7 @@ export const createRaycasting = (
     camera.updateMatrixWorld();
     box.updateMatrixWorld();
     raycaster.setFromCamera(pointer, camera);
-    return raycaster.intersectObject(box, false).length > 0;
+    return raycaster.intersectObject(box, true).length > 0;
   };
 
   return { updatePointer, isOverBox };
