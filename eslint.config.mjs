@@ -1,9 +1,34 @@
+import js from '@eslint/js';
 import { defineConfig, globalIgnores } from 'eslint/config';
-import nextVitals from 'eslint-config-next/core-web-vitals';
-import nextTypescript from 'eslint-config-next/typescript';
+import react from 'eslint-plugin-react';
+import tseslint from 'typescript-eslint';
 
 export default defineConfig([
-  ...nextVitals,
-  ...nextTypescript,
-  globalIgnores(['.next/**', 'out/**', 'build/**', 'dist/**', 'next-env.d.ts']),
+  {
+    files: ['**/*.{js,mjs,ts,tsx}'],
+    extends: [js.configs.recommended, tseslint.configs.recommended],
+    rules: {
+      curly: ['error', 'all'],
+      'no-var': 'error',
+      'prefer-const': 'error',
+      'object-shorthand': 'error',
+    },
+  },
+  {
+    files: ['**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
+      '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
+      '@typescript-eslint/no-explicit-any': 'error',
+    },
+  },
+  {
+    files: ['**/*.tsx'],
+    plugins: { react },
+    settings: { react: { version: 'detect' } },
+    rules: {
+      'react/no-multi-comp': ['error', { ignoreStateless: false }],
+    },
+  },
+  globalIgnores(['.next/**', 'dist/**', 'node_modules/**']),
 ]);

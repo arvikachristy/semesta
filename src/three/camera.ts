@@ -1,0 +1,24 @@
+import * as THREE from 'three';
+
+// Y points up. The camera looks slightly down at the middle of the box.
+export const createCamera = () => {
+  const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 200);
+  const cameraTarget = new THREE.Vector3(0, 0.5, 0);
+  const minDistance = 3;
+  const maxDistance = 18;
+
+  camera.position.set(0, 5, 8);
+  camera.lookAt(cameraTarget);
+
+  // Preserve the viewing angle as the target moves across the X/Z plane.
+  const cameraOffset = camera.position.clone().sub(cameraTarget);
+
+  const adjustZoom = (delta: number) => {
+    const currentDistance = cameraOffset.length();
+    const nextDistance = THREE.MathUtils.clamp(currentDistance + delta, minDistance, maxDistance);
+    const direction = cameraOffset.clone().normalize();
+    cameraOffset.copy(direction.multiplyScalar(nextDistance));
+  };
+
+  return { camera, cameraTarget, cameraOffset, minDistance, maxDistance, adjustZoom };
+};
