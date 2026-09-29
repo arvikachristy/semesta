@@ -69,7 +69,10 @@ export const bindPointerEvents = ({
 
     moved ||= Math.hypot(event.clientX - dragStart.x, event.clientY - dragStart.y) > tapTolerance;
 
-    if (!interaction.pressedBox && moved) {
+    if (interaction.pressedBox) {
+      const dx = event.clientX - previousPointer.x;
+      interaction.targetRotation += dx * 0.01;
+    } else if (moved) {
       // Move the view a little. The box keeps its world coordinates.
       const dx = (event.clientX - previousPointer.x) / canvas.clientWidth;
       const dy = (event.clientY - previousPointer.y) / canvas.clientHeight;
@@ -87,9 +90,6 @@ export const bindPointerEvents = ({
 
     updatePointer(event);
     moved ||= Math.hypot(event.clientX - dragStart.x, event.clientY - dragStart.y) > tapTolerance;
-    if (interaction.pressedBox && !moved && isOverBox()) {
-      interaction.targetRotation += Math.PI / 2;
-    }
 
     const bounds = canvas.getBoundingClientRect();
     interaction.pointerVisible =
