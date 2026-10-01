@@ -19,35 +19,45 @@ export const createFlagBlock = () => {
   let request = 0;
   let disposed = false;
   let country: TCountryCode | null = null;
+
   const setCountry = async (code: TCountryCode) => {
     const currentRequest = ++request;
+
     if (country === code) {
       return;
     }
+
     const texture = await createFlagPattern(code);
     if (disposed || currentRequest !== request) {
       texture.dispose();
       return;
     }
     country = code;
-    const width = flags[code].aspectRatio + 0.36;
+
+    const { size } = flags[code];
+    const width = blockHeight * (size.width / size.height);
     const { depth, radius, segments } = jellyParameters.surface;
+
     const rounded = new RoundedBoxGeometry(width, blockHeight, depth, segments, radius);
     rounded.deleteAttribute('normal');
     rounded.deleteAttribute('uv');
+
     const geometry = mergeVertices(rounded);
     rounded.dispose();
     geometry.computeVertexNormals();
+
     const positions = geometry.getAttribute('position') as THREE.BufferAttribute;
     const uv = new Float32Array(positions.count * 2);
     const probes = new THREE.BufferAttribute(new Float32Array(positions.count * 6), 3);
     const thickness = new THREE.BufferAttribute(new Float32Array(positions.count), 1);
+
     for (let i = 0; i < positions.count; i++) {
       uv[i * 2] = positions.getX(i) / width + 0.5;
       uv[i * 2 + 1] = positions.getY(i) / blockHeight + 0.5;
       probes.setXYZ(i * 2, positions.getX(i), positions.getY(i), -depth / 2);
       probes.setXYZ(i * 2 + 1, positions.getX(i), positions.getY(i), depth / 2);
     }
+
     geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
     geometry.setAttribute('jellyThickness', thickness);
     body = createSoftBody(width, blockHeight, depth);

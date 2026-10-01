@@ -7,7 +7,6 @@ import {
   type TCountryCode,
 } from './types/country';
 import { startPlayground } from './three/playground';
-import { flags } from './three/flags';
 
 export const App = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
