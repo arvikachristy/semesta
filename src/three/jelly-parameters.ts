@@ -14,6 +14,6 @@ export const jellyParameters = {
     grabStrength: 0.35,
     maxStretch: 0.85,
   },
-  surface: { height: 1.32, depth: 0.24, radius: 0.115, segments: 8 },
+  surface: { height: 1.32, depth: 1, radius: 0.115, segments: 8 },
   material: { transmission: 0.78, roughness: 0.23, ior: 1.38, absorption: 2.2 },
 };

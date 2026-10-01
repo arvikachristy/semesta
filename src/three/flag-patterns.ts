@@ -1,6 +1,6 @@
 import * as THREE from 'three';
+import { CountryCode, type TCountryCode } from '../types/country';
 import { flags } from './flags';
-import type { TCountryCode } from './flags';
 
 // Generated once per country. Surface UVs are baked from REST coordinates, never current position.
 export const createFlagPattern = async (code: TCountryCode) => {
@@ -11,12 +11,12 @@ export const createFlagPattern = async (code: TCountryCode) => {
   if (!context) {
     throw new Error('Could not create flag artwork');
   }
-  if (code === 'ID') {
+  if (code === CountryCode.ID) {
     context.fillStyle = '#ff0000';
     context.fillRect(0, 0, 512, 256);
     context.fillStyle = '#ffffff';
     context.fillRect(0, 256, 512, 256);
-  } else if (code === 'FR') {
+  } else if (code === CountryCode.FR) {
     for (const [i, color] of ['#051440', '#ffffff', '#EC1920'].entries()) {
       context.fillStyle = color;
       context.fillRect((i * 512) / 3, 0, 512 / 3 + 1, 512);

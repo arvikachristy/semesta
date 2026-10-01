@@ -1,14 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
+import {
+  COUNTRY_CODES,
+  COUNTRY_NAME_BY_CODE,
+  CountryCode,
+  type TCountryCode,
+} from './types/country';
 import { startPlayground } from './three/playground';
 import { flags } from './three/flags';
-import type { TCountryCode } from './three/flags';
 
 export const App = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playgroundRef = useRef<ReturnType<typeof startPlayground> | null>(null);
-  const [leftCountry, setLeftCountry] = useState<TCountryCode>('ID');
-  const [rightCountry, setRightCountry] = useState<TCountryCode>('FR');
+  const [leftCountry, setLeftCountry] = useState<TCountryCode>(CountryCode.ID);
+  const [rightCountry, setRightCountry] = useState<TCountryCode>(CountryCode.FR);
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
@@ -19,7 +24,7 @@ export const App = () => {
 
     const playground = startPlayground(canvas);
     playgroundRef.current = playground;
-    void playground.setCountries('ID', 'FR').catch(() => setLoadError(true));
+    void playground.setCountries(CountryCode.ID, CountryCode.FR).catch(() => setLoadError(true));
 
     return () => {
       playgroundRef.current = null;
@@ -51,9 +56,9 @@ export const App = () => {
         <label>
           Left Flag
           <select value={leftCountry} onChange={onLeftCountryChange}>
-            {Object.values(flags).map(({ code, name }) => (
+            {COUNTRY_CODES.map((code) => (
               <option key={code} value={code}>
-                {name}
+                {COUNTRY_NAME_BY_CODE[code]}
               </option>
             ))}
           </select>
@@ -63,9 +68,9 @@ export const App = () => {
         <label>
           Right Flag
           <select value={rightCountry} onChange={onRightCountryChange}>
-            {Object.values(flags).map(({ code, name }) => (
+            {COUNTRY_CODES.map((code) => (
               <option key={code} value={code}>
-                {name}
+                {COUNTRY_NAME_BY_CODE[code]}
               </option>
             ))}
           </select>

@@ -1,4 +1,6 @@
-export type TCountryCode = 'ID' | 'NP' | 'FR';
+import { CountryCode, type TCountryCode } from '../types/country';
+
+export { CountryCode, type TCountryCode } from '../types/country';
 
 export interface IFlagDefinition {
   code: TCountryCode;
@@ -11,8 +13,8 @@ export interface IFlagDefinition {
 }
 
 export const flags: Record<TCountryCode, IFlagDefinition> = {
-  ID: {
-    code: 'ID',
+  [CountryCode.ID]: {
+    code: CountryCode.ID,
     name: 'Indonesia',
     artwork: 'https://cdn.jsdelivr.net/gh/hampusborgos/country-flags@main/svg/id.svg',
     aspectRatio: 1.5,
@@ -24,8 +26,8 @@ export const flags: Record<TCountryCode, IFlagDefinition> = {
       [0, 1],
     ],
   },
-  FR: {
-    code: 'FR',
+  [CountryCode.FR]: {
+    code: CountryCode.FR,
     name: 'France',
     artwork: 'https://cdn.jsdelivr.net/gh/hampusborgos/country-flags@main/svg/fr.svg',
     aspectRatio: 1.5,
@@ -37,8 +39,8 @@ export const flags: Record<TCountryCode, IFlagDefinition> = {
       [0, 1],
     ],
   },
-  NP: {
-    code: 'NP',
+  [CountryCode.NP]: {
+    code: CountryCode.NP,
     name: 'Nepal',
     artwork: 'https://cdn.jsdelivr.net/gh/hampusborgos/country-flags@main/svg/np.svg',
     aspectRatio: 363.94 / 467.82,
