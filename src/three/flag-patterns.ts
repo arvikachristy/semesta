@@ -17,7 +17,7 @@ export const createFlagPattern = async (code: TCountryCode) => {
     context.fillStyle = '#ffffff';
     context.fillRect(0, 256, 512, 256);
   } else if (code === CountryCode.FR) {
-    for (const [i, color] of ['#051440', '#ffffff', '#EC1920'].entries()) {
+    for (const [i, color] of ['#0055A4', '#ffffff', '#EC1920'].entries()) {
       context.fillStyle = color;
       context.fillRect((i * 512) / 3, 0, 512 / 3 + 1, 512);
     }
