@@ -4,7 +4,6 @@ import { blockHeight, createFlagBlock } from './flag-block';
 import { createFloor } from './floor';
 import { createLights } from './lights';
 import { bindPointerEvents } from './pointer';
-import { createRaycasting } from './raycasting';
 import { createRenderer } from './renderer';
 import { resize } from './resize';
 import { createScene } from './scene';
@@ -28,28 +27,8 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
   box.add(leftFlag.object, rightFlag.object);
   scene.add(ambientLight, directionalLight, floor, box);
 
-  const { updatePointer, isOverBox, isOverObject } = createRaycasting(canvas, camera, box);
-  const setRotationTarget = (object: THREE.Object3D, angle: number) => {
-    object.userData.targetRotation = angle;
-  };
-  setRotationTarget(leftFlag.object, leftFlag.object.rotation.y);
-  setRotationTarget(rightFlag.object, rightFlag.object.rotation.y);
-  const { interaction, unbind } = bindPointerEvents({
-    canvas,
-    box,
-    cameraTarget,
-    updatePointer,
-    isOverBox,
-    getPressedObject: () => {
-      if (isOverObject(leftFlag.object)) {
-        return leftFlag.object;
-      }
-      if (isOverObject(rightFlag.object)) {
-        return rightFlag.object;
-      }
-      return null;
-    },
-  });
+  const blocks = [leftFlag, rightFlag];
+  const { unbind } = bindPointerEvents({ canvas, camera, cameraTarget, blocks });
   const onResize = () => {
     resize(renderer, camera);
     fitViewport();
@@ -71,24 +50,12 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
     const now = performance.now();
     const delta = Math.min((now - previousTime) / 1000, 0.05);
     previousTime = now;
-    const easing = 1 - Math.exp(-12 * delta);
 
     camera.position.copy(cameraTarget).add(cameraOffset);
     camera.lookAt(cameraTarget);
 
-    const dragging = interaction.activePointer !== null && !interaction.pressedBlock;
-    const hovered = interaction.pointerVisible && !dragging && isOverBox();
-    canvas.style.cursor = dragging ? 'grabbing' : hovered ? 'pointer' : 'grab';
-
-    for (const block of [leftFlag, rightFlag]) {
-      const targetRotation = block.object.userData.targetRotation ?? block.object.rotation.y;
-      block.object.rotation.y = THREE.MathUtils.lerp(block.object.rotation.y, targetRotation, easing);
-
-      const overBlock = hovered && isOverObject(block.object);
-      const scale = THREE.MathUtils.lerp(block.object.scale.x, overBlock ? 1.04 : 1, easing);
-      block.object.scale.setScalar(scale);
-      block.object.position.y = (blockHeight * scale) / 2;
-      block.update(now / 1000, (scale - 1) / 0.04);
+    for (const block of blocks) {
+      block.update(delta);
     }
 
     renderer.render(scene, camera);

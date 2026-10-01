@@ -3,17 +3,31 @@ import * as THREE from 'three';
 export const createLights = (renderer: THREE.WebGLRenderer) => {
   const ambientLight = new THREE.AmbientLight('#ffffff', 1);
   const directionalLight = new THREE.DirectionalLight('#ffffff', 1.3);
-  directionalLight.position.set(3, 6, 4);
+  directionalLight.position.set(1, 6, 2);
+  directionalLight.castShadow = true;
+  directionalLight.shadow.mapSize.set(1024, 1024);
+  Object.assign(directionalLight.shadow.camera, {
+    left: -5,
+    right: 5,
+    top: 4,
+    bottom: -4,
+    near: 0.1,
+    far: 15,
+  });
+  directionalLight.shadow.radius = 4;
+  directionalLight.shadow.blurSamples = 8;
+  directionalLight.shadow.normalBias = 0.025;
+  directionalLight.shadow.bias = -0.0001;
 
   // These panels exist only in a small reflection map, never in the visible world.
-  // Broad highlights reveal the resin's curved edges without a downloaded HDR image.
+  // Broad highlights reveal the jelly's curved edges without a downloaded HDR image.
   const lightingScene = new THREE.Scene();
   lightingScene.background = new THREE.Color('#5e344c');
   const panelGeometry = new THREE.PlaneGeometry(1, 1);
   const panels = [
-    { color: '#ffffff', intensity: 5, size: [1.2, 7], position: [-4, -1, 1] },
+    { color: '#ffffff', intensity: 2, size: [4, 7], position: [-4, -1, 1] },
     { color: '#ffc6df', intensity: 3, size: [5, 2], position: [1, 5, -2] },
-    { color: '#ffffff', intensity: 4, size: [1.2, 7], position: [4, -1, 1] },
+    { color: '#ffffff', intensity: 1.5, size: [4, 7], position: [4, -1, 1] },
     { color: '#cedbff', intensity: 2, size: [3, 3], position: [0, 1, -5] },
   ].map(({ color, intensity, size, position }) => {
     const material = new THREE.MeshBasicMaterial({ color });
@@ -36,6 +50,9 @@ export const createLights = (renderer: THREE.WebGLRenderer) => {
     ambientLight,
     directionalLight,
     environment: environment.texture,
-    dispose: () => environment.dispose(),
+    dispose: () => {
+      environment.dispose();
+      directionalLight.shadow.dispose();
+    },
   };
 };

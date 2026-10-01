@@ -78,7 +78,7 @@ export const App = () => {
       )}
       <canvas
         ref={canvasRef}
-        aria-label="Three playground: select a flag, tap the solid to rotate it, or drag the background to move around."
+        aria-label="Three playground: select a flag, grab a flag to stretch its jelly, or drag the background to move around."
       />
     </main>
   );
