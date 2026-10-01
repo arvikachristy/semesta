@@ -29,12 +29,26 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
   scene.add(ambientLight, directionalLight, floor, box);
 
   const { updatePointer, isOverBox, isOverObject } = createRaycasting(canvas, camera, box);
+  const setRotationTarget = (object: THREE.Object3D, angle: number) => {
+    object.userData.targetRotation = angle;
+  };
+  setRotationTarget(leftFlag.object, leftFlag.object.rotation.y);
+  setRotationTarget(rightFlag.object, rightFlag.object.rotation.y);
   const { interaction, unbind } = bindPointerEvents({
     canvas,
     box,
     cameraTarget,
     updatePointer,
     isOverBox,
+    getPressedObject: () => {
+      if (isOverObject(leftFlag.object)) {
+        return leftFlag.object;
+      }
+      if (isOverObject(rightFlag.object)) {
+        return rightFlag.object;
+      }
+      return null;
+    },
   });
   const onResize = () => {
     resize(renderer, camera);
@@ -62,18 +76,20 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
     camera.position.copy(cameraTarget).add(cameraOffset);
     camera.lookAt(cameraTarget);
 
-    const dragging = interaction.activePointer !== null && !interaction.pressedBox;
+    const dragging = interaction.activePointer !== null && !interaction.pressedBlock;
     const hovered = interaction.pointerVisible && !dragging && isOverBox();
     canvas.style.cursor = dragging ? 'grabbing' : hovered ? 'pointer' : 'grab';
 
     for (const block of [leftFlag, rightFlag]) {
+      const targetRotation = block.object.userData.targetRotation ?? block.object.rotation.y;
+      block.object.rotation.y = THREE.MathUtils.lerp(block.object.rotation.y, targetRotation, easing);
+
       const overBlock = hovered && isOverObject(block.object);
       const scale = THREE.MathUtils.lerp(block.object.scale.x, overBlock ? 1.04 : 1, easing);
       block.object.scale.setScalar(scale);
       block.object.position.y = (blockHeight * scale) / 2;
       block.update(now / 1000, (scale - 1) / 0.04);
     }
-    box.rotation.y = THREE.MathUtils.lerp(box.rotation.y, interaction.targetRotation, easing);
 
     renderer.render(scene, camera);
   }

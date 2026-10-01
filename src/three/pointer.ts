@@ -6,6 +6,7 @@ interface IPointerOptions {
   cameraTarget: THREE.Vector3;
   updatePointer: (event: PointerEvent) => void;
   isOverBox: () => boolean;
+  getPressedObject?: () => THREE.Object3D | null;
 }
 
 // Pointer Events cover both mouse and touch with the same gesture handling.
@@ -15,13 +16,13 @@ export const bindPointerEvents = ({
   cameraTarget,
   updatePointer,
   isOverBox,
+  getPressedObject,
 }: IPointerOptions) => {
   // The render loop reads this state; pointer handlers change it.
   const interaction = {
     activePointer: null as number | null,
     pointerVisible: false,
-    pressedBox: false,
-    targetRotation: box.rotation.y,
+    pressedBlock: null as THREE.Object3D | null,
   };
 
   const dragStart = new THREE.Vector2();
@@ -32,7 +33,7 @@ export const bindPointerEvents = ({
   const releasePointer = () => {
     const pointerId = interaction.activePointer;
     interaction.activePointer = null;
-    interaction.pressedBox = false;
+    interaction.pressedBlock = null;
     if (pointerId !== null && canvas.hasPointerCapture(pointerId)) {
       canvas.releasePointerCapture(pointerId);
     }
@@ -46,7 +47,7 @@ export const bindPointerEvents = ({
     updatePointer(event);
     interaction.activePointer = event.pointerId;
     interaction.pointerVisible = true;
-    interaction.pressedBox = isOverBox();
+    interaction.pressedBlock = getPressedObject?.() ?? null;
     moved = false;
     dragStart.set(event.clientX, event.clientY);
     previousPointer.copy(dragStart);
@@ -69,9 +70,10 @@ export const bindPointerEvents = ({
 
     moved ||= Math.hypot(event.clientX - dragStart.x, event.clientY - dragStart.y) > tapTolerance;
 
-    if (interaction.pressedBox) {
+    if (interaction.pressedBlock) {
       const dx = event.clientX - previousPointer.x;
-      interaction.targetRotation += dx * 0.01;
+      const currentTarget = interaction.pressedBlock.userData.targetRotation ?? interaction.pressedBlock.rotation.y;
+      interaction.pressedBlock.userData.targetRotation = currentTarget + dx * 0.01;
     } else if (moved) {
       // Move the view a little. The box keeps its world coordinates.
       const dx = (event.clientX - previousPointer.x) / canvas.clientWidth;
@@ -91,8 +93,9 @@ export const bindPointerEvents = ({
     updatePointer(event);
     moved ||= Math.hypot(event.clientX - dragStart.x, event.clientY - dragStart.y) > tapTolerance;
 
-    if (interaction.pressedBox && !moved && isOverBox()) {
-      interaction.targetRotation += Math.PI / 2;
+    if (interaction.pressedBlock && !moved) {
+      const currentTarget = interaction.pressedBlock.userData.targetRotation ?? interaction.pressedBlock.rotation.y;
+      interaction.pressedBlock.userData.targetRotation = currentTarget + Math.PI / 2;
     }
 
     const bounds = canvas.getBoundingClientRect();

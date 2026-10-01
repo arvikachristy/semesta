@@ -55,7 +55,7 @@ export const createFlagBlock = () => {
     iridescenceThicknessRange: [220, 420],
     clearcoat: 1,
     clearcoatRoughness: 0.045,
-    attenuationColor: '#ff80b5',
+    attenuationColor: '#f894be',
     attenuationDistance: 1.8,
   });
   const outer = new THREE.Mesh(geometry, material);
