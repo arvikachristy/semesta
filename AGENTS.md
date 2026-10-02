@@ -9,3 +9,6 @@
 - Keep each Three.js concept in its own small file under `src/three/`, with `src/three/playground.ts` showing assembly and the render loop. Keep scene, camera, renderer, and world coordinates explicit for learning.
 - Keep the playground to one box and one floor. Add dependencies or directories only for a current implementation need. Keep the README accurate.
 - Before handoff, run `npm run check` and `npm run build`, then verify behavior affected by the change. Report checks that could not run.
+
+- Store repeated string values in a shared enum or named key-value object and reference that source instead of duplicating literals. Reuse existing country, pattern, event, and attribute constants.
+- Avoid type assertions/casts (`as SomeType`, angle-bracket casts, and double casts). Prefer inference, explicit declarations, discriminated unions, runtime validation, or type guards. Use an assertion only as a documented last resort when the API cannot be typed or narrowed safely. `as const` is allowed for literal inference; it must not be used to disguise an unsafe cast.

@@ -1,14 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
+import {
+  COUNTRY_CODES,
+  COUNTRY_META,
+  CountryCode,
+  isCountryCode,
+  type TCountryCode,
+} from './types/country';
 import { startPlayground } from './three/playground';
-import { flags } from './three/flags';
-import type { TCountryCode } from './three/flags';
 
 export const App = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playgroundRef = useRef<ReturnType<typeof startPlayground> | null>(null);
-  const [leftCountry, setLeftCountry] = useState<TCountryCode>('ID');
-  const [rightCountry, setRightCountry] = useState<TCountryCode>('FR');
+  const [leftCountry, setLeftCountry] = useState<TCountryCode>(CountryCode.ID);
+  const [rightCountry, setRightCountry] = useState<TCountryCode>(CountryCode.FR);
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
@@ -19,7 +24,7 @@ export const App = () => {
 
     const playground = startPlayground(canvas);
     playgroundRef.current = playground;
-    void playground.setCountries('ID', 'FR').catch(() => setLoadError(true));
+    void playground.setCountries(CountryCode.ID, CountryCode.FR).catch(() => setLoadError(true));
 
     return () => {
       playgroundRef.current = null;
@@ -28,7 +33,10 @@ export const App = () => {
   }, []);
 
   const onLeftCountryChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const selectedCountry = event.target.value as TCountryCode;
+    const selectedCountry = event.target.value;
+    if (!isCountryCode(selectedCountry)) {
+      return;
+    }
     setLeftCountry(selectedCountry);
     setLoadError(false);
     void playgroundRef.current
@@ -37,7 +45,10 @@ export const App = () => {
   };
 
   const onRightCountryChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const selectedCountry = event.target.value as TCountryCode;
+    const selectedCountry = event.target.value;
+    if (!isCountryCode(selectedCountry)) {
+      return;
+    }
     setRightCountry(selectedCountry);
     setLoadError(false);
     void playgroundRef.current
@@ -51,9 +62,9 @@ export const App = () => {
         <label>
           Left Flag
           <select value={leftCountry} onChange={onLeftCountryChange}>
-            {Object.values(flags).map(({ code, name }) => (
+            {COUNTRY_CODES.map((code) => (
               <option key={code} value={code}>
-                {name}
+                {COUNTRY_META[code].name}
               </option>
             ))}
           </select>
@@ -63,9 +74,9 @@ export const App = () => {
         <label>
           Right Flag
           <select value={rightCountry} onChange={onRightCountryChange}>
-            {Object.values(flags).map(({ code, name }) => (
+            {COUNTRY_CODES.map((code) => (
               <option key={code} value={code}>
-                {name}
+                {COUNTRY_META[code].name}
               </option>
             ))}
           </select>
@@ -78,7 +89,7 @@ export const App = () => {
       )}
       <canvas
         ref={canvasRef}
-        aria-label="Three playground: select a flag, tap the solid to rotate it, or drag the background to move around."
+        aria-label="Three playground: select a flag, grab a flag to stretch its jelly, or drag the background to move around."
       />
     </main>
   );

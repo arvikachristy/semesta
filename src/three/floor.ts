@@ -4,8 +4,9 @@ import * as THREE from 'three';
 export const createFloor = () => {
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(800, 200),
-    new THREE.MeshBasicMaterial({ color: '#f3c9c7' }),
+    new THREE.ShadowMaterial({ color: '#71384b', opacity: 0.2 }),
   );
   floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
   return floor;
 };

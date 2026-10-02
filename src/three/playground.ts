@@ -1,10 +1,9 @@
 import * as THREE from 'three';
 import { createCamera } from './camera';
-import { createFlag } from './flag';
+import { blockHeight, createFlagBlock } from './jelly-flags/flag-block';
 import { createFloor } from './floor';
 import { createLights } from './lights';
 import { bindPointerEvents } from './pointer';
-import { createRaycasting } from './raycasting';
 import { createRenderer } from './renderer';
 import { resize } from './resize';
 import { createScene } from './scene';
@@ -13,28 +12,29 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
   // React supplies the canvas. These are the raw Three.js pieces inside it.
   const renderer = createRenderer(canvas);
   const scene = createScene();
-  const { camera, cameraTarget, cameraOffset, adjustZoom } = createCamera();
-  const { ambientLight, directionalLight } = createLights();
+  const { camera, cameraTarget, cameraOffset, adjustZoom, fitViewport } = createCamera();
+  const lighting = createLights(renderer);
+  const { ambientLight, directionalLight } = lighting;
+  scene.environment = lighting.environment;
   const floor = createFloor();
-  const leftFlag = createFlag();
-  const rightFlag = createFlag();
+  const leftFlag = createFlagBlock();
+  const rightFlag = createFlagBlock();
   const box = new THREE.Group();
-  leftFlag.object.position.set(-1.6, 0.5, 0.8);
+  leftFlag.object.position.set(-1.6, blockHeight / 2, 0.8);
   leftFlag.object.rotation.y = -Math.PI / 1.5;
-  rightFlag.object.position.set(1.6, 0.5, 0.8);
+  rightFlag.object.position.set(1.6, blockHeight / 2, 0.8);
   rightFlag.object.rotation.y = Math.PI / 1.5;
   box.add(leftFlag.object, rightFlag.object);
   scene.add(ambientLight, directionalLight, floor, box);
 
-  const { updatePointer, isOverBox } = createRaycasting(canvas, camera, box);
-  const { interaction, unbind } = bindPointerEvents({
-    canvas,
-    box,
-    cameraTarget,
-    updatePointer,
-    isOverBox,
-  });
-  const onResize = () => resize(renderer, camera);
+  const blocks = [leftFlag, rightFlag];
+  const viewBounds = new THREE.Frustum();
+  const viewProjection = new THREE.Matrix4();
+  const { unbind } = bindPointerEvents({ canvas, camera, cameraTarget, blocks });
+  const onResize = () => {
+    resize(renderer, camera);
+    fitViewport();
+  };
   const onWheel = (event: WheelEvent) => {
     event.preventDefault();
     adjustZoom(event.deltaY * 0.02);
@@ -42,7 +42,7 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
   window.addEventListener('resize', onResize);
   canvas.addEventListener('wheel', onWheel, { passive: false });
 
-  // The render loop keeps the camera, hover, and box rotation in sync.
+  // The render loop keeps the camera, hover, and composition rotation in sync.
   let previousTime = performance.now();
   let frameId = 0;
 
@@ -52,19 +52,17 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
     const now = performance.now();
     const delta = Math.min((now - previousTime) / 1000, 0.05);
     previousTime = now;
-    const easing = 1 - Math.exp(-12 * delta);
 
     camera.position.copy(cameraTarget).add(cameraOffset);
     camera.lookAt(cameraTarget);
+    camera.updateMatrixWorld();
+    viewProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    viewBounds.setFromProjectionMatrix(viewProjection);
 
-    const dragging = interaction.activePointer !== null && !interaction.pressedBox;
-    const hovered = interaction.pointerVisible && !dragging && isOverBox();
-    canvas.style.cursor = dragging ? 'grabbing' : hovered ? 'pointer' : 'grab';
-
-    const scale = THREE.MathUtils.lerp(box.scale.x, hovered ? 1.08 : 1, easing);
-    box.scale.setScalar(scale);
-    box.position.y = scale / 2;
-    box.rotation.y = THREE.MathUtils.lerp(box.rotation.y, interaction.targetRotation, easing);
+    for (const block of blocks) {
+      block.setBounds(viewBounds.planes);
+      block.update(delta);
+    }
 
     renderer.render(scene, camera);
   }
@@ -81,6 +79,7 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
     rightFlag.dispose();
     floor.geometry.dispose();
     floor.material.dispose();
+    lighting.dispose();
     renderer.dispose();
     scene.clear();
     canvas.style.cursor = '';

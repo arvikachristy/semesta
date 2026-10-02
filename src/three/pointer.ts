@@ -1,153 +1,125 @@
 import * as THREE from 'three';
+import type { createFlagBlock } from './jelly-flags/flag-block';
+
+enum PointerEventName {
+  Down = 'pointerdown',
+  Move = 'pointermove',
+  Up = 'pointerup',
+  Cancel = 'pointercancel',
+  LostCapture = 'lostpointercapture',
+  Blur = 'blur',
+}
+const Cursor = { Grab: 'grab', Grabbing: 'grabbing', Pointer: 'pointer' };
 
 interface IPointerOptions {
   canvas: HTMLCanvasElement;
-  box: THREE.Object3D;
+  camera: THREE.PerspectiveCamera;
   cameraTarget: THREE.Vector3;
-  updatePointer: (event: PointerEvent) => void;
-  isOverBox: () => boolean;
+  blocks: ReturnType<typeof createFlagBlock>[];
 }
 
-// Pointer Events cover both mouse and touch with the same gesture handling.
-export const bindPointerEvents = ({
-  canvas,
-  box,
-  cameraTarget,
-  updatePointer,
-  isOverBox,
-}: IPointerOptions) => {
-  // The render loop reads this state; pointer handlers change it.
-  const interaction = {
-    activePointer: null as number | null,
-    pointerVisible: false,
-    pressedBox: false,
-    targetRotation: box.rotation.y,
-  };
-
-  const dragStart = new THREE.Vector2();
-  const previousPointer = new THREE.Vector2();
-  const tapTolerance = 6;
-  let moved = false;
-
-  const releasePointer = () => {
-    const pointerId = interaction.activePointer;
-    interaction.activePointer = null;
-    interaction.pressedBox = false;
-    if (pointerId !== null && canvas.hasPointerCapture(pointerId)) {
-      canvas.releasePointerCapture(pointerId);
-    }
-  };
-
-  const onPointerDown = (event: PointerEvent) => {
-    if (!event.isPrimary || event.button !== 0 || interaction.activePointer !== null) {
-      return;
-    }
-
-    updatePointer(event);
-    interaction.activePointer = event.pointerId;
-    interaction.pointerVisible = true;
-    interaction.pressedBox = isOverBox();
-    moved = false;
-    dragStart.set(event.clientX, event.clientY);
-    previousPointer.copy(dragStart);
-    canvas.setPointerCapture(event.pointerId);
-  };
-
-  const onPointerMove = (event: PointerEvent) => {
-    if (
-      !event.isPrimary ||
-      (interaction.activePointer !== null && event.pointerId !== interaction.activePointer)
-    ) {
-      return;
-    }
-
-    updatePointer(event);
-    interaction.pointerVisible = true;
-    if (interaction.activePointer === null) {
-      return;
-    }
-
-    moved ||= Math.hypot(event.clientX - dragStart.x, event.clientY - dragStart.y) > tapTolerance;
-
-    if (interaction.pressedBox) {
-      const dx = event.clientX - previousPointer.x;
-      interaction.targetRotation += dx * 0.01;
-    } else if (moved) {
-      // Move the view a little. The box keeps its world coordinates.
-      const dx = (event.clientX - previousPointer.x) / canvas.clientWidth;
-      const dy = (event.clientY - previousPointer.y) / canvas.clientHeight;
-      cameraTarget.x = THREE.MathUtils.clamp(cameraTarget.x - dx * 4, -0.8, 0.8);
-      cameraTarget.z = THREE.MathUtils.clamp(cameraTarget.z - dy * 4, -1.2, 1.2);
-    }
-
-    previousPointer.set(event.clientX, event.clientY);
-  };
-
-  const onPointerUp = (event: PointerEvent) => {
-    if (event.pointerId !== interaction.activePointer) {
-      return;
-    }
-
-    updatePointer(event);
-    moved ||= Math.hypot(event.clientX - dragStart.x, event.clientY - dragStart.y) > tapTolerance;
-
-    if (interaction.pressedBox && !moved && isOverBox()) {
-      interaction.targetRotation += Math.PI / 2;
-    }
-
+// A hit creates a camera-facing grab plane. Ray points are converted to the body's local space.
+export const bindPointerEvents = ({ canvas, camera, cameraTarget, blocks }: IPointerOptions) => {
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+  const plane = new THREE.Plane();
+  const point = new THREE.Vector3();
+  const normal = new THREE.Vector3();
+  const previous = new THREE.Vector2();
+  let activePointer: number | null = null;
+  let grabbed: ReturnType<typeof createFlagBlock> | null = null;
+  const updateRay = (event: PointerEvent) => {
     const bounds = canvas.getBoundingClientRect();
-    interaction.pointerVisible =
-      event.pointerType !== 'touch' &&
-      event.clientX >= bounds.left &&
-      event.clientX <= bounds.right &&
-      event.clientY >= bounds.top &&
-      event.clientY <= bounds.bottom;
-    releasePointer();
+    pointer.set(
+      ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
+      1 - ((event.clientY - bounds.top) / bounds.height) * 2,
+    );
+    camera.updateMatrixWorld();
+    blocks.forEach((block) => block.object.updateWorldMatrix(true, true));
+    raycaster.setFromCamera(pointer, camera);
   };
-
-  const onPointerLeave = () => {
-    interaction.pointerVisible = false;
+  const hit = () =>
+    raycaster.intersectObjects(
+      blocks.map((block) => block.object),
+      true,
+    )[0];
+  const release = (jump = false) => {
+    grabbed?.endGrab(jump);
+    grabbed = null;
+    const id = activePointer;
+    activePointer = null;
+    if (id !== null && canvas.hasPointerCapture(id)) {
+      canvas.releasePointerCapture(id);
+    }
+    canvas.style.cursor = Cursor.Grab;
   };
-
-  const onPointerCancel = (event: PointerEvent) => {
-    if (event.pointerId !== interaction.activePointer) {
+  const down = (event: PointerEvent) => {
+    if (!event.isPrimary || event.button !== 0 || activePointer !== null) {
       return;
     }
-    interaction.pointerVisible = false;
-    releasePointer();
+    updateRay(event);
+    const intersection = hit();
+    activePointer = event.pointerId;
+    previous.set(event.clientX, event.clientY);
+    if (intersection) {
+      grabbed = blocks.find((block) => intersection.object.parent === block.object) ?? null;
+      if (grabbed) {
+        camera.getWorldDirection(normal);
+        plane.setFromNormalAndCoplanarPoint(normal, intersection.point);
+        grabbed.beginGrab(grabbed.object.worldToLocal(point.copy(intersection.point)));
+      }
+    }
+    canvas.setPointerCapture(event.pointerId);
+    canvas.style.cursor = Cursor.Grabbing;
   };
-
-  const onLostPointerCapture = (event: PointerEvent) => {
-    if (event.pointerId !== interaction.activePointer) {
+  const move = (event: PointerEvent) => {
+    if (!event.isPrimary || (activePointer !== null && activePointer !== event.pointerId)) {
       return;
     }
-    interaction.pointerVisible = false;
-    releasePointer();
+    updateRay(event);
+    if (activePointer === null) {
+      canvas.style.cursor = hit() ? Cursor.Pointer : Cursor.Grab;
+      return;
+    }
+    if (grabbed) {
+      if (raycaster.ray.intersectPlane(plane, point)) {
+        grabbed.moveGrab(grabbed.object.worldToLocal(point));
+      }
+    } else {
+      cameraTarget.x = THREE.MathUtils.clamp(
+        cameraTarget.x - ((event.clientX - previous.x) / canvas.clientWidth) * 4,
+        -0.8,
+        0.8,
+      );
+      cameraTarget.z = THREE.MathUtils.clamp(
+        cameraTarget.z - ((event.clientY - previous.y) / canvas.clientHeight) * 4,
+        -1.2,
+        1.2,
+      );
+    }
+    previous.set(event.clientX, event.clientY);
   };
-
-  const onBlur = () => {
-    interaction.pointerVisible = false;
-    releasePointer();
+  const up = (event: PointerEvent) => {
+    if (event.pointerId === activePointer) {
+      release(event.type === PointerEventName.Up);
+    }
   };
-
-  canvas.addEventListener('pointerdown', onPointerDown);
-  canvas.addEventListener('pointermove', onPointerMove);
-  canvas.addEventListener('pointerup', onPointerUp);
-  canvas.addEventListener('pointerleave', onPointerLeave);
-  canvas.addEventListener('pointercancel', onPointerCancel);
-  canvas.addEventListener('lostpointercapture', onLostPointerCapture);
-  window.addEventListener('blur', onBlur);
-
-  const unbind = () => {
-    canvas.removeEventListener('pointerdown', onPointerDown);
-    canvas.removeEventListener('pointermove', onPointerMove);
-    canvas.removeEventListener('pointerup', onPointerUp);
-    canvas.removeEventListener('pointerleave', onPointerLeave);
-    canvas.removeEventListener('pointercancel', onPointerCancel);
-    canvas.removeEventListener('lostpointercapture', onLostPointerCapture);
-    window.removeEventListener('blur', onBlur);
-    releasePointer();
+  const cancel = () => release();
+  canvas.addEventListener(PointerEventName.Down, down);
+  canvas.addEventListener(PointerEventName.Move, move);
+  canvas.addEventListener(PointerEventName.Up, up);
+  canvas.addEventListener(PointerEventName.Cancel, up);
+  canvas.addEventListener(PointerEventName.LostCapture, up);
+  window.addEventListener(PointerEventName.Blur, cancel);
+  return {
+    unbind: () => {
+      release();
+      canvas.removeEventListener(PointerEventName.Down, down);
+      canvas.removeEventListener(PointerEventName.Move, move);
+      canvas.removeEventListener(PointerEventName.Up, up);
+      canvas.removeEventListener(PointerEventName.Cancel, up);
+      canvas.removeEventListener(PointerEventName.LostCapture, up);
+      window.removeEventListener(PointerEventName.Blur, cancel);
+    },
   };
-
-  return { interaction, unbind };
 };
