@@ -1,3 +1,5 @@
+import { FlagPatternType, StripeOrientation } from '../types/flag-pattern';
+import { jellyParameters } from './jelly-parameters';
 import * as THREE from 'three';
 import type { TCountryCode } from '../types/country';
 import { flags } from './flags';
@@ -7,23 +9,23 @@ const textureHeight = 512;
 // Surface UVs are baked from rest coordinates, never current position.
 export const createFlagPattern = async (code: TCountryCode) => {
   const { pattern, size } = flags[code];
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.round(textureHeight * (size.width / size.height));
-  canvas.height = textureHeight;
-  const context = canvas.getContext('2d');
-  if (!context) {
+  const artwork = document.createElement('canvas');
+  artwork.width = Math.round(textureHeight * (size.width / size.height));
+  artwork.height = textureHeight;
+  const artworkContext = artwork.getContext('2d');
+  if (!artworkContext) {
     throw new Error('Could not create flag artwork');
   }
-  const { width, height } = canvas;
+  const { width, height } = artwork;
   switch (pattern.type) {
-    case 'stripes': {
-      const horizontal = pattern.orientation === 'horizontal';
+    case FlagPatternType.Stripes: {
+      const horizontal = pattern.orientation === StripeOrientation.Horizontal;
       const extent = horizontal ? height : width;
       for (const [index, color] of pattern.colors.entries()) {
         const start = Math.round((index * extent) / pattern.colors.length);
         const end = Math.round(((index + 1) * extent) / pattern.colors.length);
-        context.fillStyle = color;
-        context.fillRect(
+        artworkContext.fillStyle = color;
+        artworkContext.fillRect(
           horizontal ? 0 : start,
           horizontal ? start : 0,
           horizontal ? width : end - start,
@@ -32,14 +34,14 @@ export const createFlagPattern = async (code: TCountryCode) => {
       }
       break;
     }
-    case 'svg': {
+    case FlagPatternType.Svg: {
       const image = new Image();
       image.crossOrigin = 'anonymous';
       image.src = pattern.src;
       await image.decode();
-      context.fillStyle = pattern.background;
-      context.fillRect(0, 0, width, height);
-      context.drawImage(
+      artworkContext.fillStyle = pattern.background;
+      artworkContext.fillRect(0, 0, width, height);
+      artworkContext.drawImage(
         image,
         width * pattern.inset,
         height * pattern.inset,
@@ -53,6 +55,32 @@ export const createFlagPattern = async (code: TCountryCode) => {
       throw new Error(`Unsupported flag pattern: ${String(unsupported)}`);
     }
   }
+  // Preserve national artwork proportions inside the shared, identical jelly dimensions.
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(
+    textureHeight * (jellyParameters.surface.width / jellyParameters.surface.height),
+  );
+  canvas.height = textureHeight;
+  const context = canvas.getContext('2d');
+  if (!context) {
+    throw new Error('Could not create the shared flag texture');
+  }
+  const background =
+    pattern.type === FlagPatternType.Svg
+      ? pattern.background
+      : (pattern.colors.find((color) => color.toLowerCase() === '#ffffff') ?? pattern.colors[0]);
+  context.fillStyle = background;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  const drawWidth = Math.min(canvas.width, (canvas.height * size.width) / size.height);
+  const drawHeight = Math.min(canvas.height, (canvas.width * size.height) / size.width);
+  context.drawImage(
+    artwork,
+    (canvas.width - drawWidth) / 2,
+    (canvas.height - drawHeight) / 2,
+    drawWidth,
+    drawHeight,
+  );
+
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;

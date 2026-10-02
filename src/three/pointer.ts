@@ -1,6 +1,16 @@
 import * as THREE from 'three';
 import type { createFlagBlock } from './flag-block';
 
+enum PointerEventName {
+  Down = 'pointerdown',
+  Move = 'pointermove',
+  Up = 'pointerup',
+  Cancel = 'pointercancel',
+  LostCapture = 'lostpointercapture',
+  Blur = 'blur',
+}
+const Cursor = { Grab: 'grab', Grabbing: 'grabbing', Pointer: 'pointer' };
+
 interface IPointerOptions {
   canvas: HTMLCanvasElement;
   camera: THREE.PerspectiveCamera;
@@ -33,15 +43,15 @@ export const bindPointerEvents = ({ canvas, camera, cameraTarget, blocks }: IPoi
       blocks.map((block) => block.object),
       true,
     )[0];
-  const release = () => {
-    grabbed?.endGrab();
+  const release = (jump = false) => {
+    grabbed?.endGrab(jump);
     grabbed = null;
     const id = activePointer;
     activePointer = null;
     if (id !== null && canvas.hasPointerCapture(id)) {
       canvas.releasePointerCapture(id);
     }
-    canvas.style.cursor = 'grab';
+    canvas.style.cursor = Cursor.Grab;
   };
   const down = (event: PointerEvent) => {
     if (!event.isPrimary || event.button !== 0 || activePointer !== null) {
@@ -60,7 +70,7 @@ export const bindPointerEvents = ({ canvas, camera, cameraTarget, blocks }: IPoi
       }
     }
     canvas.setPointerCapture(event.pointerId);
-    canvas.style.cursor = 'grabbing';
+    canvas.style.cursor = Cursor.Grabbing;
   };
   const move = (event: PointerEvent) => {
     if (!event.isPrimary || (activePointer !== null && activePointer !== event.pointerId)) {
@@ -68,7 +78,7 @@ export const bindPointerEvents = ({ canvas, camera, cameraTarget, blocks }: IPoi
     }
     updateRay(event);
     if (activePointer === null) {
-      canvas.style.cursor = hit() ? 'pointer' : 'grab';
+      canvas.style.cursor = hit() ? Cursor.Pointer : Cursor.Grab;
       return;
     }
     if (grabbed) {
@@ -91,24 +101,25 @@ export const bindPointerEvents = ({ canvas, camera, cameraTarget, blocks }: IPoi
   };
   const up = (event: PointerEvent) => {
     if (event.pointerId === activePointer) {
-      release();
+      release(event.type === PointerEventName.Up);
     }
   };
-  canvas.addEventListener('pointerdown', down);
-  canvas.addEventListener('pointermove', move);
-  canvas.addEventListener('pointerup', up);
-  canvas.addEventListener('pointercancel', up);
-  canvas.addEventListener('lostpointercapture', up);
-  window.addEventListener('blur', release);
+  const cancel = () => release();
+  canvas.addEventListener(PointerEventName.Down, down);
+  canvas.addEventListener(PointerEventName.Move, move);
+  canvas.addEventListener(PointerEventName.Up, up);
+  canvas.addEventListener(PointerEventName.Cancel, up);
+  canvas.addEventListener(PointerEventName.LostCapture, up);
+  window.addEventListener(PointerEventName.Blur, cancel);
   return {
     unbind: () => {
       release();
-      canvas.removeEventListener('pointerdown', down);
-      canvas.removeEventListener('pointermove', move);
-      canvas.removeEventListener('pointerup', up);
-      canvas.removeEventListener('pointercancel', up);
-      canvas.removeEventListener('lostpointercapture', up);
-      window.removeEventListener('blur', release);
+      canvas.removeEventListener(PointerEventName.Down, down);
+      canvas.removeEventListener(PointerEventName.Move, move);
+      canvas.removeEventListener(PointerEventName.Up, up);
+      canvas.removeEventListener(PointerEventName.Cancel, up);
+      canvas.removeEventListener(PointerEventName.LostCapture, up);
+      window.removeEventListener(PointerEventName.Blur, cancel);
     },
   };
 };

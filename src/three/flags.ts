@@ -1,4 +1,5 @@
-import { CountryCode, type TCountryCode } from '../types/country';
+import { FlagPatternType, StripeOrientation } from '../types/flag-pattern';
+import { COUNTRY_META, CountryCode, type TCountryCode } from '../types/country';
 import type { TFlagPattern } from '../types/flag-pattern';
 
 export { CountryCode, type TCountryCode } from '../types/country';
@@ -30,18 +31,22 @@ const rectangularOutline: IFlagDefinition['outline'] = [
 export const flags: Record<TCountryCode, IFlagDefinition> = {
   [CountryCode.ID]: {
     code: CountryCode.ID,
-    name: 'Indonesia',
-    pattern: { type: 'stripes', orientation: 'horizontal', colors: ['#ff0000', '#ffffff'] },
+    name: COUNTRY_META[CountryCode.ID].name,
+    pattern: {
+      type: FlagPatternType.Stripes,
+      orientation: StripeOrientation.Horizontal,
+      colors: ['#ff0000', '#ffffff'],
+    },
     size: { width: 3, height: 2 },
     edgeColor: '#ff0000',
     outline: rectangularOutline,
   },
   [CountryCode.FR]: {
     code: CountryCode.FR,
-    name: 'France',
+    name: COUNTRY_META[CountryCode.FR].name,
     pattern: {
-      type: 'stripes',
-      orientation: 'vertical',
+      type: FlagPatternType.Stripes,
+      orientation: StripeOrientation.Vertical,
       colors: ['#051440', '#ffffff', '#EC1920'],
     },
     size: { width: 3, height: 2 },
@@ -50,9 +55,9 @@ export const flags: Record<TCountryCode, IFlagDefinition> = {
   },
   [CountryCode.NP]: {
     code: CountryCode.NP,
-    name: 'Nepal',
+    name: COUNTRY_META[CountryCode.NP].name,
     pattern: {
-      type: 'svg',
+      type: FlagPatternType.Svg,
       src: 'https://cdn.jsdelivr.net/gh/hampusborgos/country-flags@main/svg/np.svg',
       background: '#f7b8cb',
       inset: 0.0390625,
@@ -69,31 +74,35 @@ export const flags: Record<TCountryCode, IFlagDefinition> = {
   },
   [CountryCode.DE]: {
     code: CountryCode.DE,
-    name: 'Germany',
+    name: COUNTRY_META[CountryCode.DE].name,
     size: { width: 5, height: 3 },
     edgeColor: '#000000',
     pattern: {
-      type: 'stripes',
-      orientation: 'horizontal',
+      type: FlagPatternType.Stripes,
+      orientation: StripeOrientation.Horizontal,
       colors: ['#000000', '#ff0000', '#ffcc00'],
     },
     outline: rectangularOutline,
   },
   [CountryCode.PL]: {
     code: CountryCode.PL,
-    name: 'Poland',
+    name: COUNTRY_META[CountryCode.PL].name,
     size: { width: 8, height: 5 },
     edgeColor: '#dc143c',
-    pattern: { type: 'stripes', orientation: 'horizontal', colors: ['#ffffff', '#dc143c'] },
+    pattern: {
+      type: FlagPatternType.Stripes,
+      orientation: StripeOrientation.Horizontal,
+      colors: ['#ffffff', '#dc143c'],
+    },
     outline: rectangularOutline,
   },
   [CountryCode.KZ]: {
     code: CountryCode.KZ,
-    name: 'Kazakhstan',
+    name: COUNTRY_META[CountryCode.KZ].name,
     size: { width: 2, height: 1 },
     edgeColor: '#00afca',
     pattern: {
-      type: 'svg',
+      type: FlagPatternType.Svg,
       src: 'https://cdn.jsdelivr.net/gh/hampusborgos/country-flags@main/svg/kz.svg',
       background: '#00afca',
       inset: 0,
@@ -102,11 +111,11 @@ export const flags: Record<TCountryCode, IFlagDefinition> = {
   },
   [CountryCode.BN]: {
     code: CountryCode.BN,
-    name: 'Brunei',
+    name: COUNTRY_META[CountryCode.BN].name,
     size: { width: 2, height: 1 },
     edgeColor: '#f7e017',
     pattern: {
-      type: 'svg',
+      type: FlagPatternType.Svg,
       src: 'https://cdn.jsdelivr.net/gh/hampusborgos/country-flags@main/svg/bn.svg',
       background: '#f7e017',
       inset: 0,

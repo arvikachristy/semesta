@@ -28,6 +28,8 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
   scene.add(ambientLight, directionalLight, floor, box);
 
   const blocks = [leftFlag, rightFlag];
+  const viewBounds = new THREE.Frustum();
+  const viewProjection = new THREE.Matrix4();
   const { unbind } = bindPointerEvents({ canvas, camera, cameraTarget, blocks });
   const onResize = () => {
     resize(renderer, camera);
@@ -53,8 +55,12 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
 
     camera.position.copy(cameraTarget).add(cameraOffset);
     camera.lookAt(cameraTarget);
+    camera.updateMatrixWorld();
+    viewProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    viewBounds.setFromProjectionMatrix(viewProjection);
 
     for (const block of blocks) {
+      block.setBounds(viewBounds.planes);
       block.update(delta);
     }
 

@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
-import { flags } from './flags';
 import { createFlagPattern } from './flag-patterns';
 import { createJellyMaterial } from './jelly-material';
 import type { TCountryCode } from './flags';
@@ -12,6 +11,8 @@ export const blockHeight = jellyParameters.surface.height;
 
 export const createFlagBlock = () => {
   const object = new THREE.Group();
+  const bounds = Array.from({ length: 6 }, () => new THREE.Plane());
+  const inverseWorld = new THREE.Matrix4();
   let body: ReturnType<typeof createSoftBody>;
   let surface: THREE.Mesh<THREE.BufferGeometry, THREE.MeshPhysicalMaterial> | null = null;
   let updateSurface: (() => void) | null = null;
@@ -34,9 +35,7 @@ export const createFlagBlock = () => {
     }
     country = code;
 
-    const { size } = flags[code];
-    const width = blockHeight * (size.width / size.height);
-    const { depth, radius, segments } = jellyParameters.surface;
+    const { width, depth, radius, segments } = jellyParameters.surface;
 
     const rounded = new RoundedBoxGeometry(width, blockHeight, depth, segments, radius);
     rounded.deleteAttribute('normal');
@@ -46,7 +45,7 @@ export const createFlagBlock = () => {
     rounded.dispose();
     geometry.computeVertexNormals();
 
-    const positions = geometry.getAttribute('position') as THREE.BufferAttribute;
+    const positions = geometry.getAttribute('position');
     const uv = new Float32Array(positions.count * 2);
     const probes = new THREE.BufferAttribute(new Float32Array(positions.count * 6), 3);
     const thickness = new THREE.BufferAttribute(new Float32Array(positions.count), 1);
@@ -60,8 +59,8 @@ export const createFlagBlock = () => {
 
     geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
     geometry.setAttribute('jellyThickness', thickness);
-    body = createSoftBody(width, blockHeight, depth);
-    updateSurface = body.bind(geometry.getAttribute('position') as THREE.BufferAttribute);
+    body = createSoftBody(width, blockHeight, depth, bounds);
+    updateSurface = body.bind(positions);
     const updateProbes = body.bind(probes);
     updateThickness = () => {
       updateProbes();
@@ -108,11 +107,16 @@ export const createFlagBlock = () => {
   };
   return {
     object,
+    setBounds: (worldPlanes: THREE.Plane[]) => {
+      object.updateWorldMatrix(true, false);
+      inverseWorld.copy(object.matrixWorld).invert();
+      worldPlanes.forEach((plane, index) => bounds[index].copy(plane).applyMatrix4(inverseWorld));
+    },
     setCountry,
     update,
     dispose,
     beginGrab: (point: THREE.Vector3) => body?.beginGrab(point),
     moveGrab: (point: THREE.Vector3) => body?.moveGrab(point),
-    endGrab: () => body?.endGrab(),
+    endGrab: (jump = false) => body?.endGrab(jump),
   };
 };

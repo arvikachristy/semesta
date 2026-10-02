@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import {
   COUNTRY_CODES,
-  COUNTRY_NAME_BY_CODE,
+  COUNTRY_META,
   CountryCode,
+  isCountryCode,
   type TCountryCode,
 } from './types/country';
 import { startPlayground } from './three/playground';
@@ -32,7 +33,10 @@ export const App = () => {
   }, []);
 
   const onLeftCountryChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const selectedCountry = event.target.value as TCountryCode;
+    const selectedCountry = event.target.value;
+    if (!isCountryCode(selectedCountry)) {
+      return;
+    }
     setLeftCountry(selectedCountry);
     setLoadError(false);
     void playgroundRef.current
@@ -41,7 +45,10 @@ export const App = () => {
   };
 
   const onRightCountryChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const selectedCountry = event.target.value as TCountryCode;
+    const selectedCountry = event.target.value;
+    if (!isCountryCode(selectedCountry)) {
+      return;
+    }
     setRightCountry(selectedCountry);
     setLoadError(false);
     void playgroundRef.current
@@ -57,7 +64,7 @@ export const App = () => {
           <select value={leftCountry} onChange={onLeftCountryChange}>
             {COUNTRY_CODES.map((code) => (
               <option key={code} value={code}>
-                {COUNTRY_NAME_BY_CODE[code]}
+                {COUNTRY_META[code].name}
               </option>
             ))}
           </select>
@@ -69,7 +76,7 @@ export const App = () => {
           <select value={rightCountry} onChange={onRightCountryChange}>
             {COUNTRY_CODES.map((code) => (
               <option key={code} value={code}>
-                {COUNTRY_NAME_BY_CODE[code]}
+                {COUNTRY_META[code].name}
               </option>
             ))}
           </select>

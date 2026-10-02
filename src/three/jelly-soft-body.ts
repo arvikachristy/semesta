@@ -12,7 +12,12 @@ interface ITet {
 }
 
 // A low-resolution tetrahedral volume. The rendering mesh is bound separately.
-export const createSoftBody = (width: number, height: number, depth: number) => {
+export const createSoftBody = (
+  width: number,
+  height: number,
+  depth: number,
+  bounds: THREE.Plane[] = [],
+) => {
   const p = jellyParameters.physics;
   const [nx, ny, nz] = p.cells;
   const rest: THREE.Vector3[] = [];
@@ -36,8 +41,8 @@ export const createSoftBody = (width: number, height: number, depth: number) => 
         positions.push(point.clone());
         previous.push(point.clone());
         velocities.push(new THREE.Vector3());
-        // The bottom contact patch holds the composition in place while the body sags above it.
-        weights.push(y === 0 ? 0 : 1);
+        // Every particle is movable; the floor is a collision constraint, not an anchor.
+        weights.push(1);
       }
     }
   }
@@ -94,6 +99,9 @@ export const createSoftBody = (width: number, height: number, depth: number) => 
   const grabOffsets = rest.map(() => new THREE.Vector3());
   const target = new THREE.Vector3();
   const scratch = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  const meanVelocity = new THREE.Vector3();
+  const incomingVelocity = rest.map(() => new THREE.Vector3());
   let grabbed = false;
   let accumulator = 0;
   const beginGrab = (point: THREE.Vector3) => {
@@ -115,21 +123,40 @@ export const createSoftBody = (width: number, height: number, depth: number) => 
   const moveGrab = (point: THREE.Vector3) => {
     target.copy(point);
   };
-  const endGrab = () => {
+  const endGrab = (jump = false) => {
+    if (grabbed && jump) {
+      for (const velocity of velocities) {
+        velocity.y = Math.max(velocity.y, p.jumpSpeed);
+      }
+    }
     grabbed = false;
   };
   const step = () => {
     const dt = p.timestep;
     const decay = Math.exp(-p.damping * dt);
+    center.set(0, 0, 0);
+    meanVelocity.set(0, 0, 0);
+    for (let i = 0; i < positions.length; i++) {
+      center.add(positions[i]);
+      meanVelocity.add(velocities[i]);
+    }
+    center.divideScalar(positions.length);
+    meanVelocity.divideScalar(positions.length);
+    // Recover shape around the moving centre, never around a fixed floor position.
+
     for (let i = 0; i < positions.length; i++) {
       previous[i].copy(positions[i]);
       if (!weights[i]) {
         continue;
       }
       velocities[i]
+        .sub(meanVelocity)
         .multiplyScalar(decay)
-        .addScaledVector(scratch.subVectors(rest[i], positions[i]), p.recovery * dt);
+        .addScaledVector(meanVelocity, Math.exp(-p.airDrag * dt));
+      scratch.copy(rest[i]).add(center).sub(positions[i]);
+      velocities[i].addScaledVector(scratch, p.recovery * dt);
       velocities[i].y += p.gravity * dt;
+      incomingVelocity[i].copy(velocities[i]);
       positions[i].addScaledVector(velocities[i], dt);
     }
     for (let iteration = 0; iteration < p.iterations; iteration++) {
@@ -184,11 +211,19 @@ export const createSoftBody = (width: number, height: number, depth: number) => 
             .copy(target)
             .add(grabOffsets[i])
             .sub(rest[i])
+            .sub(center)
             .clampLength(0, p.maxStretch)
-            .add(rest[i]);
+            .add(rest[i])
+            .add(center);
           positions[i].lerp(scratch, grabWeights[i] * p.grabStrength);
         }
         positions[i].y = Math.max(-height / 2, positions[i].y);
+        for (const plane of bounds) {
+          const distance = plane.distanceToPoint(positions[i]) - p.screenMargin;
+          if (distance < 0) {
+            positions[i].addScaledVector(plane.normal, -distance);
+          }
+        }
       }
     }
     for (let i = 0; i < positions.length; i++) {
@@ -196,6 +231,23 @@ export const createSoftBody = (width: number, height: number, depth: number) => 
         .subVectors(positions[i], previous[i])
         .multiplyScalar(1 / dt)
         .clampLength(0, 10);
+      if (positions[i].y <= -height / 2 + 1e-6) {
+        velocities[i].y =
+          incomingVelocity[i].y < -p.bounceThreshold
+            ? -incomingVelocity[i].y * p.restitution
+            : Math.max(0, velocities[i].y);
+        velocities[i].x *= Math.exp(-p.floorFriction * dt);
+        velocities[i].z *= Math.exp(-p.floorFriction * dt);
+      }
+      for (const plane of bounds) {
+        const approach = incomingVelocity[i].dot(plane.normal);
+        if (plane.distanceToPoint(positions[i]) <= p.screenMargin + 1e-5 && approach < 0) {
+          velocities[i].addScaledVector(
+            plane.normal,
+            -approach * p.restitution - velocities[i].dot(plane.normal),
+          );
+        }
+      }
     }
   };
   const update = (delta: number) => {
@@ -206,10 +258,13 @@ export const createSoftBody = (width: number, height: number, depth: number) => 
     }
   };
   // Trilinear embedding transfers the simulated volume's displacement to a dense surface.
-  const bind = (attribute: THREE.BufferAttribute) => {
+  const bind = (attribute: THREE.BufferAttribute | THREE.InterleavedBufferAttribute) => {
     const indices = new Uint16Array(attribute.count * 8);
     const factors = new Float32Array(attribute.count * 8);
-    const original = Float32Array.from(attribute.array);
+    const original = new Float32Array(attribute.count * 3);
+    for (let i = 0; i < attribute.count; i++) {
+      original.set([attribute.getX(i), attribute.getY(i), attribute.getZ(i)], i * 3);
+    }
     for (let i = 0; i < attribute.count; i++) {
       const coords = [
         (attribute.getX(i) / width + 0.5) * nx,

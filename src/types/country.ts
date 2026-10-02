@@ -25,10 +25,7 @@ export const COUNTRY_META: Record<TCountryCode, ICountryMeta> = {
   [CountryCode.BN]: { code: CountryCode.BN, name: 'Brunei' },
 };
 
-export const COUNTRY_CODES = Object.values(CountryCode) as TCountryCode[];
-export const COUNTRY_NAME_BY_CODE = Object.fromEntries(
-  Object.values(COUNTRY_META).map(({ code, name }) => [code, name]),
-) as Record<TCountryCode, string>;
-export const COUNTRY_CODE_BY_NAME = Object.fromEntries(
-  Object.values(COUNTRY_META).map(({ code, name }) => [name, code]),
-) as Record<string, TCountryCode>;
+export const COUNTRY_CODES = Object.values(CountryCode);
+
+export const isCountryCode = (value: string): value is TCountryCode =>
+  COUNTRY_CODES.some((code) => code === value);
