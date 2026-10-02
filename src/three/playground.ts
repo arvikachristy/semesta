@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { createCamera } from './camera';
 import { blockHeight, createFlagBlock } from './jelly-flags/flag-block';
 import { createFloor } from './floor';
+import { createGlassSet } from './glasses/glass-set';
 import { createLights } from './lights';
 import { bindPointerEvents } from './pointer';
 import { createRenderer } from './renderer';
@@ -12,7 +13,10 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
   // React supplies the canvas. These are the raw Three.js pieces inside it.
   const renderer = createRenderer(canvas);
   const scene = createScene();
-  const { camera, cameraTarget, cameraOffset, adjustZoom, fitViewport } = createCamera();
+  const glasses = createGlassSet();
+  const { camera, cameraTarget, cameraOffset, adjustZoom, fitViewport } = createCamera(
+    glasses.bounds,
+  );
   const lighting = createLights(renderer);
   const { ambientLight, directionalLight } = lighting;
   scene.environment = lighting.environment;
@@ -25,12 +29,12 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
   rightFlag.object.position.set(1.6, blockHeight / 2, 0.8);
   rightFlag.object.rotation.y = Math.PI / 1.5;
   box.add(leftFlag.object, rightFlag.object);
-  scene.add(ambientLight, directionalLight, floor, box);
+  scene.add(ambientLight, directionalLight, floor, box, glasses.object);
 
   const blocks = [leftFlag, rightFlag];
   const viewBounds = new THREE.Frustum();
   const viewProjection = new THREE.Matrix4();
-  const { unbind } = bindPointerEvents({ canvas, camera, cameraTarget, blocks });
+  const { unbind } = bindPointerEvents({ canvas, camera, cameraTarget, blocks, glasses });
   const onResize = () => {
     resize(renderer, camera);
     fitViewport();
@@ -77,6 +81,7 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
     unbind();
     leftFlag.dispose();
     rightFlag.dispose();
+    glasses.dispose();
     floor.geometry.dispose();
     floor.material.dispose();
     lighting.dispose();

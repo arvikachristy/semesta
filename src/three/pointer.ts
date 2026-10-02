@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { createFlagBlock } from './jelly-flags/flag-block';
+import type { createGlassSet } from './glasses/glass-set';
 
 enum PointerEventName {
   Down = 'pointerdown',
@@ -16,10 +17,17 @@ interface IPointerOptions {
   camera: THREE.PerspectiveCamera;
   cameraTarget: THREE.Vector3;
   blocks: ReturnType<typeof createFlagBlock>[];
+  glasses: ReturnType<typeof createGlassSet>;
 }
 
 // A hit creates a camera-facing grab plane. Ray points are converted to the body's local space.
-export const bindPointerEvents = ({ canvas, camera, cameraTarget, blocks }: IPointerOptions) => {
+export const bindPointerEvents = ({
+  canvas,
+  camera,
+  cameraTarget,
+  blocks,
+  glasses,
+}: IPointerOptions) => {
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
   const plane = new THREE.Plane();
@@ -28,6 +36,7 @@ export const bindPointerEvents = ({ canvas, camera, cameraTarget, blocks }: IPoi
   const previous = new THREE.Vector2();
   let activePointer: number | null = null;
   let grabbed: ReturnType<typeof createFlagBlock> | null = null;
+  let rotatingGlasses = false;
   const updateRay = (event: PointerEvent) => {
     const bounds = canvas.getBoundingClientRect();
     pointer.set(
@@ -36,6 +45,7 @@ export const bindPointerEvents = ({ canvas, camera, cameraTarget, blocks }: IPoi
     );
     camera.updateMatrixWorld();
     blocks.forEach((block) => block.object.updateWorldMatrix(true, true));
+    glasses.object.updateWorldMatrix(true, true);
     raycaster.setFromCamera(pointer, camera);
   };
   const hit = () =>
@@ -46,6 +56,7 @@ export const bindPointerEvents = ({ canvas, camera, cameraTarget, blocks }: IPoi
   const release = (jump = false) => {
     grabbed?.endGrab(jump);
     grabbed = null;
+    rotatingGlasses = false;
     const id = activePointer;
     activePointer = null;
     if (id !== null && canvas.hasPointerCapture(id)) {
@@ -69,6 +80,7 @@ export const bindPointerEvents = ({ canvas, camera, cameraTarget, blocks }: IPoi
         grabbed.beginGrab(grabbed.object.worldToLocal(point.copy(intersection.point)));
       }
     }
+    rotatingGlasses = !grabbed && raycaster.intersectObject(glasses.object, true).length > 0;
     canvas.setPointerCapture(event.pointerId);
     canvas.style.cursor = Cursor.Grabbing;
   };
@@ -85,6 +97,9 @@ export const bindPointerEvents = ({ canvas, camera, cameraTarget, blocks }: IPoi
       if (raycaster.ray.intersectPlane(plane, point)) {
         grabbed.moveGrab(grabbed.object.worldToLocal(point));
       }
+    } else if (rotatingGlasses) {
+      // Only turn around world Y: the circle and all glass bases stay on the floor.
+      glasses.rotateBy((event.clientX - previous.x) / canvas.clientWidth);
     } else {
       cameraTarget.x = THREE.MathUtils.clamp(
         cameraTarget.x - ((event.clientX - previous.x) / canvas.clientWidth) * 4,
