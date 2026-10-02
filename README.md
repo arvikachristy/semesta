@@ -17,7 +17,7 @@ npm run dev
 
 The same playground is available at `/` and `/countryjellies/`.
 
-Select Indonesia, France, Nepal, Germany, Poland, Kazakhstan, or Brunei for either flag. Grab a region to stretch the jelly, then release to let it settle. Drag the empty background to pan; use the wheel to zoom. Mouse and touch use the same Pointer Events.
+Select Indonesia, France, Nepal, Germany, Poland, Kazakhstan, or Brunei for either flag. Grab a region to stretch the jelly, then release to let it settle. Drag a glass left or right to rotate the entire circle like a lazy Susan; the glasses stay on the floor and stop when released. Drag the empty background to pan; use the wheel to zoom. Mouse and touch use the same Pointer Events.
 
 ## How the files fit together
 

@@ -34,7 +34,7 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
   const blocks = [leftFlag, rightFlag];
   const viewBounds = new THREE.Frustum();
   const viewProjection = new THREE.Matrix4();
-  const { unbind } = bindPointerEvents({ canvas, camera, cameraTarget, blocks });
+  const { unbind } = bindPointerEvents({ canvas, camera, cameraTarget, blocks, glasses });
   const onResize = () => {
     resize(renderer, camera);
     fitViewport();

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { createGlassGeometry } from './glass-geometry';
 import { createGlassMaterial } from './glass-material';
-import { glassParameters } from './glass-parameters';
+import { glassDimensions, glassParameters } from './glass-parameters';
 
 export const createGlassSet = () => {
   const object = new THREE.Group();
@@ -19,9 +19,17 @@ export const createGlassSet = () => {
     object.add(glass);
   }
 
+  // The complete rotation envelope keeps every orientation inside the camera fit.
+  const extent = glassParameters.circleRadius + glassDimensions.outerRadius;
   return {
     object,
-    bounds: new THREE.Box3().setFromObject(object),
+    bounds: new THREE.Box3(
+      new THREE.Vector3(-extent, 0, -extent),
+      new THREE.Vector3(extent, glassDimensions.outerHeight, extent),
+    ),
+    rotateBy: (viewportDelta: number) => {
+      object.rotation.y += viewportDelta * glassParameters.dragRadiansPerViewport;
+    },
     dispose: () => {
       geometry.dispose();
       material.dispose();

@@ -3,6 +3,7 @@ import { jellyParameters } from '../jelly-flags/jelly-parameters';
 export const glassParameters = {
   count: 7,
   circleRadius: 4.5,
+  dragRadiansPerViewport: Math.PI * 2,
   capacity: 60,
   jellyScale: 0.3,
   packingFraction: 0.5,
