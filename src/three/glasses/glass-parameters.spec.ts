@@ -11,8 +11,9 @@ describe('glass capacity', () => {
     expect(glassParameters.capacity).toBe(60);
     expect(glassParameters.jellyScale).toBe(0.3);
     expect(topBuffer / interiorHeight).toBeCloseTo(0.1);
-    expect((pileVolume * glassParameters.packingFraction) / jellyVolume).toBeCloseTo(60);
-    expect(interiorDiameter).toBeCloseTo(1.95, 3);
+    expect((pileVolume * glassParameters.packingFraction) / jellyVolume).toBeCloseTo(93.75);
+    expect(glassDimensions.estimatedPackingCapacity).toBeCloseTo(93.75);
+    expect(interiorDiameter).toBeCloseTo(1.9504302557 * 1.25);
     expect(interiorHeight).toBeCloseTo(3.149, 3);
   });
 

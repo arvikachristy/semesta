@@ -8,6 +8,7 @@ import {
   type TCountryCode,
 } from './types/country';
 import { startPlayground } from './three/playground';
+import { continents } from './three/glasses/continents';
 
 export const App = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -87,8 +88,16 @@ export const App = () => {
           Could not load the flag.
         </span>
       )}
+      <ul className="visually-hidden" id="continent-descriptions">
+        {continents.map((continent) => (
+          <li key={continent.id}>
+            {continent.name}: an empty amber-tinted glass with a gold continent map and name.
+          </li>
+        ))}
+      </ul>
       <canvas
         ref={canvasRef}
+        aria-describedby="continent-descriptions"
         aria-label="Three playground: select a flag, grab a flag to stretch its jelly, or drag the background to move around."
       />
     </main>

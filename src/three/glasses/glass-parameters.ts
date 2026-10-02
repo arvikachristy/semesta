@@ -11,18 +11,23 @@ export const glassParameters = {
   heightToDiameter: 1.55 / 0.96,
   wallThickness: 0.045,
   baseThickness: 0.07,
+  widthMultiplier: 1.25,
+  gradient: { bottomColor: '#d6a058', clearColor: '#ffffff', fadeHeight: 0.45 },
+  gold: { color: '#d7a357', metalness: 0.62, roughness: 0.32, envMapIntensity: 1 },
+  artwork: { width: 1.8, height: 1.9, centreHeight: 0.56, surfaceOffset: 0.003 },
 };
 
 const { width, height, depth } = jellyParameters.surface;
 const jellyVolume = width * height * depth * glassParameters.jellyScale ** 3;
-const interiorDiameter = Math.cbrt(
+const capacityDiameter = Math.cbrt(
   (glassParameters.capacity * jellyVolume) /
     (glassParameters.packingFraction *
       (1 - glassParameters.topBufferFraction) *
       (Math.PI / 4) *
       glassParameters.heightToDiameter),
 );
-const interiorHeight = interiorDiameter * glassParameters.heightToDiameter;
+const interiorHeight = capacityDiameter * glassParameters.heightToDiameter;
+const interiorDiameter = capacityDiameter * glassParameters.widthMultiplier;
 
 // Capacity is a loose-pile volume estimate; filling physics must validate it later.
 export const glassDimensions = {
@@ -31,4 +36,5 @@ export const glassDimensions = {
   topBuffer: interiorHeight * glassParameters.topBufferFraction,
   outerRadius: interiorDiameter / 2 + glassParameters.wallThickness,
   outerHeight: interiorHeight + glassParameters.baseThickness,
+  estimatedPackingCapacity: glassParameters.capacity * glassParameters.widthMultiplier ** 2,
 };
