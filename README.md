@@ -70,10 +70,12 @@ Glass sizing is configured in `src/three/glasses/glass-parameters.ts`. Each empt
 
 The glass combines physical transmission with light alpha blending because the WebGL transmission buffer omits the other transmissive jelly objects. This keeps the flags visible behind glass; refraction between overlapping transparent objects remains approximate.
 
-`npm run check` runs formatting, lint, and TypeScript checks. `npm run build` creates the production bundle.
+`npm run check` runs formatting, lint, TypeScript checks, and the Vitest regression specs. Specs live beside their source files as `*.spec.ts`; pointer and camera specs use jsdom while geometry and capacity specs run in Node. These test behaviour and geometry, not GPU rendering or visual appearance. `npm run build` creates the production bundle.
 
 ```sh
 npm run check
+npm run test
+npm run test:watch
 npm run build
 npm run preview
 ```
