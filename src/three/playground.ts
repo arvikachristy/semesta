@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { createCamera } from './camera';
 import { blockHeight, createFlagBlock } from './jelly-flags/flag-block';
 import { createFloor } from './floor';
+import { createGlassCylinder } from './glasses/glass-cylinder';
 import { createLights } from './lights';
 import { bindPointerEvents } from './pointer';
 import { createRenderer } from './renderer';
@@ -17,6 +18,7 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
   const { ambientLight, directionalLight } = lighting;
   scene.environment = lighting.environment;
   const floor = createFloor();
+  const glassCylinder = createGlassCylinder();
   const leftFlag = createFlagBlock();
   const rightFlag = createFlagBlock();
   const box = new THREE.Group();
@@ -25,7 +27,7 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
   rightFlag.object.position.set(1.6, blockHeight / 2, 0.8);
   rightFlag.object.rotation.y = Math.PI / 1.5;
   box.add(leftFlag.object, rightFlag.object);
-  scene.add(ambientLight, directionalLight, floor, box);
+  scene.add(ambientLight, directionalLight, floor, box, glassCylinder.object);
 
   const blocks = [leftFlag, rightFlag];
   const viewBounds = new THREE.Frustum();
@@ -77,6 +79,7 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
     unbind();
     leftFlag.dispose();
     rightFlag.dispose();
+    glassCylinder.dispose();
     floor.geometry.dispose();
     floor.material.dispose();
     lighting.dispose();
