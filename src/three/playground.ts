@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { createCamera } from './camera';
-import { blockHeight, createFlagBlock } from './flag-block';
+import { blockHeight, createFlagBlock } from './jelly-flags/flag-block';
 import { createFloor } from './floor';
 import { createLights } from './lights';
 import { bindPointerEvents } from './pointer';

@@ -1,8 +1,8 @@
-import { FlagPatternType, StripeOrientation } from '../types/flag-pattern';
+import { FlagPatternType, StripeOrientation } from '../../types/flag-pattern';
 import { jellyParameters } from './jelly-parameters';
 import * as THREE from 'three';
-import type { TCountryCode } from '../types/country';
-import { flags } from './flags';
+import type { TCountryCode } from '../../types/country';
+import { flags } from '../flags';
 
 const textureHeight = 512;
 

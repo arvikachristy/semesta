@@ -3,7 +3,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createFlagPattern } from './flag-patterns';
 import { createJellyMaterial } from './jelly-material';
-import type { TCountryCode } from './flags';
+import type { TCountryCode } from '../flags';
 import { createSoftBody } from './jelly-soft-body';
 import { jellyParameters } from './jelly-parameters';
 

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { createFlagBlock } from './flag-block';
+import type { createFlagBlock } from './jelly-flags/flag-block';
 
 enum PointerEventName {
   Down = 'pointerdown',
