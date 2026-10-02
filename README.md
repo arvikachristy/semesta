@@ -8,7 +8,7 @@ each semesta will be a personal space journey telling hidden stories but at the 
 
 # Let's begin
 
-A minimal Three.js learning workspace inside Semesta. React renders the canvas and country selectors; raw Three.js draws two deformable gummy flags in a pale pink world. Built with Vite, TypeScript and plain CSS.
+A minimal Three.js learning workspace inside Semesta. React renders the canvas and country selectors; raw Three.js draws two deformable gummy flags surrounded by seven open glass containers in a pale pink world. Built with Vite, TypeScript and plain CSS.
 
 ```sh
 npm ci
@@ -33,6 +33,11 @@ flowchart TD
   scene --> input["pointer.ts: raycast + local grab constraint"]
   input --> volume
   scene --> lighting["lights.ts + floor.ts: environment and soft shadows"]
+  scene --> glasses["glass-set.ts: seven containers on a circle"]
+  glasses --> glassGeometry["glass-geometry.ts: hollow revolved shell"]
+  glasses --> glassMaterial["glass-material.ts: clear physical transmission"]
+  glassConfig["glass-parameters.ts: capacity and derived dimensions"] --> glasses
+  glassConfig --> glassGeometry
   config["jelly-parameters.ts"] --> volume
   config --> material
 ```
@@ -60,6 +65,10 @@ Main controls are in `src/three/jelly-parameters.ts`:
 The existing `camera.ts`, `scene.ts`, `renderer.ts`, and `resize.ts` keep camera, background, renderer, and resizing explicit. `app.tsx` owns only the canvas and selectors; no React state updates occur per physics frame. Country changes rebuild only the affected body, and cleanup disposes its geometry/material/texture plus scene lighting resources.
 
 ## Checks
+
+Glass sizing is configured in `src/three/glasses/glass-parameters.ts`. Each empty container is sized for an estimated 60 jellies at 30% of the current flag dimensions, using 50% loose-pile packing and a 10% top buffer. The interior is approximately 1.950 units across and 3.149 units high, including 0.315 units of headroom. The seven containers share geometry/material resources and sit on a 4.5-unit circle. The camera fits their bounds on load and resize. Capacity is a volume estimate; contents and container collisions are not implemented yet.
+
+The glass combines physical transmission with light alpha blending because the WebGL transmission buffer omits the other transmissive jelly objects. This keeps the flags visible behind glass; refraction between overlapping transparent objects remains approximate.
 
 `npm run check` runs formatting, lint, and TypeScript checks. `npm run build` creates the production bundle.
 

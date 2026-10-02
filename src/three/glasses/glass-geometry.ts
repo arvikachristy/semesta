@@ -1,37 +1,28 @@
 import * as THREE from 'three';
+import { glassDimensions, glassParameters } from './glass-parameters';
 
-export const glassCylinderSize = { radius: 0.48, height: 1.55, edgeRadius: 0.11 };
-
-// A revolved profile closes at the axis and rounds the rim of the solid cylinder.
+// Revolve the underside, outer wall, rounded rim, inner wall, and base.
 export const createGlassGeometry = () => {
-  const { radius, height, edgeRadius } = glassCylinderSize;
-  const halfHeight = height / 2;
-  const innerRadius = radius - edgeRadius;
-  const points = [new THREE.Vector2(0, -halfHeight), new THREE.Vector2(innerRadius, -halfHeight)];
+  const { outerRadius, outerHeight, interiorDiameter } = glassDimensions;
+  const { wallThickness, baseThickness } = glassParameters;
+  const innerRadius = interiorDiameter / 2;
+  const rimRadius = wallThickness / 2;
+  const bottomRadius = wallThickness;
+  const points = [new THREE.Vector2(0, 0), new THREE.Vector2(outerRadius - bottomRadius, 0)];
   const curveSegments = 8;
+  const addArc = (x: number, y: number, radius: number, start: number, end: number) => {
+    for (let step = 1; step <= curveSegments; step++) {
+      const angle = start + (step / curveSegments) * (end - start);
+      points.push(new THREE.Vector2(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius));
+    }
+  };
 
-  for (let step = 1; step <= curveSegments; step++) {
-    const angle = -Math.PI / 2 + (step / curveSegments) * (Math.PI / 2);
-    points.push(
-      new THREE.Vector2(
-        innerRadius + Math.cos(angle) * edgeRadius,
-        -halfHeight + edgeRadius + Math.sin(angle) * edgeRadius,
-      ),
-    );
-  }
+  addArc(outerRadius - bottomRadius, bottomRadius, bottomRadius, -Math.PI / 2, 0);
+  points.push(new THREE.Vector2(outerRadius, outerHeight - rimRadius));
+  addArc(outerRadius - rimRadius, outerHeight - rimRadius, rimRadius, 0, Math.PI);
+  points.push(new THREE.Vector2(innerRadius, baseThickness + rimRadius));
+  addArc(innerRadius - rimRadius, baseThickness + rimRadius, rimRadius, 0, -Math.PI / 2);
+  points.push(new THREE.Vector2(0, baseThickness));
 
-  points.push(new THREE.Vector2(radius, halfHeight - edgeRadius));
-
-  for (let step = 1; step <= curveSegments; step++) {
-    const angle = (step / curveSegments) * (Math.PI / 2);
-    points.push(
-      new THREE.Vector2(
-        innerRadius + Math.cos(angle) * edgeRadius,
-        halfHeight - edgeRadius + Math.sin(angle) * edgeRadius,
-      ),
-    );
-  }
-
-  points.push(new THREE.Vector2(0, halfHeight));
   return new THREE.LatheGeometry(points, 64);
 };
