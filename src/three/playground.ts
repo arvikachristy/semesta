@@ -60,6 +60,7 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
     camera.position.copy(cameraTarget).add(cameraOffset);
     camera.lookAt(cameraTarget);
     camera.updateMatrixWorld();
+    glasses.updateFacing(camera);
     viewProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     viewBounds.setFromProjectionMatrix(viewProjection);
 

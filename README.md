@@ -36,6 +36,7 @@ flowchart TD
   scene --> glasses["glass-set.ts: seven containers on a circle"]
   glasses --> glassGeometry["glass-geometry.ts: hollow revolved shell"]
   glasses --> glassMaterial["glass-material.ts: clear physical transmission"]
+  glasses --> continentArt["continents.ts + glass-artwork.ts: gold maps, names and rims"]
   glassConfig["glass-parameters.ts: capacity and derived dimensions"] --> glasses
   glassConfig --> glassGeometry
   config["jelly-parameters.ts"] --> volume
@@ -66,7 +67,9 @@ The existing `camera.ts`, `scene.ts`, `renderer.ts`, and `resize.ts` keep camera
 
 ## Checks
 
-Glass sizing is configured in `src/three/glasses/glass-parameters.ts`. Each empty container is sized for an estimated 60 jellies at 30% of the current flag dimensions, using 50% loose-pile packing and a 10% top buffer. The interior is approximately 1.950 units across and 3.149 units high, including 0.315 units of headroom. The seven containers share geometry/material resources and sit on a 4.5-unit circle. The camera fits their bounds on load and resize. Capacity is a volume estimate; contents and container collisions are not implemented yet.
+Glass sizing is configured in `src/three/glasses/glass-parameters.ts`. The original sizing estimated 60 jellies at 30% of the current flag dimensions, using 50% loose-pile packing and a 10% top buffer. A 1.25 width multiplier now widens the interior to approximately 2.438 units while keeping its 3.149-unit height and 0.315 units of headroom. The intended content limit remains 60; the larger volume estimates space for about 94 under the same packing assumptions. Contents and container collisions are not implemented yet.
+
+The seven glasses sit on a 4.5-unit circle and share shell, plating and rim geometry. Gold maps and names face the camera as the circle turns. A local-height shader fades amber at the base to clear glass at 45% height. Gradient, plating and width settings are in the same configuration object. Continent masks are local SVG assets derived from public-domain Natural Earth outlines; their provenance is recorded in `src/three/glasses/assets/README.md`. Accessible continent descriptions accompany the canvas in HTML. Camera bounds include the wider glasses and plating throughout a complete rotation.
 
 The glass combines physical transmission with light alpha blending because the WebGL transmission buffer omits the other transmissive jelly objects. This keeps the flags visible behind glass; refraction between overlapping transparent objects remains approximate.
 
