@@ -127,6 +127,11 @@ export const bindPointerEvents = ({
   canvas.addEventListener(PointerEventName.LostCapture, up);
   window.addEventListener(PointerEventName.Blur, cancel);
   return {
+    releaseBlock: (block: ReturnType<typeof createFlagBlock>) => {
+      if (grabbed === block) {
+        release();
+      }
+    },
     unbind: () => {
       release();
       canvas.removeEventListener(PointerEventName.Down, down);

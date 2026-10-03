@@ -3,25 +3,31 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createFlagPattern } from './flag-patterns';
 import { createJellyMaterial } from './jelly-material';
-import type { TCountryCode } from '../flags';
+import type { CountryList } from '../../types/country';
 import { createSoftBody } from './jelly-soft-body';
+import type { IJellyContainer } from './jelly-soft-body';
 import { jellyParameters } from './jelly-parameters';
 
 export const blockHeight = jellyParameters.surface.height;
 
-export const createFlagBlock = () => {
+export interface IFlagBlockOptions {
+  scale?: number;
+  container?: Omit<IJellyContainer, 'origin'>;
+}
+export const createFlagBlock = ({ scale = 1, container }: IFlagBlockOptions = {}) => {
   const object = new THREE.Group();
-  const bounds = Array.from({ length: 6 }, () => new THREE.Plane());
+  const bounds: THREE.Plane[] = [];
   const inverseWorld = new THREE.Matrix4();
-  let body: ReturnType<typeof createSoftBody>;
+  let body: ReturnType<typeof createSoftBody> | null = null;
   let surface: THREE.Mesh<THREE.BufferGeometry, THREE.MeshPhysicalMaterial> | null = null;
   let updateSurface: (() => void) | null = null;
   let updateThickness: (() => void) | null = null;
+  let renderedRevision = -1;
   let request = 0;
   let disposed = false;
-  let country: TCountryCode | null = null;
+  let country: CountryList | null = null;
 
-  const setCountry = async (code: TCountryCode) => {
+  const setCountry = async (code: CountryList) => {
     const currentRequest = ++request;
 
     if (country === code) {
@@ -35,9 +41,13 @@ export const createFlagBlock = () => {
     }
     country = code;
 
-    const { width, depth, radius, segments } = jellyParameters.surface;
+    const width = jellyParameters.surface.width * scale;
+    const height = blockHeight * scale;
+    const depth = jellyParameters.surface.depth * scale;
+    const radius = jellyParameters.surface.radius * scale;
+    const { segments } = jellyParameters.surface;
 
-    const rounded = new RoundedBoxGeometry(width, blockHeight, depth, segments, radius);
+    const rounded = new RoundedBoxGeometry(width, height, depth, segments, radius);
     rounded.deleteAttribute('normal');
     rounded.deleteAttribute('uv');
 
@@ -52,14 +62,21 @@ export const createFlagBlock = () => {
 
     for (let i = 0; i < positions.count; i++) {
       uv[i * 2] = positions.getX(i) / width + 0.5;
-      uv[i * 2 + 1] = positions.getY(i) / blockHeight + 0.5;
+      uv[i * 2 + 1] = positions.getY(i) / height + 0.5;
       probes.setXYZ(i * 2, positions.getX(i), positions.getY(i), -depth / 2);
       probes.setXYZ(i * 2 + 1, positions.getX(i), positions.getY(i), depth / 2);
     }
 
     geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
     geometry.setAttribute('jellyThickness', thickness);
-    body = createSoftBody(width, blockHeight, depth, bounds);
+    body = createSoftBody(
+      width,
+      height,
+      depth,
+      bounds,
+      container ? { ...container, origin: object.position } : undefined,
+    );
+    renderedRevision = -1;
     updateSurface = body.bind(positions);
     const updateProbes = body.bind(probes);
     updateThickness = () => {
@@ -82,7 +99,7 @@ export const createFlagBlock = () => {
       surface.material.map?.dispose();
       surface.material.dispose();
     }
-    surface = new THREE.Mesh(geometry, createJellyMaterial(texture));
+    surface = new THREE.Mesh(geometry, createJellyMaterial(texture, scale));
     updateThickness();
     surface.castShadow = true;
     object.add(surface);
@@ -91,7 +108,17 @@ export const createFlagBlock = () => {
     if (!surface) {
       return;
     }
-    body.update(delta);
+    body?.update(delta);
+    syncSurface();
+  };
+  const syncSurface = () => {
+    if (body && body.getRevision() === renderedRevision) {
+      return;
+    }
+    renderedRevision = body?.getRevision() ?? -1;
+    if (!surface) {
+      return;
+    }
     updateSurface?.();
     updateThickness?.();
     surface.geometry.computeVertexNormals();
@@ -104,16 +131,22 @@ export const createFlagBlock = () => {
     surface?.geometry.dispose();
     surface?.material.dispose();
     object.clear();
+    body = null;
   };
   return {
     object,
     setBounds: (worldPlanes: THREE.Plane[]) => {
       object.updateWorldMatrix(true, false);
       inverseWorld.copy(object.matrixWorld).invert();
-      worldPlanes.forEach((plane, index) => bounds[index].copy(plane).applyMatrix4(inverseWorld));
+      worldPlanes.forEach((plane, index) => {
+        bounds[index] = (bounds[index] ?? new THREE.Plane()).copy(plane).applyMatrix4(inverseWorld);
+      });
+      bounds.length = worldPlanes.length;
     },
     setCountry,
     update,
+    syncSurface,
+    getBody: () => body,
     dispose,
     beginGrab: (point: THREE.Vector3) => body?.beginGrab(point),
     moveGrab: (point: THREE.Vector3) => body?.moveGrab(point),

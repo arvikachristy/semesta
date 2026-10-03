@@ -1,6 +1,7 @@
-import * as THREE from 'three';
 import { createCamera } from './camera';
-import { blockHeight, createFlagBlock } from './jelly-flags/flag-block';
+import { createCountryCollection } from './jelly-flags/country-collection';
+import type { CountryStatus } from '../types/country-status';
+import type { CountryList } from '../types/country';
 import { createFloor } from './floor';
 import { createGlassSet } from './glasses/glass-set';
 import { createLights } from './lights';
@@ -9,7 +10,13 @@ import { createRenderer } from './renderer';
 import { resize } from './resize';
 import { createScene } from './scene';
 
-export const startPlayground = (canvas: HTMLCanvasElement) => {
+interface IPlaygroundOptions {
+  onCountryStatus?: (country: CountryList, status: CountryStatus) => void;
+}
+export const startPlayground = (
+  canvas: HTMLCanvasElement,
+  { onCountryStatus }: IPlaygroundOptions = {},
+) => {
   // React supplies the canvas. These are the raw Three.js pieces inside it.
   const renderer = createRenderer(canvas);
   const scene = createScene();
@@ -21,20 +28,14 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
   const { ambientLight, directionalLight } = lighting;
   scene.environment = lighting.environment;
   const floor = createFloor();
-  const leftFlag = createFlagBlock();
-  const rightFlag = createFlagBlock();
-  const box = new THREE.Group();
-  leftFlag.object.position.set(-1.6, blockHeight / 2, 0.8);
-  leftFlag.object.rotation.y = -Math.PI / 1.5;
-  rightFlag.object.position.set(1.6, blockHeight / 2, 0.8);
-  rightFlag.object.rotation.y = Math.PI / 1.5;
-  box.add(leftFlag.object, rightFlag.object);
-  scene.add(ambientLight, directionalLight, floor, box, glasses.object);
-
-  const blocks = [leftFlag, rightFlag];
-  const viewBounds = new THREE.Frustum();
-  const viewProjection = new THREE.Matrix4();
-  const { unbind } = bindPointerEvents({ canvas, camera, cameraTarget, blocks, glasses });
+  let input: ReturnType<typeof bindPointerEvents> | null = null;
+  const collection = createCountryCollection({
+    glasses,
+    onStatus: onCountryStatus,
+    onRemove: (block) => input?.releaseBlock(block),
+  });
+  scene.add(ambientLight, directionalLight, floor, glasses.object);
+  input = bindPointerEvents({ canvas, camera, cameraTarget, blocks: collection.blocks, glasses });
   const onResize = () => {
     resize(renderer, camera);
     fitViewport();
@@ -61,13 +62,7 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
     camera.lookAt(cameraTarget);
     camera.updateMatrixWorld();
     glasses.updateFacing(camera);
-    viewProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
-    viewBounds.setFromProjectionMatrix(viewProjection);
-
-    for (const block of blocks) {
-      block.setBounds(viewBounds.planes);
-      block.update(delta);
-    }
+    collection.update(delta);
 
     renderer.render(scene, camera);
   }
@@ -79,9 +74,8 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
     cancelAnimationFrame(frameId);
     window.removeEventListener('resize', onResize);
     canvas.removeEventListener('wheel', onWheel);
-    unbind();
-    leftFlag.dispose();
-    rightFlag.dispose();
+    input?.unbind();
+    collection.dispose();
     glasses.dispose();
     floor.geometry.dispose();
     floor.material.dispose();
@@ -92,12 +86,7 @@ export const startPlayground = (canvas: HTMLCanvasElement) => {
   };
 
   return {
-    setCountries: async (
-      leftCountry: Parameters<typeof leftFlag.setCountry>[0],
-      rightCountry: Parameters<typeof rightFlag.setCountry>[0],
-    ) => {
-      await Promise.all([leftFlag.setCountry(leftCountry), rightFlag.setCountry(rightCountry)]);
-    },
+    setCountries: collection.setCountries,
     dispose,
   };
 };

@@ -94,7 +94,7 @@ describe('glass circle', () => {
         const position = glass.getWorldPosition(new THREE.Vector3());
         const towardCamera = camera.position.clone().sub(position).setY(0).normalize();
         expect(glass.getWorldDirection(new THREE.Vector3()).dot(towardCamera)).toBeCloseTo(1);
-        expect(glass.children).toHaveLength(2);
+        expect(glass.children).toHaveLength(3);
       });
     }
   });

@@ -1,14 +1,14 @@
 import { FlagPatternType, StripeOrientation } from '../../types/flag-pattern';
 import { jellyParameters } from './jelly-parameters';
 import * as THREE from 'three';
-import type { TCountryCode } from '../../types/country';
-import { flags } from '../flags';
+import type { CountryList } from '../../types/country';
+import { countries } from '../../data/countries';
 
 const textureHeight = 512;
 
 // Surface UVs are baked from rest coordinates, never current position.
-export const createFlagPattern = async (code: TCountryCode) => {
-  const { pattern, size } = flags[code];
+export const createFlagPattern = async (code: CountryList) => {
+  const { pattern, size } = countries[code];
   const artwork = document.createElement('canvas');
   artwork.width = Math.round(textureHeight * (size.width / size.height));
   artwork.height = textureHeight;

@@ -16,6 +16,8 @@ export const jellyParameters = {
     airDrag: 0.4,
     floorFriction: 9,
     recovery: 18,
+    sleepSpeed: 0.03,
+    sleepAfter: 0.5,
     grabRadius: 0.38,
     grabStrength: 0.35,
     maxStretch: 0.85,

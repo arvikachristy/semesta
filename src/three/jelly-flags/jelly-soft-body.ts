@@ -1,6 +1,13 @@
 import * as THREE from 'three';
 import { jellyParameters } from './jelly-parameters';
 
+export interface IJellyContainer {
+  origin: THREE.Vector3;
+  radius: number;
+  floor: number;
+  ceiling: number;
+}
+
 interface IEdge {
   a: number;
   b: number;
@@ -17,8 +24,11 @@ export const createSoftBody = (
   height: number,
   depth: number,
   bounds: THREE.Plane[] = [],
+  container?: IJellyContainer,
 ) => {
   const p = jellyParameters.physics;
+  const scale = width / jellyParameters.surface.width;
+  const floorLevel = () => (container ? container.floor - container.origin.y : -height / 2);
   const [nx, ny, nz] = p.cells;
   const rest: THREE.Vector3[] = [];
   const positions: THREE.Vector3[] = [];
@@ -103,15 +113,23 @@ export const createSoftBody = (
   const meanVelocity = new THREE.Vector3();
   const incomingVelocity = rest.map(() => new THREE.Vector3());
   let grabbed = false;
+  let sleeping = false;
+  let quietTime = 0;
+  let revision = 0;
+  const wake = () => {
+    sleeping = false;
+    quietTime = 0;
+  };
   let accumulator = 0;
   const beginGrab = (point: THREE.Vector3) => {
+    wake();
     grabbed = true;
     target.copy(point);
     let nearest = 0;
     let nearestDistance = Infinity;
     positions.forEach((position, i) => {
       const distance = position.distanceTo(point);
-      grabWeights[i] = weights[i] * Math.max(0, 1 - distance / p.grabRadius) ** 2;
+      grabWeights[i] = weights[i] * Math.max(0, 1 - distance / (p.grabRadius * scale)) ** 2;
       grabOffsets[i].subVectors(position, point);
       if (weights[i] && distance < nearestDistance) {
         nearest = i;
@@ -126,12 +144,30 @@ export const createSoftBody = (
   const endGrab = (jump = false) => {
     if (grabbed && jump) {
       for (const velocity of velocities) {
-        velocity.y = Math.max(velocity.y, p.jumpSpeed);
+        velocity.y = Math.max(velocity.y, p.jumpSpeed * scale);
       }
     }
     grabbed = false;
   };
-  const step = () => {
+  const normal = new THREE.Vector3();
+  const constrainParticle = (position: THREE.Vector3) => {
+    position.y = Math.max(floorLevel(), position.y);
+    if (container) {
+      position.y = Math.min(container.ceiling - container.origin.y, position.y);
+      const x = position.x + container.origin.x;
+      const z = position.z + container.origin.z;
+      const radius = Math.hypot(x, z);
+      if (radius > container.radius) {
+        position.x = (x * container.radius) / radius - container.origin.x;
+        position.z = (z * container.radius) / radius - container.origin.z;
+      }
+    }
+  };
+  const constrainEnvironment = () => positions.forEach(constrainParticle);
+  const predict = () => {
+    if (sleeping) {
+      return;
+    }
     const dt = p.timestep;
     const decay = Math.exp(-p.damping * dt);
     center.set(0, 0, 0);
@@ -159,79 +195,90 @@ export const createSoftBody = (
       incomingVelocity[i].copy(velocities[i]);
       positions[i].addScaledVector(velocities[i], dt);
     }
-    for (let iteration = 0; iteration < p.iterations; iteration++) {
-      for (const edge of edges) {
-        const { a, b, length } = edge;
-        const w = weights[a] + weights[b];
-        if (!w) {
-          continue;
-        }
-        scratch.subVectors(positions[b], positions[a]);
-        const distance = scratch.length();
-        if (distance < 1e-8) {
-          continue;
-        }
-        scratch.multiplyScalar((((distance - length) / distance) * p.stiffness) / w);
-        positions[a].addScaledVector(scratch, weights[a]);
-        positions[b].addScaledVector(scratch, -weights[b]);
+  };
+  const solveConstraints = () => {
+    if (sleeping) {
+      return;
+    }
+    for (const edge of edges) {
+      const { a, b, length } = edge;
+      const w = weights[a] + weights[b];
+      if (!w) {
+        continue;
       }
-      for (const tet of tets) {
-        const [ia, ib, ic, iz] = tet.ids;
-        const a = positions[ia];
-        const b = positions[ib];
-        const c = positions[ic];
-        const d = positions[iz];
-        ab.subVectors(b, a);
-        ac.subVectors(c, a);
-        ad.subVectors(d, a);
-        gradients[1].crossVectors(ac, ad).multiplyScalar(1 / 6);
-        gradients[2].crossVectors(ad, ab).multiplyScalar(1 / 6);
-        gradients[3].crossVectors(ab, ac).multiplyScalar(1 / 6);
-        gradients[0].copy(gradients[1]).add(gradients[2]).add(gradients[3]).negate();
-        const current = ab.dot(gradients[1]);
-        let denominator = 0;
-        for (let j = 0; j < 4; j++) {
-          denominator += weights[tet.ids[j]] * gradients[j].lengthSq();
-        }
-        if (denominator < 1e-12) {
-          continue;
-        }
-        const correction = ((current - tet.volume) * p.volumePreservation) / denominator;
-        for (let j = 0; j < 4; j++) {
-          positions[tet.ids[j]].addScaledVector(gradients[j], -correction * weights[tet.ids[j]]);
-        }
+      scratch.subVectors(positions[b], positions[a]);
+      const distance = scratch.length();
+      if (distance < 1e-8) {
+        continue;
       }
-      for (let i = 0; i < positions.length; i++) {
-        if (!weights[i]) {
-          positions[i].copy(rest[i]);
-          continue;
-        }
-        if (grabbed && grabWeights[i] > 0) {
-          scratch
-            .copy(target)
-            .add(grabOffsets[i])
-            .sub(rest[i])
-            .sub(center)
-            .clampLength(0, p.maxStretch)
-            .add(rest[i])
-            .add(center);
-          positions[i].lerp(scratch, grabWeights[i] * p.grabStrength);
-        }
-        positions[i].y = Math.max(-height / 2, positions[i].y);
-        for (const plane of bounds) {
-          const distance = plane.distanceToPoint(positions[i]) - p.screenMargin;
-          if (distance < 0) {
-            positions[i].addScaledVector(plane.normal, -distance);
-          }
+      scratch.multiplyScalar((((distance - length) / distance) * p.stiffness) / w);
+      positions[a].addScaledVector(scratch, weights[a]);
+      positions[b].addScaledVector(scratch, -weights[b]);
+    }
+    for (const tet of tets) {
+      const [ia, ib, ic, iz] = tet.ids;
+      const a = positions[ia];
+      const b = positions[ib];
+      const c = positions[ic];
+      const d = positions[iz];
+      ab.subVectors(b, a);
+      ac.subVectors(c, a);
+      ad.subVectors(d, a);
+      gradients[1].crossVectors(ac, ad).multiplyScalar(1 / 6);
+      gradients[2].crossVectors(ad, ab).multiplyScalar(1 / 6);
+      gradients[3].crossVectors(ab, ac).multiplyScalar(1 / 6);
+      gradients[0].copy(gradients[1]).add(gradients[2]).add(gradients[3]).negate();
+      const current = ab.dot(gradients[1]);
+      let denominator = 0;
+      for (let j = 0; j < 4; j++) {
+        denominator += weights[tet.ids[j]] * gradients[j].lengthSq();
+      }
+      if (denominator < 1e-12) {
+        continue;
+      }
+      const correction = ((current - tet.volume) * p.volumePreservation) / denominator;
+      for (let j = 0; j < 4; j++) {
+        positions[tet.ids[j]].addScaledVector(gradients[j], -correction * weights[tet.ids[j]]);
+      }
+    }
+    for (let i = 0; i < positions.length; i++) {
+      if (!weights[i]) {
+        positions[i].copy(rest[i]);
+        continue;
+      }
+      if (grabbed && grabWeights[i] > 0) {
+        scratch
+          .copy(target)
+          .add(grabOffsets[i])
+          .sub(rest[i])
+          .sub(center)
+          .clampLength(0, p.maxStretch * scale)
+          .add(rest[i])
+          .add(center);
+        positions[i].lerp(scratch, grabWeights[i] * p.grabStrength);
+      }
+      constrainParticle(positions[i]);
+      for (const plane of bounds) {
+        const distance = plane.distanceToPoint(positions[i]) - p.screenMargin;
+        if (distance < 0) {
+          positions[i].addScaledVector(plane.normal, -distance);
         }
       }
     }
+  };
+  const finishStep = () => {
+    if (sleeping) {
+      return;
+    }
+    revision++;
+    let maximumSpeed = 0;
+    const dt = p.timestep;
     for (let i = 0; i < positions.length; i++) {
       velocities[i]
         .subVectors(positions[i], previous[i])
         .multiplyScalar(1 / dt)
-        .clampLength(0, 10);
-      if (positions[i].y <= -height / 2 + 1e-6) {
+        .clampLength(0, 10 * scale);
+      if (positions[i].y <= floorLevel() + 1e-6) {
         velocities[i].y =
           incomingVelocity[i].y < -p.bounceThreshold
             ? -incomingVelocity[i].y * p.restitution
@@ -239,6 +286,25 @@ export const createSoftBody = (
         velocities[i].x *= Math.exp(-p.floorFriction * dt);
         velocities[i].z *= Math.exp(-p.floorFriction * dt);
       }
+      if (container) {
+        const x = positions[i].x + container.origin.x;
+        const z = positions[i].z + container.origin.z;
+        const radius = Math.hypot(x, z);
+        if (radius >= container.radius - 1e-5) {
+          normal.set(-x / radius, 0, -z / radius);
+          const approach = incomingVelocity[i].dot(normal);
+          if (approach < 0) {
+            velocities[i].addScaledVector(
+              normal,
+              -approach * p.restitution - velocities[i].dot(normal),
+            );
+          }
+        }
+        if (positions[i].y + container.origin.y >= container.ceiling - 1e-5) {
+          velocities[i].y = Math.min(0, -Math.abs(incomingVelocity[i].y) * p.restitution);
+        }
+      }
+      maximumSpeed = Math.max(maximumSpeed, velocities[i].length());
       for (const plane of bounds) {
         const approach = incomingVelocity[i].dot(plane.normal);
         if (plane.distanceToPoint(positions[i]) <= p.screenMargin + 1e-5 && approach < 0) {
@@ -249,6 +315,18 @@ export const createSoftBody = (
         }
       }
     }
+    quietTime = !grabbed && maximumSpeed < p.sleepSpeed * scale ? quietTime + dt : 0;
+    if (quietTime >= p.sleepAfter) {
+      sleeping = true;
+      velocities.forEach((velocity) => velocity.set(0, 0, 0));
+    }
+  };
+  const step = () => {
+    predict();
+    for (let iteration = 0; iteration < p.iterations; iteration++) {
+      solveConstraints();
+    }
+    finishStep();
   };
   const update = (delta: number) => {
     accumulator = Math.min(accumulator + delta, p.timestep * p.maxSubsteps);
@@ -300,5 +378,22 @@ export const createSoftBody = (
       attribute.needsUpdate = true;
     };
   };
-  return { update, bind, beginGrab, moveGrab, endGrab, positions, rest, tets };
+  return {
+    update,
+    bind,
+    beginGrab,
+    moveGrab,
+    endGrab,
+    positions,
+    rest,
+    tets,
+    predict,
+    solveConstraints,
+    constrainEnvironment,
+    finishStep,
+    container,
+    wake,
+    isSleeping: () => sleeping,
+    getRevision: () => revision,
+  };
 };

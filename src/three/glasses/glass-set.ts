@@ -3,10 +3,12 @@ import { createGlassGeometry } from './glass-geometry';
 import { createGlassMaterial } from './glass-material';
 import { glassDimensions, glassParameters } from './glass-parameters';
 import { continents } from './continents';
+import type { TContinentId } from '../../types/continent';
 import { createArtworkGeometry, createContinentArtwork, createGoldMaterial } from './glass-artwork';
 
 export const createGlassSet = () => {
   const object = new THREE.Group();
+  const containers = new Map<TContinentId, THREE.Group>();
   const geometry = createGlassGeometry();
   const material = createGlassMaterial();
   const artworkGeometry = createArtworkGeometry();
@@ -31,7 +33,9 @@ export const createGlassSet = () => {
     const rim = new THREE.Mesh(rimGeometry, goldMaterial);
     rim.rotation.x = Math.PI / 2;
     rim.position.y = glassDimensions.outerHeight - glassParameters.wallThickness / 2;
-    glass.add(artwork.object, rim);
+    const contents = new THREE.Group();
+    containers.set(continent.id, contents);
+    glass.add(artwork.object, rim, contents);
     glass.position.set(
       glassParameters.circleRadius * Math.sin(angle),
       0,
@@ -47,6 +51,7 @@ export const createGlassSet = () => {
     glassParameters.artwork.surfaceOffset;
   return {
     object,
+    containers,
     bounds: new THREE.Box3(
       new THREE.Vector3(-extent, 0, -extent),
       new THREE.Vector3(extent, glassDimensions.outerHeight, extent),

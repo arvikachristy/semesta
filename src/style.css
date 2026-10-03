@@ -43,93 +43,77 @@ canvas {
 
 .country-selector {
   position: absolute;
-  top: clamp(1rem, 2.5vw, 1.75rem);
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  left: 50%;
   z-index: 1;
-  width: min(11rem, calc((100vw - 3rem) / 2));
-}
-
-.left-country {
-  left: clamp(1rem, 2.5vw, 1.75rem);
-}
-
-.right-country {
-  right: clamp(1rem, 2.5vw, 1.75rem);
-}
-
-.country-selector label {
-  position: relative;
-  display: grid;
-  gap: 0.4rem;
+  width: min(24rem, calc(100vw - 2rem));
+  transform: translateX(-50%);
   color: #63323a;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
-
-.country-selector label::after {
-  position: absolute;
-  right: 1rem;
-  bottom: 1.2rem;
-  width: 0.4rem;
-  height: 0.4rem;
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  content: '';
-  pointer-events: none;
-  transform: rotate(45deg);
-}
-
-.country-selector select {
+.country-selector button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   width: 100%;
-  min-height: 2.75rem;
-  padding: 0.65rem 2.25rem 0.65rem 0.9rem;
-  appearance: none;
+  min-height: 3rem;
+  padding: 0.75rem 1rem;
   border: 1px solid #ad8589;
   border-radius: 999px;
   background: #fff9f8;
-  color: #402329;
+  color: inherit;
+  font: inherit;
   cursor: pointer;
-  font:
-    500 0.9rem/1.2 system-ui,
-    sans-serif;
-  letter-spacing: normal;
-  text-transform: none;
-  transition:
-    background-color 150ms ease,
-    border-color 150ms ease;
 }
-
-.country-selector select:hover {
-  border-color: #63323a;
-  background: #fff;
+.country-selector button span {
+  font-size: 0.8rem;
 }
-
-.country-selector select:focus-visible {
-  outline: 2px solid #63323a;
-  outline-offset: 2px;
-}
-
-.load-error {
+.country-checklist {
   position: absolute;
-  top: 6rem;
-  left: clamp(1rem, 2.5vw, 1.75rem);
-  z-index: 1;
-  color: #63323a;
-  font-size: 0.85rem;
+  bottom: calc(100% + 0.75rem);
+  width: 100%;
+  max-height: min(60dvh, 28rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1rem;
+  border: 1px solid #ad8589;
+  border-radius: 1rem;
+  background: #fff9f8;
 }
-
-@media (max-width: 500px) {
-  .country-selector {
-    top: 0.75rem;
-    width: calc((100vw - 2.25rem) / 2);
-  }
-
-  .left-country {
-    left: 0.75rem;
-  }
-
-  .right-country {
-    right: 0.75rem;
-  }
+.country-checklist fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.country-checklist fieldset + fieldset {
+  margin-top: 1rem;
+}
+.country-checklist legend {
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.country-option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 2.75rem;
+  cursor: pointer;
+}
+.country-option input {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0;
+  accent-color: #63323a;
+}
+.country-option small {
+  font-size: 0.7rem;
+}
+.country-selector button:focus-visible,
+.country-option input:focus-visible {
+  outline: 2px solid #63323a;
+  outline-offset: 3px;
 }
