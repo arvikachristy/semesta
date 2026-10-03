@@ -146,8 +146,11 @@ describe('pointer gestures', () => {
       setCountry: vi.fn(async () => {}),
       update: vi.fn(),
       dispose: vi.fn(),
+      syncSurface: vi.fn(),
+      getBody: () => null,
     };
-    bind([block]);
+    const binding = bindPointerEvents({ canvas, camera, cameraTarget, blocks: [block], glasses });
+    unbind = binding.unbind;
     const { x, y } = glassPoint;
     send(Events.down, x, y);
     send(Events.move, x + 50, y);
@@ -156,6 +159,12 @@ describe('pointer gestures', () => {
     expect(block.moveGrab).toHaveBeenCalledOnce();
     expect(block.endGrab).toHaveBeenCalledWith(true);
     expect(glasses.object.rotation.y).toBe(0);
+    send(Events.down, x, y);
+    binding.releaseBlock(block);
+    expect(block.endGrab).toHaveBeenLastCalledWith(false);
+    expect(captures.size).toBe(0);
+    send(Events.move, x + 100, y);
+    expect(block.moveGrab).toHaveBeenCalledOnce();
     mesh.geometry.dispose();
     mesh.material.dispose();
   });

@@ -1,104 +1,85 @@
+import { FpsToken } from './components/fps-token';
+import type { IFrameReading } from './performance/frame-monitor';
 import { useEffect, useRef, useState } from 'react';
-import type { ChangeEvent } from 'react';
-import {
-  COUNTRY_CODES,
-  COUNTRY_META,
-  CountryCode,
-  isCountryCode,
-  type TCountryCode,
-} from './types/country';
+import { countries, defaultCountries, toggleCountry } from './data/countries';
+import { CountrySelector } from './components/country-selector';
+import type { CountryList } from './types/country';
+import { CountryStatus } from './types/country-status';
+import { continentDefinitions } from './types/continent';
 import { startPlayground } from './three/playground';
-import { continents } from './three/glasses/continents';
+import { glassParameters } from './three/glasses/glass-parameters';
 
 export const App = () => {
+  const [frameReading, setFrameReading] = useState<IFrameReading | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playgroundRef = useRef<ReturnType<typeof startPlayground> | null>(null);
-  const [leftCountry, setLeftCountry] = useState<TCountryCode>(CountryCode.ID);
-  const [rightCountry, setRightCountry] = useState<TCountryCode>(CountryCode.FR);
-  const [loadError, setLoadError] = useState(false);
+  const [showedCountries, setShowedCountries] = useState<CountryList[]>(() => [
+    ...defaultCountries,
+  ]);
+  const [statuses, setStatuses] = useState<Partial<Record<CountryList, CountryStatus>>>({});
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) {
       return;
     }
-
-    const playground = startPlayground(canvas);
+    let active = true;
+    const playground = startPlayground(canvas, {
+      onFrameReading: (reading) => {
+        if (active) {
+          setFrameReading(reading);
+        }
+      },
+      onCountryStatus: (country, status) => {
+        if (!active) {
+          return;
+        }
+        setStatuses((current) => ({ ...current, [country]: status }));
+        if (status === CountryStatus.Error) {
+          setShowedCountries((current) => current.filter((id) => id !== country));
+        }
+      },
+    });
     playgroundRef.current = playground;
-    void playground.setCountries(CountryCode.ID, CountryCode.FR).catch(() => setLoadError(true));
-
     return () => {
+      active = false;
       playgroundRef.current = null;
       playground.dispose();
     };
   }, []);
 
-  const onLeftCountryChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const selectedCountry = event.target.value;
-    if (!isCountryCode(selectedCountry)) {
-      return;
-    }
-    setLeftCountry(selectedCountry);
-    setLoadError(false);
-    void playgroundRef.current
-      ?.setCountries(selectedCountry, rightCountry)
-      .catch(() => setLoadError(true));
-  };
-
-  const onRightCountryChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const selectedCountry = event.target.value;
-    if (!isCountryCode(selectedCountry)) {
-      return;
-    }
-    setRightCountry(selectedCountry);
-    setLoadError(false);
-    void playgroundRef.current
-      ?.setCountries(leftCountry, selectedCountry)
-      .catch(() => setLoadError(true));
-  };
+  useEffect(() => {
+    void playgroundRef.current?.setCountries(showedCountries);
+  }, [showedCountries]);
 
   return (
     <main>
-      <div className="country-selector left-country">
-        <label>
-          Left Flag
-          <select value={leftCountry} onChange={onLeftCountryChange}>
-            {COUNTRY_CODES.map((code) => (
-              <option key={code} value={code}>
-                {COUNTRY_META[code].name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-      <div className="country-selector right-country">
-        <label>
-          Right Flag
-          <select value={rightCountry} onChange={onRightCountryChange}>
-            {COUNTRY_CODES.map((code) => (
-              <option key={code} value={code}>
-                {COUNTRY_META[code].name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-      {loadError && (
-        <span className="load-error" role="alert">
-          Could not load the flag.
-        </span>
-      )}
+      <FpsToken reading={frameReading} />
+      <CountrySelector
+        showedCountries={showedCountries}
+        statuses={statuses}
+        onToggle={(country, checked) =>
+          setShowedCountries((current) =>
+            toggleCountry(current, country, checked, glassParameters.capacity),
+          )
+        }
+      />
       <ul className="visually-hidden" id="continent-descriptions">
-        {continents.map((continent) => (
+        {continentDefinitions.map((continent) => (
           <li key={continent.id}>
-            {continent.name}: an empty amber-tinted glass with a gold continent map and name.
+            {continent.name}: gold-marked amber glass. Selected countries:{' '}
+            {showedCountries
+              .filter((id) => countries[id].continent === continent.id)
+              .map((id) => countries[id].name)
+              .join(', ') || 'none'}
+            .
           </li>
         ))}
       </ul>
       <canvas
         ref={canvasRef}
         aria-describedby="continent-descriptions"
-        aria-label="Three playground: select a flag, grab a flag to stretch its jelly, or drag the background to move around."
+        aria-label="Three playground: select countries below, grab their jellies inside the glasses, drag a glass to turn the circle, or drag the background to pan."
       />
     </main>
   );

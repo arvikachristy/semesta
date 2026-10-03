@@ -1,8 +1,8 @@
 import { FlagPatternType, StripeOrientation } from '../types/flag-pattern';
-import { COUNTRY_META, CountryCode, type TCountryCode } from '../types/country';
+import { CountryList } from '../types/country';
+import { ContinentId, continentDefinitions } from '../types/continent';
+import type { TContinentId } from '../types/continent';
 import type { TFlagPattern } from '../types/flag-pattern';
-
-export { CountryCode, type TCountryCode } from '../types/country';
 
 export interface IFlagSize {
   // Relative dimensions, expressed as width : height.
@@ -10,9 +10,10 @@ export interface IFlagSize {
   height: number;
 }
 
-export interface IFlagDefinition {
-  code: TCountryCode;
+export interface ICountryDefinition {
+  code: CountryList;
   name: string;
+  continent: TContinentId;
   pattern: TFlagPattern;
   size: IFlagSize;
   edgeColor: string;
@@ -20,7 +21,7 @@ export interface IFlagDefinition {
   outline: ReadonlyArray<readonly [number, number]>;
 }
 
-const rectangularOutline: IFlagDefinition['outline'] = [
+const rectangularOutline: ICountryDefinition['outline'] = [
   [0, 0],
   [1, 0],
   [1, 1],
@@ -28,10 +29,11 @@ const rectangularOutline: IFlagDefinition['outline'] = [
 ];
 
 // Palette references and specification limits are documented in README.md.
-export const flags: Record<TCountryCode, IFlagDefinition> = {
-  [CountryCode.ID]: {
-    code: CountryCode.ID,
-    name: COUNTRY_META[CountryCode.ID].name,
+export const countries: Record<CountryList, ICountryDefinition> = {
+  [CountryList.Indonesia]: {
+    code: CountryList.Indonesia,
+    name: 'Indonesia',
+    continent: ContinentId.Asia,
     pattern: {
       type: FlagPatternType.Stripes,
       orientation: StripeOrientation.Horizontal,
@@ -41,9 +43,10 @@ export const flags: Record<TCountryCode, IFlagDefinition> = {
     edgeColor: '#ff0000',
     outline: rectangularOutline,
   },
-  [CountryCode.FR]: {
-    code: CountryCode.FR,
-    name: COUNTRY_META[CountryCode.FR].name,
+  [CountryList.France]: {
+    code: CountryList.France,
+    name: 'France',
+    continent: ContinentId.Europe,
     pattern: {
       type: FlagPatternType.Stripes,
       orientation: StripeOrientation.Vertical,
@@ -53,9 +56,10 @@ export const flags: Record<TCountryCode, IFlagDefinition> = {
     edgeColor: '#051440',
     outline: rectangularOutline,
   },
-  [CountryCode.NP]: {
-    code: CountryCode.NP,
-    name: COUNTRY_META[CountryCode.NP].name,
+  [CountryList.Nepal]: {
+    code: CountryList.Nepal,
+    name: 'Nepal',
+    continent: ContinentId.Asia,
     pattern: {
       type: FlagPatternType.Svg,
       src: 'https://cdn.jsdelivr.net/gh/hampusborgos/country-flags@main/svg/np.svg',
@@ -72,9 +76,10 @@ export const flags: Record<TCountryCode, IFlagDefinition> = {
       [0, 1],
     ],
   },
-  [CountryCode.DE]: {
-    code: CountryCode.DE,
-    name: COUNTRY_META[CountryCode.DE].name,
+  [CountryList.Germany]: {
+    code: CountryList.Germany,
+    name: 'Germany',
+    continent: ContinentId.Europe,
     size: { width: 5, height: 3 },
     edgeColor: '#000000',
     pattern: {
@@ -84,9 +89,10 @@ export const flags: Record<TCountryCode, IFlagDefinition> = {
     },
     outline: rectangularOutline,
   },
-  [CountryCode.PL]: {
-    code: CountryCode.PL,
-    name: COUNTRY_META[CountryCode.PL].name,
+  [CountryList.Poland]: {
+    code: CountryList.Poland,
+    name: 'Poland',
+    continent: ContinentId.Europe,
     size: { width: 8, height: 5 },
     edgeColor: '#dc143c',
     pattern: {
@@ -96,9 +102,10 @@ export const flags: Record<TCountryCode, IFlagDefinition> = {
     },
     outline: rectangularOutline,
   },
-  [CountryCode.KZ]: {
-    code: CountryCode.KZ,
-    name: COUNTRY_META[CountryCode.KZ].name,
+  [CountryList.Kazakhstan]: {
+    code: CountryList.Kazakhstan,
+    name: 'Kazakhstan',
+    continent: ContinentId.Asia,
     size: { width: 2, height: 1 },
     edgeColor: '#00afca',
     pattern: {
@@ -109,9 +116,10 @@ export const flags: Record<TCountryCode, IFlagDefinition> = {
     },
     outline: rectangularOutline,
   },
-  [CountryCode.BN]: {
-    code: CountryCode.BN,
-    name: COUNTRY_META[CountryCode.BN].name,
+  [CountryList.Brunei]: {
+    code: CountryList.Brunei,
+    name: 'Brunei',
+    continent: ContinentId.Asia,
     size: { width: 2, height: 1 },
     edgeColor: '#f7e017',
     pattern: {
@@ -122,4 +130,38 @@ export const flags: Record<TCountryCode, IFlagDefinition> = {
     },
     outline: rectangularOutline,
   },
+};
+
+export const countryIds = Object.values(CountryList);
+export const countryGroups = continentDefinitions
+  .map((continent) => ({
+    ...continent,
+    countries: countryIds
+      .map((id) => countries[id])
+      .filter((country) => country.continent === continent.id)
+      .sort((a, b) => a.name.localeCompare(b.name)),
+  }))
+  .filter((group) => group.countries.length > 0);
+export const defaultCountries: CountryList[] = [CountryList.Indonesia];
+
+export const toggleCountry = (
+  current: readonly CountryList[],
+  country: CountryList,
+  checked: boolean,
+  limit: number,
+) => {
+  if (
+    checked &&
+    !current.includes(country) &&
+    current.filter((id) => countries[id].continent === countries[country].continent).length >= limit
+  ) {
+    return [...current];
+  }
+  const selected = new Set(current);
+  if (checked) {
+    selected.add(country);
+  } else {
+    selected.delete(country);
+  }
+  return countryIds.filter((id) => selected.has(id));
 };

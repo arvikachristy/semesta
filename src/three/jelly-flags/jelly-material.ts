@@ -3,14 +3,14 @@ import { jellyParameters } from './jelly-parameters';
 
 // The thickness attribute is measured between embedded front/back volume probes each frame.
 // This is a local-volume approximation, not a screen-space back-depth render pass.
-export const createJellyMaterial = (pattern: THREE.Texture) => {
+export const createJellyMaterial = (pattern: THREE.Texture, scale = 1) => {
   const p = jellyParameters.material;
   const material = new THREE.MeshPhysicalMaterial({
     map: pattern,
     roughness: p.roughness,
     transmission: p.transmission,
     ior: p.ior,
-    thickness: jellyParameters.surface.depth,
+    thickness: jellyParameters.surface.depth * scale,
     metalness: 0,
     clearcoat: 0.18,
     clearcoatRoughness: 0.25,
@@ -19,7 +19,7 @@ export const createJellyMaterial = (pattern: THREE.Texture) => {
     attenuationDistance: 1 / p.absorption,
   });
   material.onBeforeCompile = (shader) => {
-    shader.uniforms.jellyAbsorption = { value: p.absorption };
+    shader.uniforms.jellyAbsorption = { value: p.absorption / scale };
     shader.vertexShader = shader.vertexShader
       .replace(
         '#include <common>',
