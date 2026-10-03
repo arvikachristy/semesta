@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { FrameStatus } from './performance/frame-monitor';
 import { act, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -33,6 +34,19 @@ afterEach(async () => {
 });
 
 describe('application selection state', () => {
+  it('updates the diagnostic token without recreating the scene', async () => {
+    await act(async () => root.render(<App />));
+    await act(async () =>
+      vi.mocked(startPlayground).mock.calls[0][1]?.onFrameReading?.({
+        fps: 24,
+        frameMs: 1000 / 24,
+        status: FrameStatus.Bad,
+      }),
+    );
+    expect(host.querySelector('.fps-token')?.textContent).toContain('24');
+    expect(host.querySelector('.fps-token')?.textContent).toContain('Potato mode');
+    expect(startPlayground).toHaveBeenCalledOnce();
+  });
   it('reconciles the enum array without reinitializing the scene and unticks failed loads', async () => {
     await act(async () => root.render(<App />));
     expect(setCountries).toHaveBeenLastCalledWith([CountryList.Indonesia]);

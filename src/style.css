@@ -117,3 +117,50 @@ canvas {
   outline: 2px solid #63323a;
   outline-offset: 3px;
 }
+
+.fps-token {
+  position: absolute;
+  top: max(1rem, env(safe-area-inset-top));
+  right: max(1rem, env(safe-area-inset-right));
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 10.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid currentColor;
+  border-radius: 1.25rem;
+  background: #fff9f8;
+  color: #63323a;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+.fps-token[data-status='good'] {
+  color: #285b3b;
+  background: #eef7ee;
+}
+.fps-token[data-status='medium'] {
+  color: #805016;
+  background: #fff3d9;
+}
+.fps-token[data-status='bad'] {
+  color: #943a48;
+  background: #ffe8eb;
+}
+.fps-token-face {
+  font-size: 1.4rem;
+}
+.fps-token-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.fps-token-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+.fps-token-value small,
+.fps-token-message,
+.fps-token-time {
+  font-size: 0.7rem;
+}

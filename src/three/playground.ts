@@ -1,3 +1,5 @@
+import { createFrameMonitor } from '../performance/frame-monitor';
+import type { IFrameReading } from '../performance/frame-monitor';
 import { createCamera } from './camera';
 import { createCountryCollection } from './jelly-flags/country-collection';
 import type { CountryStatus } from '../types/country-status';
@@ -11,11 +13,12 @@ import { resize } from './resize';
 import { createScene } from './scene';
 
 interface IPlaygroundOptions {
+  onFrameReading?: (reading: IFrameReading) => void;
   onCountryStatus?: (country: CountryList, status: CountryStatus) => void;
 }
 export const startPlayground = (
   canvas: HTMLCanvasElement,
-  { onCountryStatus }: IPlaygroundOptions = {},
+  { onCountryStatus, onFrameReading }: IPlaygroundOptions = {},
 ) => {
   // React supplies the canvas. These are the raw Three.js pieces inside it.
   const renderer = createRenderer(canvas);
@@ -48,6 +51,9 @@ export const startPlayground = (
   canvas.addEventListener('wheel', onWheel, { passive: false });
 
   // The render loop keeps the camera, hover, and composition rotation in sync.
+  const frameMonitor = createFrameMonitor((reading) => onFrameReading?.(reading));
+  const visibilityEvent = 'visibilitychange';
+  document.addEventListener(visibilityEvent, frameMonitor.reset);
   let previousTime = performance.now();
   let frameId = 0;
 
@@ -55,6 +61,11 @@ export const startPlayground = (
     frameId = requestAnimationFrame(animate);
 
     const now = performance.now();
+    if (document.hidden) {
+      frameMonitor.reset();
+    } else {
+      frameMonitor.sample(now);
+    }
     const delta = Math.min((now - previousTime) / 1000, 0.05);
     previousTime = now;
 
@@ -72,6 +83,7 @@ export const startPlayground = (
   // React calls this when the canvas unmounts (and during Strict Mode checks).
   const dispose = () => {
     cancelAnimationFrame(frameId);
+    document.removeEventListener(visibilityEvent, frameMonitor.reset);
     window.removeEventListener('resize', onResize);
     canvas.removeEventListener('wheel', onWheel);
     input?.unbind();

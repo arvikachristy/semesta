@@ -1,3 +1,5 @@
+import { FpsToken } from './components/fps-token';
+import type { IFrameReading } from './performance/frame-monitor';
 import { useEffect, useRef, useState } from 'react';
 import { countries, defaultCountries, toggleCountry } from './data/countries';
 import { CountrySelector } from './components/country-selector';
@@ -8,6 +10,7 @@ import { startPlayground } from './three/playground';
 import { glassParameters } from './three/glasses/glass-parameters';
 
 export const App = () => {
+  const [frameReading, setFrameReading] = useState<IFrameReading | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playgroundRef = useRef<ReturnType<typeof startPlayground> | null>(null);
   const [showedCountries, setShowedCountries] = useState<CountryList[]>(() => [
@@ -22,6 +25,11 @@ export const App = () => {
     }
     let active = true;
     const playground = startPlayground(canvas, {
+      onFrameReading: (reading) => {
+        if (active) {
+          setFrameReading(reading);
+        }
+      },
       onCountryStatus: (country, status) => {
         if (!active) {
           return;
@@ -46,6 +54,7 @@ export const App = () => {
 
   return (
     <main>
+      <FpsToken reading={frameReading} />
       <CountrySelector
         showedCountries={showedCountries}
         statuses={statuses}

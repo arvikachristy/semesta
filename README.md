@@ -19,6 +19,8 @@ The same playground is available at `/` and `/countryjellies/`.
 
 Open **Countries** at the bottom to tick Indonesia, France, Nepal, Germany, Poland, Kazakhstan, or Brunei, grouped by continent. Indonesia starts selected. Ticking a country drops one miniature jelly into its continent glass; unticking removes it, even while it is loading or being grabbed. Selection resets on reload. Grab a region to stretch the jelly, then release to let it settle. Drag a glass left or right to rotate the entire circle like a lazy Susan; the glasses stay on the floor and stop when released. Drag the empty background to pan; use the wheel to zoom. Mouse and touch use the same Pointer Events.
 
+The token at the top right shows FPS and average milliseconds per frame, sampled from the scene loop once per second. Green **Butter mode** means at least 50 FPS, amber **Jelly legs** means 30–49 FPS, and red **Potato mode** means below 30 FPS. Hidden-tab pauses reset sampling. This measures frame pacing; it does not isolate CPU or GPU cost. Thresholds and labels live in `src/performance/frame-monitor.ts`.
+
 ## How the files fit together
 
 ```mermaid
