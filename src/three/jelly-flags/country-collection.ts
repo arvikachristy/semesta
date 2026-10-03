@@ -35,12 +35,14 @@ export const createCountryCollection = ({
   const blocks: ReturnType<typeof createFlagBlock>[] = [];
   let elapsed = 0;
   let disposed = false;
+  let membershipChanged = false;
   const remove = (country: CountryList) => {
     const entry = entries.get(country);
     if (!entry) {
       return;
     }
     entries.delete(country);
+    membershipChanged = true;
     onRemove?.(entry.block);
     const body = entry.block.getBody();
     if (body) {
@@ -125,6 +127,8 @@ export const createCountryCollection = ({
     await Promise.all([...entries.values()].map((entry) => entry.ready));
   };
   const update = (delta: number) => {
+    let changed = membershipChanged;
+    membershipChanged = false;
     elapsed += delta;
     entries.forEach((entry, country) => {
       if (entry.inserted || elapsed < entry.readyAt) {
@@ -144,10 +148,14 @@ export const createCountryCollection = ({
       parent.add(entry.block.object);
       blocks.push(entry.block);
       entry.inserted = true;
+      changed = true;
       onStatus?.(country, CountryStatus.Ready);
     });
     piles.forEach((pile) => pile.update(delta));
-    blocks.forEach((block) => block.syncSurface());
+    blocks.forEach((block) => {
+      changed = block.syncSurface() || changed;
+    });
+    return changed;
   };
   return {
     blocks,

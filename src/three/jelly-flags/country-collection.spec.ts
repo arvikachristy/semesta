@@ -57,6 +57,22 @@ const setup = () => {
 };
 
 describe('country collection reconciliation', () => {
+  it('invalidates shadows for insertion, deformation and removal, then becomes quiet', async () => {
+    const s = setup();
+    const ready = s.collection.setCountries([CountryList.Indonesia]);
+    s.pending[0].resolve();
+    await ready;
+    expect(s.collection.update(0)).toBe(true);
+    expect(s.collection.update(0)).toBe(false);
+    s.pending[0].block.syncSurface.mockReturnValueOnce(true);
+    expect(s.collection.update(0)).toBe(true);
+    expect(s.collection.update(0)).toBe(false);
+    await s.collection.setCountries([]);
+    expect(s.collection.update(0)).toBe(true);
+    expect(s.collection.update(0)).toBe(false);
+    s.dispose();
+  });
+
   it('inserts selected countries into their continent and preserves existing bodies on additions', async () => {
     const s = setup();
     const first = s.collection.setCountries([CountryList.Indonesia]);

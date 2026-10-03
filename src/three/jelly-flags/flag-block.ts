@@ -113,16 +113,17 @@ export const createFlagBlock = ({ scale = 1, container }: IFlagBlockOptions = {}
   };
   const syncSurface = () => {
     if (body && body.getRevision() === renderedRevision) {
-      return;
+      return false;
     }
     renderedRevision = body?.getRevision() ?? -1;
     if (!surface) {
-      return;
+      return false;
     }
     updateSurface?.();
     updateThickness?.();
     surface.geometry.computeVertexNormals();
     surface.geometry.computeBoundingSphere();
+    return true;
   };
   const dispose = () => {
     disposed = true;

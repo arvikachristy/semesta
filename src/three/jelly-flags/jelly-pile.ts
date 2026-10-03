@@ -8,6 +8,8 @@ export const pileParameters = {
   contactMargin: 0.002,
   maxContactCorrection: 0.05,
   wallClearance: 0.015,
+  wakePenetration: 0.002,
+  neighbourMargin: 0.01,
 };
 interface ICollisionBody {
   body: ReturnType<typeof createSoftBody>;
@@ -70,6 +72,31 @@ export const createJellyPile = () => {
     };
     bodies.set(body, entry);
     entries.push(entry);
+  };
+
+  const contactBounds = new THREE.Box3();
+  const refreshBounds = () =>
+    bodies.forEach((entry) => {
+      entry.bounds.makeEmpty();
+      entry.body.positions.forEach((position) =>
+        entry.bounds.expandByPoint(world.copy(position).add(entry.origin)),
+      );
+    });
+  // Wake the touching group when its support moves or disappears, leaving distant piles asleep.
+  const wakeConnected = (seed: ICollisionBody) => {
+    const visited = new Set<ICollisionBody>([seed]);
+    const queue = [seed];
+    for (let i = 0; i < queue.length; i++) {
+      const current = queue[i];
+      current.body.wake();
+      contactBounds.copy(current.bounds).expandByScalar(pileParameters.neighbourMargin);
+      for (const entry of entries) {
+        if (!visited.has(entry) && contactBounds.intersectsBox(entry.bounds)) {
+          visited.add(entry);
+          queue.push(entry);
+        }
+      }
+    }
   };
 
   const indexBody = (entry: ICollisionBody) => {
@@ -142,8 +169,6 @@ export const createJellyPile = () => {
       if (!contains(target, query)) {
         continue;
       }
-      source.body.wake();
-      target.body.wake();
       let distance = Infinity;
       let face: readonly [number, number, number] | null = null;
       for (const candidate of target.faces) {
@@ -169,11 +194,26 @@ export const createJellyPile = () => {
         Math.sqrt(distance) + pileParameters.contactMargin,
         pileParameters.maxContactCorrection,
       );
-      const correction = depth / (1 + weights.lengthSq());
-      position.addScaledVector(normal, correction);
-      a.addScaledVector(normal, -correction * weights.x);
-      b.addScaledVector(normal, -correction * weights.y);
-      c.addScaledVector(normal, -correction * weights.z);
+      if (Math.sqrt(distance) > pileParameters.wakePenetration) {
+        if (source.body.isSleeping()) {
+          wakeConnected(source);
+        }
+        if (target.body.isSleeping()) {
+          wakeConnected(target);
+        }
+      }
+      // Sleeping bodies support gentle resting contact without restarting their sleep timers.
+      const sourceWeight = source.body.isSleeping() ? 0 : 1;
+      const targetWeight = target.body.isSleeping() ? 0 : 1;
+      const denominator = sourceWeight + targetWeight * weights.lengthSq();
+      if (denominator === 0) {
+        continue;
+      }
+      const correction = depth / denominator;
+      position.addScaledVector(normal, correction * sourceWeight);
+      a.addScaledVector(normal, -correction * weights.x * targetWeight);
+      b.addScaledVector(normal, -correction * weights.y * targetWeight);
+      c.addScaledVector(normal, -correction * weights.z * targetWeight);
     }
   };
 
@@ -182,6 +222,12 @@ export const createJellyPile = () => {
       accumulator = 0;
       return;
     }
+    refreshBounds();
+    entries.forEach((entry) => {
+      if (entry.body.isGrabbed()) {
+        wakeConnected(entry);
+      }
+    });
     const p = jellyParameters.physics;
     accumulator = Math.min(accumulator + delta, p.timestep * p.maxSubsteps);
     while (accumulator >= p.timestep) {
@@ -189,12 +235,7 @@ export const createJellyPile = () => {
       for (let iteration = 0; iteration < p.iterations; iteration++) {
         bodies.forEach(({ body }) => body.solveConstraints());
         if (bodies.size > 1 && (iteration === 0 || iteration === p.iterations - 1)) {
-          bodies.forEach((entry) => {
-            entry.bounds.makeEmpty();
-            entry.body.positions.forEach((position) =>
-              entry.bounds.expandByPoint(world.copy(position).add(entry.origin)),
-            );
-          });
+          refreshBounds();
           indexed.clear();
           for (let a = 0; a < entries.length; a++) {
             for (let b = a + 1; b < entries.length; b++) {
@@ -230,6 +271,8 @@ export const createJellyPile = () => {
     remove: (body: ReturnType<typeof createSoftBody>) => {
       const entry = bodies.get(body);
       if (entry) {
+        refreshBounds();
+        wakeConnected(entry);
         entries.splice(entries.indexOf(entry), 1);
         bodies.delete(body);
       }

@@ -117,6 +117,13 @@ export const createSoftBody = (
   let quietTime = 0;
   let revision = 0;
   const wake = () => {
+    if (sleeping) {
+      // A collision can wake a body after prediction; discard stale velocity history.
+      positions.forEach((position, i) => {
+        previous[i].copy(position);
+        incomingVelocity[i].set(0, 0, 0);
+      });
+    }
     sleeping = false;
     quietTime = 0;
   };
@@ -394,6 +401,7 @@ export const createSoftBody = (
     container,
     wake,
     isSleeping: () => sleeping,
+    isGrabbed: () => grabbed,
     getRevision: () => revision,
   };
 };
