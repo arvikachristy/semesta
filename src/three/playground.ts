@@ -56,6 +56,8 @@ export const startPlayground = (
   document.addEventListener(visibilityEvent, frameMonitor.reset);
   let previousTime = performance.now();
   let frameId = 0;
+  const previousCameraPosition = camera.position.clone();
+  let previousGlassRotation = glasses.object.rotation.y;
 
   function animate() {
     frameId = requestAnimationFrame(animate);
@@ -73,7 +75,13 @@ export const startPlayground = (
     camera.lookAt(cameraTarget);
     camera.updateMatrixWorld();
     glasses.updateFacing(camera);
-    collection.update(delta);
+    const surfacesChanged = collection.update(delta);
+    renderer.shadowMap.needsUpdate ||=
+      surfacesChanged ||
+      !previousCameraPosition.equals(camera.position) ||
+      previousGlassRotation !== glasses.object.rotation.y;
+    previousCameraPosition.copy(camera.position);
+    previousGlassRotation = glasses.object.rotation.y;
 
     renderer.render(scene, camera);
   }

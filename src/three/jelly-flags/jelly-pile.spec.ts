@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { createJellyPile } from './jelly-pile';
 import { createSoftBody } from './jelly-soft-body';
+import { jellyParameters } from './jelly-parameters';
 
 const makeBody = (x: number, y: number) =>
   createSoftBody(0.594, 0.396, 0.3, [], {
@@ -84,7 +85,7 @@ describe('contained loose jelly piles', () => {
     expect(body.getRevision()).toBe(revision);
     body.beginGrab(body.positions[0]);
     expect(body.isSleeping()).toBe(false);
-    pile.update(1 / 120);
+    pile.update(jellyParameters.physics.timestep);
     expect(body.getRevision()).toBeGreaterThan(revision);
     pile.dispose();
   });
@@ -97,5 +98,98 @@ describe('contained loose jelly piles', () => {
     pile.update(0.05);
     body.positions.forEach((point, index) => expect(point.equals(before[index])).toBe(true));
     pile.dispose();
+  });
+});
+
+const settle = (body: ReturnType<typeof makeBody>) => {
+  for (let step = 0; step < 240; step++) {
+    body.update(1 / 60);
+  }
+  expect(body.isSleeping()).toBe(true);
+};
+
+describe('selective sleeping', () => {
+  it('wakes a hit body while a distant body stays asleep', () => {
+    const lower = makeBody(-0.35, 0.7);
+    const distant = makeBody(0.65, 0.7);
+    settle(lower);
+    settle(distant);
+    const lowerRevision = lower.getRevision();
+    const distantRevision = distant.getRevision();
+    const incoming = makeBody(-0.33, 1.5);
+    const pile = createJellyPile();
+    pile.add(lower);
+    pile.add(distant);
+    pile.add(incoming);
+    for (let step = 0; step < 120; step++) {
+      pile.update(1 / 60);
+    }
+    expect(lower.getRevision()).toBeGreaterThan(lowerRevision);
+    expect(distant.getRevision()).toBe(distantRevision);
+    expect(distant.isSleeping()).toBe(true);
+    assertContained(lower);
+    assertContained(incoming);
+    pile.dispose();
+  });
+  it('wakes resting neighbours when their support is removed', () => {
+    const lower = makeBody(0, 0.7);
+    const upper = makeBody(0, 0.7);
+    settle(lower);
+    settle(upper);
+    // Assemble an already sleeping stack, with the upper base touching the lower top.
+    upper.positions.forEach((point) => {
+      point.y += 0.394;
+    });
+    const height = centre(upper).y;
+    const pile = createJellyPile();
+    pile.add(lower);
+    pile.add(upper);
+    pile.remove(lower);
+    expect(upper.isSleeping()).toBe(false);
+    for (let step = 0; step < 90; step++) {
+      pile.update(1 / 60);
+    }
+    expect(centre(upper).y).toBeLessThan(height - 0.2);
+    assertContained(upper);
+    pile.dispose();
+  });
+  it('deforms a grabbed corner locally while retaining signed volume', () => {
+    const body = makeBody(0, 0.7);
+    settle(body);
+    const before = body.positions.map((point) => point.clone());
+    const near = before.length - 1;
+    body.beginGrab(before[near]);
+    body.moveGrab(before[near].clone().add(new THREE.Vector3(0.14, 0.12, 0)));
+    for (let step = 0; step < 2; step++) {
+      body.update(1 / 60);
+    }
+    const movement = new THREE.Vector3();
+    body.positions.forEach((point, index) => movement.add(point).sub(before[index]));
+    movement.divideScalar(before.length);
+    const nearShift = body.positions[near].clone().sub(before[near]).sub(movement).length();
+    const farShift = body.positions[0].clone().sub(before[0]).sub(movement).length();
+    expect(nearShift).toBeGreaterThan(farShift * 1.2);
+    for (let step = 0; step < 10; step++) {
+      body.update(1 / 60);
+    }
+    const ab = new THREE.Vector3(),
+      ac = new THREE.Vector3(),
+      ad = new THREE.Vector3();
+    let volume = 0;
+    body.tets.forEach(({ ids }) => {
+      const [a, b, c, d] = ids.map((id) => body.positions[id]);
+      const signed = ab.subVectors(b, a).cross(ac.subVectors(c, a)).dot(ad.subVectors(d, a)) / 6;
+      expect(signed).toBeGreaterThan(0);
+      volume += signed;
+    });
+    const restVolume = body.tets.reduce((sum, tet) => sum + tet.volume, 0);
+    expect(volume / restVolume).toBeGreaterThan(0.85);
+    expect(volume / restVolume).toBeLessThan(1.15);
+    body.endGrab();
+    for (let step = 0; step < 180; step++) {
+      body.update(1 / 60);
+    }
+    expect(body.isSleeping()).toBe(true);
+    assertContained(body);
   });
 });
