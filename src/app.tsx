@@ -1,21 +1,19 @@
 import { FpsToken } from './components/fps-token';
 import type { IFrameReading } from './performance/frame-monitor';
 import { useEffect, useRef, useState } from 'react';
-import { countries, defaultCountries, toggleCountry } from './data/countries';
+import { countries } from './data/countries';
+import { useCountrySelection } from './hooks/use-country-selection';
 import { CountrySelector } from './components/country-selector';
 import type { CountryList } from './types/country';
-import { CountryStatus } from './types/country-status';
+import type { CountryStatus } from './types/country-status';
 import { continentDefinitions } from './types/continent';
 import { startPlayground } from './three/playground';
-import { glassParameters } from './three/glasses/glass-parameters';
 
 export const App = () => {
   const [frameReading, setFrameReading] = useState<IFrameReading | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playgroundRef = useRef<ReturnType<typeof startPlayground> | null>(null);
-  const [showedCountries, setShowedCountries] = useState<CountryList[]>(() => [
-    ...defaultCountries,
-  ]);
+  const { showedCountries, ready, onToggle } = useCountrySelection();
   const [statuses, setStatuses] = useState<Partial<Record<CountryList, CountryStatus>>>({});
 
   useEffect(() => {
@@ -35,9 +33,6 @@ export const App = () => {
           return;
         }
         setStatuses((current) => ({ ...current, [country]: status }));
-        if (status === CountryStatus.Error) {
-          setShowedCountries((current) => current.filter((id) => id !== country));
-        }
       },
     });
     playgroundRef.current = playground;
@@ -49,8 +44,10 @@ export const App = () => {
   }, []);
 
   useEffect(() => {
-    void playgroundRef.current?.setCountries(showedCountries);
-  }, [showedCountries]);
+    if (ready) {
+      void playgroundRef.current?.setCountries(showedCountries);
+    }
+  }, [ready, showedCountries]);
 
   return (
     <main>
@@ -58,11 +55,8 @@ export const App = () => {
       <CountrySelector
         showedCountries={showedCountries}
         statuses={statuses}
-        onToggle={(country, checked) =>
-          setShowedCountries((current) =>
-            toggleCountry(current, country, checked, glassParameters.capacity),
-          )
-        }
+        disabled={!ready}
+        onToggle={onToggle}
       />
       <ul className="visually-hidden" id="continent-descriptions">
         {continentDefinitions.map((continent) => (

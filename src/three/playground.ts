@@ -1,4 +1,5 @@
 import { createFrameMonitor } from '../performance/frame-monitor';
+import { jellyPerformance } from './jelly-flags/jelly-performance';
 import type { IFrameReading } from '../performance/frame-monitor';
 import { createCamera } from './camera';
 import { createCountryCollection } from './jelly-flags/country-collection';
@@ -58,6 +59,8 @@ export const startPlayground = (
   let frameId = 0;
   const previousCameraPosition = camera.position.clone();
   let previousGlassRotation = glasses.object.rotation.y;
+  let shadowDirty = true;
+  let previousShadowTime = 0;
 
   function animate() {
     frameId = requestAnimationFrame(animate);
@@ -76,10 +79,15 @@ export const startPlayground = (
     camera.updateMatrixWorld();
     glasses.updateFacing(camera);
     const surfacesChanged = collection.update(delta);
-    renderer.shadowMap.needsUpdate ||=
+    shadowDirty ||=
       surfacesChanged ||
       !previousCameraPosition.equals(camera.position) ||
       previousGlassRotation !== glasses.object.rotation.y;
+    if (shadowDirty && now - previousShadowTime >= 1000 / jellyPerformance.shadowUpdatesPerSecond) {
+      renderer.shadowMap.needsUpdate = true;
+      previousShadowTime = now;
+      shadowDirty = false;
+    }
     previousCameraPosition.copy(camera.position);
     previousGlassRotation = glasses.object.rotation.y;
 

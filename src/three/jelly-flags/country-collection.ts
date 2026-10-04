@@ -7,6 +7,8 @@ import { createFlagBlock } from './flag-block';
 import { createJellyPile, pileParameters } from './jelly-pile';
 import { jellyParameters } from './jelly-parameters';
 import { CountryStatus } from '../../types/country-status';
+import { createLoadQueue } from './load-queue';
+import { jellyPerformance } from './jelly-performance';
 
 interface IEntry {
   block: ReturnType<typeof createFlagBlock>;
@@ -29,8 +31,10 @@ export const createCountryCollection = ({
   createBlock = createFlagBlock,
 }: ICollectionOptions) => {
   const entries = new Map<CountryList, IEntry>();
+  const loadQueue = createLoadQueue(jellyPerformance.concurrentLoads);
   const piles = new Map<TContinentId, ReturnType<typeof createJellyPile>>();
   const nextDrop = new Map<TContinentId, number>();
+  const lastInsertion = new Map<TContinentId, number>();
   // Stable array shared with pointer handling; reconciliation changes its contents in place.
   const blocks: ReturnType<typeof createFlagBlock>[] = [];
   let elapsed = 0;
@@ -54,6 +58,10 @@ export const createCountryCollection = ({
     }
     entry.block.object.removeFromParent();
     entry.block.dispose();
+    if (![...entries.values()].some((remaining) => remaining.continent === entry.continent)) {
+      nextDrop.delete(entry.continent);
+      lastInsertion.delete(entry.continent);
+    }
   };
   const setCountries = async (selected: readonly CountryList[]) => {
     if (disposed) {
@@ -88,15 +96,24 @@ export const createCountryCollection = ({
         },
       });
       block.object.name = country;
-      const angle = countryIds.indexOf(country) * 2.3999632297;
+      const angle = count * pileParameters.dropAngle;
+      const radius =
+        Math.max(
+          0,
+          glassDimensions.interiorDiameter / 2 -
+            (Math.hypot(jellyParameters.surface.width, jellyParameters.surface.depth) *
+              glassParameters.jellyScale) /
+              2 -
+            pileParameters.wallClearance,
+        ) * Math.sqrt((count * pileParameters.dropRadiusStep) % 1);
       block.object.position.set(
-        Math.sin(angle) * 0.22,
+        Math.sin(angle) * radius,
         glassParameters.baseThickness +
           glassDimensions.interiorHeight -
           glassDimensions.topBuffer -
           (jellyParameters.surface.height * glassParameters.jellyScale) / 2 -
           0.02,
-        Math.cos(angle) * 0.22,
+        Math.cos(angle) * radius,
       );
       const entry: IEntry = {
         block,
@@ -107,8 +124,12 @@ export const createCountryCollection = ({
       };
       entries.set(country, entry);
       onStatus?.(country, CountryStatus.Loading);
-      entry.ready = block
-        .setCountry(country)
+      entry.ready = loadQueue
+        .run(async () => {
+          if (!disposed && entries.get(country) === entry) {
+            await block.setCountry(country);
+          }
+        })
         .then(() => {
           if (disposed || entries.get(country) !== entry) {
             return;
@@ -134,6 +155,12 @@ export const createCountryCollection = ({
       if (entry.inserted || elapsed < entry.readyAt) {
         return;
       }
+      if (
+        (piles.get(entry.continent)?.getAwakeCount() ?? 0) >= jellyPerformance.maxAwakeBeforeDrop &&
+        elapsed - (lastInsertion.get(entry.continent) ?? 0) < jellyPerformance.maxDropPause
+      ) {
+        return;
+      }
       const body = entry.block.getBody();
       const parent = glasses.containers.get(entry.continent);
       if (!body || !parent) {
@@ -148,6 +175,7 @@ export const createCountryCollection = ({
       parent.add(entry.block.object);
       blocks.push(entry.block);
       entry.inserted = true;
+      lastInsertion.set(entry.continent, elapsed);
       changed = true;
       onStatus?.(country, CountryStatus.Ready);
     });
@@ -163,12 +191,14 @@ export const createCountryCollection = ({
     update,
     dispose: () => {
       disposed = true;
+      loadQueue.dispose();
       for (const country of entries.keys()) {
         remove(country);
       }
       piles.forEach((pile) => pile.dispose());
       piles.clear();
       nextDrop.clear();
+      lastInsertion.clear();
     },
   };
 };

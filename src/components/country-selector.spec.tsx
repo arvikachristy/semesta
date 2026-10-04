@@ -53,6 +53,10 @@ describe('continent country checklist', () => {
     expect([...host.querySelectorAll('legend')].map((element) => element.textContent)).toEqual([
       'Europe',
       'Asia',
+      'Africa',
+      'Oceania',
+      'South America',
+      'North America',
     ]);
     expect(checkbox(CountryList.Indonesia).checked).toBe(true);
     await act(async () => checkbox(CountryList.France).click());

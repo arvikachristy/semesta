@@ -2,8 +2,27 @@ import { describe, expect, it } from 'vitest';
 import { countries, countryGroups, countryIds, defaultCountries, toggleCountry } from './countries';
 import { CountryList } from '../types/country';
 import { ContinentId } from '../types/continent';
+import { existsSync, readFileSync } from 'node:fs';
+import { glassParameters } from '../three/glasses/glass-parameters';
 
 describe('country registry and selection', () => {
+  it('covers exactly 195 states with local SVGs and fits the per-continent selection limit', () => {
+    expect(countryIds).toHaveLength(195);
+    expect(new Set(countryIds).size).toBe(195);
+    for (const code of countryIds) {
+      const file = new URL(`../../public/flags/${code.toLowerCase()}.svg`, import.meta.url);
+      expect(existsSync(file), code).toBe(true);
+      expect(readFileSync(file, 'utf8')).toContain('<svg');
+      expect(countries[code].size.width).toBeGreaterThan(0);
+      expect(countries[code].size.height).toBeGreaterThan(0);
+    }
+    expect(countryGroups.map((group) => group.countries.length)).toEqual([44, 48, 54, 14, 12, 23]);
+    expect(countryGroups.every((group) => group.countries.length <= glassParameters.capacity)).toBe(
+      true,
+    );
+    expect(countryIds).toContain(CountryList.HolySee);
+    expect(countryIds).toContain(CountryList.Palestine);
+  });
   it('derives each checkbox and flag from the same enum-keyed record', () => {
     expect(Object.keys(countries).sort()).toEqual([...countryIds].sort());
     const listed = countryGroups.flatMap((group) =>

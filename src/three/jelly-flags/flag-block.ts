@@ -1,12 +1,11 @@
 import * as THREE from 'three';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createFlagPattern } from './flag-patterns';
 import { createJellyMaterial } from './jelly-material';
 import type { CountryList } from '../../types/country';
 import { createSoftBody } from './jelly-soft-body';
 import type { IJellyContainer } from './jelly-soft-body';
 import { jellyParameters } from './jelly-parameters';
+import { createJellyGeometry, JellyAttribute } from './jelly-geometry';
 
 export const blockHeight = jellyParameters.surface.height;
 
@@ -44,31 +43,17 @@ export const createFlagBlock = ({ scale = 1, container }: IFlagBlockOptions = {}
     const width = jellyParameters.surface.width * scale;
     const height = blockHeight * scale;
     const depth = jellyParameters.surface.depth * scale;
-    const radius = jellyParameters.surface.radius * scale;
-    const { segments } = jellyParameters.surface;
-
-    const rounded = new RoundedBoxGeometry(width, height, depth, segments, radius);
-    rounded.deleteAttribute('normal');
-    rounded.deleteAttribute('uv');
-
-    const geometry = mergeVertices(rounded);
-    rounded.dispose();
-    geometry.computeVertexNormals();
-
-    const positions = geometry.getAttribute('position');
-    const uv = new Float32Array(positions.count * 2);
+    const geometry = createJellyGeometry(scale);
+    const positions = geometry.getAttribute(JellyAttribute.Position);
     const probes = new THREE.BufferAttribute(new Float32Array(positions.count * 6), 3);
     const thickness = new THREE.BufferAttribute(new Float32Array(positions.count), 1);
 
     for (let i = 0; i < positions.count; i++) {
-      uv[i * 2] = positions.getX(i) / width + 0.5;
-      uv[i * 2 + 1] = positions.getY(i) / height + 0.5;
       probes.setXYZ(i * 2, positions.getX(i), positions.getY(i), -depth / 2);
       probes.setXYZ(i * 2 + 1, positions.getX(i), positions.getY(i), depth / 2);
     }
 
-    geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-    geometry.setAttribute('jellyThickness', thickness);
+    geometry.setAttribute(JellyAttribute.Thickness, thickness);
     body = createSoftBody(
       width,
       height,

@@ -7,6 +7,7 @@ import { App } from './app';
 import { startPlayground } from './three/playground';
 import { CountryList } from './types/country';
 import { CountryStatus } from './types/country-status';
+import { selectionStorage } from './storage/country-selection';
 
 vi.mock('./three/playground', () => ({ startPlayground: vi.fn() }));
 const host = document.createElement('div');
@@ -21,6 +22,7 @@ const click = async (query: string) => {
   await act(async () => element.click());
 };
 beforeEach(() => {
+  localStorage.clear();
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.mocked(startPlayground).mockReturnValue({ setCountries, dispose });
   document.body.append(host);
@@ -34,6 +36,34 @@ afterEach(async () => {
 });
 
 describe('application selection state', () => {
+  it('restores an intentionally empty selection before reconciling the scene', async () => {
+    localStorage.setItem(
+      selectionStorage.key,
+      JSON.stringify({
+        version: selectionStorage.version,
+        selectedCountryIds: [],
+      }),
+    );
+    await act(async () => root.render(<App />));
+    expect(setCountries).toHaveBeenCalledOnce();
+    expect(setCountries).toHaveBeenLastCalledWith([]);
+  });
+  it('restores saved IDs and persists checkbox changes', async () => {
+    localStorage.setItem(
+      selectionStorage.key,
+      JSON.stringify({
+        version: selectionStorage.version,
+        selectedCountryIds: [CountryList.France],
+      }),
+    );
+    await act(async () => root.render(<App />));
+    expect(setCountries).toHaveBeenLastCalledWith([CountryList.France]);
+    await click('button');
+    await click(`input[value="${CountryList.France}"]`);
+    expect(
+      JSON.parse(localStorage.getItem(selectionStorage.key) ?? '{}').selectedCountryIds,
+    ).toEqual([]);
+  });
   it('updates the diagnostic token without recreating the scene', async () => {
     await act(async () => root.render(<App />));
     await act(async () =>
@@ -47,7 +77,7 @@ describe('application selection state', () => {
     expect(host.querySelector('.fps-token')?.textContent).toContain('Potato mode');
     expect(startPlayground).toHaveBeenCalledOnce();
   });
-  it('reconciles the enum array without reinitializing the scene and unticks failed loads', async () => {
+  it('reconciles the enum array without reinitializing the scene and retains failed selections for retry', async () => {
     await act(async () => root.render(<App />));
     expect(setCountries).toHaveBeenLastCalledWith([CountryList.Indonesia]);
     await click('button');
@@ -59,8 +89,9 @@ describe('application selection state', () => {
         .mocked(startPlayground)
         .mock.calls[0][1]?.onCountryStatus?.(CountryList.France, CountryStatus.Error),
     );
-    expect(setCountries).toHaveBeenLastCalledWith([CountryList.Indonesia]);
-    expect(host.textContent).toContain('Could not load. Check to retry.');
+    expect(setCountries).toHaveBeenLastCalledWith([CountryList.Indonesia, CountryList.France]);
+    expect(host.textContent).toContain('Could not load. Untick and tick to retry.');
+    await click(`input[value="${CountryList.France}"]`);
     await click(`input[value="${CountryList.France}"]`);
     expect(setCountries).toHaveBeenLastCalledWith([CountryList.Indonesia, CountryList.France]);
   });
