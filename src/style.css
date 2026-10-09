@@ -175,3 +175,54 @@ canvas {
   background: transparent;
   font: inherit;
 }
+
+.country-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+}
+.country-actions button {
+  width: auto;
+  min-height: 2.5rem;
+  padding: 0.4rem 0.85rem;
+}
+.country-selector button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.country-confirmation {
+  width: min(24rem, calc(100vw - 2rem));
+  padding: 1.5rem;
+  border: 1px solid #ad8589;
+  border-radius: 1.25rem;
+  background: #fff9f8;
+  color: inherit;
+}
+.country-confirmation::backdrop {
+  background: rgb(99 50 58 / 25%);
+}
+.country-confirmation h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.country-confirmation p {
+  margin: 0.75rem 0 1.25rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.country-confirmation-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+.country-confirmation-actions button {
+  justify-content: center;
+  padding: 0.65rem;
+  font-size: 0.85rem;
+}
+.country-confirmation-actions button:last-child {
+  background: #63323a;
+  color: #fff9f8;
+}

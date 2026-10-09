@@ -12,6 +12,7 @@ const Harness = () => {
     <CountrySelector
       showedCountries={showedCountries}
       statuses={{}}
+      onClear={() => setShowedCountries([])}
       onToggle={(country, checked) =>
         setShowedCountries((current) => toggleCountry(current, country, checked, 60))
       }
@@ -36,6 +37,13 @@ const checkbox = (country: CountryList) => {
 };
 beforeEach(async () => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  // jsdom lacks the native modal API; real focus trapping is checked in Chrome.
+  Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+    configurable: true,
+    value(this: HTMLDialogElement) {
+      this.open = true;
+    },
+  });
   document.body.append(host);
   root = createRoot(host);
   await act(async () => root.render(<Harness />));
@@ -44,6 +52,7 @@ afterEach(async () => {
   await act(async () => root.unmount());
   host.remove();
   vi.unstubAllGlobals();
+  Reflect.deleteProperty(HTMLDialogElement.prototype, 'showModal');
 });
 
 describe('continent country checklist', () => {
@@ -65,6 +74,34 @@ describe('continent country checklist', () => {
     await act(async () => checkbox(CountryList.Indonesia).click());
     expect(checkbox(CountryList.Indonesia).checked).toBe(false);
     expect(button().getAttribute('aria-expanded')).toBe('true');
+  });
+  it('requires confirmation, preserves flags on cancellation, and clears all on confirmation', async () => {
+    await act(async () => button().click());
+    await act(async () => checkbox(CountryList.France).click());
+    const clear = host.querySelector('.country-actions button');
+    if (!(clear instanceof HTMLButtonElement)) {
+      throw new Error('Missing clear action');
+    }
+    await act(async () => clear.click());
+    expect(button().textContent).toContain('2 selected');
+    const cancel = host.querySelector('dialog button');
+    if (!(cancel instanceof HTMLButtonElement)) {
+      throw new Error('Missing cancellation');
+    }
+    await act(async () => cancel.click());
+    expect(button().textContent).toContain('2 selected');
+    expect(document.activeElement).toBe(clear);
+    await act(async () => clear.click());
+    const confirm = host.querySelector('dialog button:last-child');
+    if (!(confirm instanceof HTMLButtonElement)) {
+      throw new Error('Missing confirmation');
+    }
+    await act(async () => confirm.click());
+    expect(button().textContent).toContain('0 selected');
+    expect(checkbox(CountryList.Indonesia).checked).toBe(false);
+    expect(checkbox(CountryList.France).checked).toBe(false);
+    expect(clear.disabled).toBe(true);
+    expect(host.querySelector('dialog')).toBeNull();
   });
   it('closes on Escape with focus restored and on an outside pointer press', async () => {
     await act(async () => button().click());

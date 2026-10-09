@@ -50,5 +50,10 @@ export const useCountrySelection = (repository: ICountrySelectionRepository = lo
     },
     [ready],
   );
-  return { showedCountries, ready, onToggle };
+  const onClear = useCallback(() => {
+    if (ready) {
+      setShowedCountries([]);
+    }
+  }, [ready]);
+  return { showedCountries, ready, onToggle, onClear };
 };

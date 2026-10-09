@@ -8,17 +8,30 @@ enum SelectorEvent {
   PointerDown = 'pointerdown',
 }
 const SelectorKey = { Escape: 'Escape' };
-const selectorText = { search: 'Search countries' };
+const selectorText = { search: 'Search countries', clear: 'Clear all', cancel: 'Keep flags' };
 interface ICountrySelectorProps {
   disabled?: boolean;
   showedCountries: readonly CountryList[];
   statuses: Partial<Record<CountryList, CountryStatus>>;
+  onClear: () => void;
   onToggle: (country: CountryList, checked: boolean) => void;
 }
 
 export const CountrySelector = memo(
-  ({ disabled = false, showedCountries, statuses, onToggle }: ICountrySelectorProps) => {
+  ({ disabled = false, showedCountries, statuses, onToggle, onClear }: ICountrySelectorProps) => {
     const [open, setOpen] = useState(false);
+    const [confirming, setConfirming] = useState(false);
+    const dialog = useRef<HTMLDialogElement>(null);
+    const clearButton = useRef<HTMLButtonElement>(null);
+    const closeConfirmation = () => {
+      setConfirming(false);
+      clearButton.current?.focus();
+    };
+    useEffect(() => {
+      if (confirming) {
+        dialog.current?.showModal();
+      }
+    }, [confirming]);
     const [search, setSearch] = useState('');
     const query = search.trim().toLocaleLowerCase();
     const groups = countryGroups
@@ -37,12 +50,15 @@ export const CountrySelector = memo(
         return;
       }
       const outside = (event: PointerEvent) => {
+        if (dialog.current?.open) {
+          return;
+        }
         if (event.target instanceof Node && !root.current?.contains(event.target)) {
           setOpen(false);
         }
       };
       const keyDown = (event: KeyboardEvent) => {
-        if (event.key === SelectorKey.Escape) {
+        if (!dialog.current?.open && event.key === SelectorKey.Escape) {
           setOpen(false);
           trigger.current?.focus();
         }
@@ -70,6 +86,17 @@ export const CountrySelector = memo(
         </button>
         {open && (
           <div className="country-checklist" id="country-checklist">
+            <div className="country-actions">
+              <span>{showedCountries.length} selected</span>
+              <button
+                type="button"
+                ref={clearButton}
+                disabled={disabled || showedCountries.length === 0}
+                onClick={() => setConfirming(true)}
+              >
+                {selectorText.clear}
+              </button>
+            </div>
             <input
               className="country-search"
               type="search"
@@ -101,6 +128,35 @@ export const CountrySelector = memo(
               </fieldset>
             ))}
           </div>
+        )}
+        {confirming && (
+          <dialog
+            className="country-confirmation"
+            ref={dialog}
+            aria-labelledby="clear-country-title"
+            aria-describedby="clear-country-description"
+            onCancel={closeConfirmation}
+          >
+            <h2 id="clear-country-title">Clear all flags?</h2>
+            <p id="clear-country-description">
+              This removes every selected jelly. You can add countries again anytime.
+            </p>
+            <div className="country-confirmation-actions">
+              <button type="button" autoFocus onClick={closeConfirmation}>
+                {selectorText.cancel}
+              </button>
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => {
+                  onClear();
+                  closeConfirmation();
+                }}
+              >
+                {selectorText.clear}
+              </button>
+            </div>
+          </dialog>
         )}
       </div>
     );

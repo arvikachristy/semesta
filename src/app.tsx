@@ -13,7 +13,7 @@ export const App = () => {
   const [frameReading, setFrameReading] = useState<IFrameReading | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playgroundRef = useRef<ReturnType<typeof startPlayground> | null>(null);
-  const { showedCountries, ready, onToggle } = useCountrySelection();
+  const { showedCountries, ready, onToggle, onClear } = useCountrySelection();
   const [statuses, setStatuses] = useState<Partial<Record<CountryList, CountryStatus>>>({});
 
   useEffect(() => {
@@ -57,6 +57,7 @@ export const App = () => {
         statuses={statuses}
         disabled={!ready}
         onToggle={onToggle}
+        onClear={onClear}
       />
       <ul className="visually-hidden" id="continent-descriptions">
         {continentDefinitions.map((continent) => (
