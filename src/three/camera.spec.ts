@@ -35,11 +35,30 @@ describe('camera framing', () => {
     const glasses = createGlassSet();
     const view = createCamera(glasses.bounds);
     const direction = view.cameraOffset.clone().normalize();
-    view.adjustZoom(-10000);
+    view.zoomBy(10000);
     expect(view.cameraOffset.length()).toBeCloseTo(3);
-    view.adjustZoom(10000);
+    view.zoomBy(0.0001);
     expect(view.cameraOffset.length()).toBeLessThan(200);
     expect(view.cameraOffset.clone().normalize().distanceTo(direction)).toBeLessThan(1e-10);
+    glasses.dispose();
+  });
+
+  it('uses the same proportional magnification in desktop and portrait framing', () => {
+    const glasses = createGlassSet();
+    const view = createCamera(glasses.bounds);
+    for (const aspect of [1280 / 800, 390 / 844]) {
+      view.camera.aspect = aspect;
+      view.fitViewport();
+      const before = view.cameraOffset.length();
+      view.zoomBy(1.5);
+      expect(view.cameraOffset.length()).toBeCloseTo(before / 1.5);
+      view.zoomBy(1 / 1.5);
+      expect(view.cameraOffset.length()).toBeCloseTo(before);
+      for (const invalid of [0, -1, Infinity, NaN]) {
+        view.zoomBy(invalid);
+        expect(view.cameraOffset.length()).toBeCloseTo(before);
+      }
+    }
     glasses.dispose();
   });
 });

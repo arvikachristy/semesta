@@ -13,6 +13,7 @@ import { createRenderer } from './renderer';
 import { createRenderQuality, getRenderPixelRatio } from './render-parameters';
 import { resize } from './resize';
 import { createScene } from './scene';
+import { getWheelZoomFactor } from './zoom';
 
 interface IPlaygroundOptions {
   onFrameReading?: (reading: IFrameReading) => void;
@@ -27,9 +28,7 @@ export const startPlayground = (
   const quality = createRenderQuality();
   const scene = createScene();
   const glasses = createGlassSet();
-  const { camera, cameraTarget, cameraOffset, adjustZoom, fitViewport } = createCamera(
-    glasses.bounds,
-  );
+  const { camera, cameraTarget, cameraOffset, zoomBy, fitViewport } = createCamera(glasses.bounds);
   const lighting = createLights(renderer);
   const { ambientLight, directionalLight } = lighting;
   scene.environment = lighting.environment;
@@ -41,14 +40,21 @@ export const startPlayground = (
     onRemove: (block) => input?.releaseBlock(block),
   });
   scene.add(ambientLight, directionalLight, floor, glasses.object);
-  input = bindPointerEvents({ canvas, camera, cameraTarget, blocks: collection.blocks, glasses });
+  input = bindPointerEvents({
+    canvas,
+    camera,
+    cameraTarget,
+    blocks: collection.blocks,
+    glasses,
+    zoomBy,
+  });
   const onResize = () => {
     resize(renderer, camera, quality.getScale());
     fitViewport();
   };
   const onWheel = (event: WheelEvent) => {
     event.preventDefault();
-    adjustZoom(event.deltaY * 0.02);
+    zoomBy(getWheelZoomFactor(event, canvas.clientHeight));
   };
   window.addEventListener('resize', onResize);
   canvas.addEventListener('wheel', onWheel, { passive: false });
