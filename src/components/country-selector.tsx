@@ -1,3 +1,4 @@
+import type { IMobilePanelState } from '../types/mobile-panel';
 import { Button, ButtonVariant } from './ui/button';
 import ui from './ui/ui.module.css';
 import { memo, useEffect, useRef, useState } from 'react';
@@ -11,7 +12,8 @@ enum SelectorEvent {
 }
 const SelectorKey = { Escape: 'Escape' };
 const selectorText = { search: 'Search countries', clear: 'Clear all', cancel: 'Keep flags' };
-interface ICountrySelectorProps {
+export interface ICountrySelectorProps {
+  mobilePanel?: IMobilePanelState;
   disabled?: boolean;
   showedCountries: readonly CountryList[];
   statuses: Partial<Record<CountryList, CountryStatus>>;
@@ -20,8 +22,16 @@ interface ICountrySelectorProps {
 }
 
 export const CountrySelector = memo(
-  ({ disabled = false, showedCountries, statuses, onToggle, onClear }: ICountrySelectorProps) => {
-    const [open, setOpen] = useState(false);
+  ({
+    disabled = false,
+    showedCountries,
+    statuses,
+    onToggle,
+    onClear,
+    mobilePanel,
+  }: ICountrySelectorProps) => {
+    const [desktopOpen, setOpen] = useState(false);
+    const open = mobilePanel?.open ?? desktopOpen;
     const [confirming, setConfirming] = useState(false);
     const dialog = useRef<HTMLDialogElement>(null);
     const clearButton = useRef<HTMLButtonElement>(null);
@@ -48,7 +58,7 @@ export const CountrySelector = memo(
     const root = useRef<HTMLDivElement>(null);
     const trigger = useRef<HTMLButtonElement>(null);
     useEffect(() => {
-      if (!open) {
+      if (!open || mobilePanel) {
         return;
       }
       const outside = (event: PointerEvent) => {
@@ -71,14 +81,15 @@ export const CountrySelector = memo(
         document.removeEventListener(SelectorEvent.PointerDown, outside);
         document.removeEventListener(SelectorEvent.KeyDown, keyDown);
       };
-    }, [open]);
+    }, [open, mobilePanel]);
 
     return (
-      <div className="country-selector" ref={root}>
+      <div className="country-selector" data-mobile={Boolean(mobilePanel)} ref={root}>
         <Button
           type="button"
           disabled={disabled}
           className="country-trigger"
+          hidden={Boolean(mobilePanel)}
           ref={trigger}
           aria-expanded={open}
           aria-controls="country-checklist"

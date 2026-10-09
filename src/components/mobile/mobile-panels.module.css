@@ -1,0 +1,88 @@
+.shell[open] {
+  display: contents;
+}
+.feature,
+.contents {
+  display: contents;
+}
+.feature[hidden],
+.bar[hidden],
+.sheetHeader[hidden] {
+  display: none;
+}
+.bar {
+  position: fixed;
+  left: var(--space-4);
+  right: var(--space-4);
+  bottom: max(var(--space-4), env(safe-area-inset-bottom));
+  z-index: 2;
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--color-glass-edge);
+  border-radius: var(--radius-panel);
+  background: var(--color-glass-raised);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--shadow-small);
+}
+.bar > button {
+  flex: 1;
+}
+.shell[data-mobile='true'][data-active]:not([data-active='']) {
+  --sheet-height: min(56dvh, var(--visible-height, 100dvh));
+  position: fixed;
+  inset: auto 0 auto;
+  top: calc(var(--visible-top, 0px) + var(--visible-height, 100dvh) - var(--sheet-height));
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: none;
+  height: var(--sheet-height);
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border-radius: var(--radius-panel) var(--radius-panel) 0 0;
+  background: var(--color-sheet);
+  overflow: hidden;
+}
+.shell[data-mobile='true'][data-active='trips']:has([data-expanded='true']) {
+  --sheet-height: max(
+    0px,
+    calc(var(--visible-height, 100dvh) - max(var(--space-4), env(safe-area-inset-top)))
+  );
+}
+.shell::backdrop {
+  background: var(--color-backdrop);
+}
+.sheetHeader {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font: 400 var(--text-body) / 1.5 var(--font-body);
+}
+.shell[data-mobile='true'][data-active]:not([data-active='']) .contents {
+  display: block;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.shell[data-mobile='true'][data-active]:not([data-active='']) .feature:not([hidden]) {
+  display: block;
+  height: 100%;
+  overflow: hidden;
+}
+.shell[data-mobile='true'][data-active]:not([data-active='']) .bar {
+  position: static;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: var(--space-2) var(--space-4) max(var(--space-2), env(safe-area-inset-bottom));
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}

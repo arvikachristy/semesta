@@ -63,3 +63,11 @@ A fully styled calendar would be a deliberate separate component with keyboard n
 6. Run the repository checks and production build. Add behaviour tests only for new behaviour; visually inspect style changes.
 
 Token naming follows the [Design Tokens Community Group](https://www.w3.org/community/design-tokens/) principle of storing design decisions as named, reusable values. CSS custom properties are enough for this repository; no token compiler or UI framework is needed.
+
+## Mobile sheets
+
+At 600px and below, route the Countries and Trips interfaces through `MobilePanels`. It owns the single active sheet and bottom navigation. Keep feature components mounted so closing a sheet or switching tabs preserves drafts. Desktop keeps its existing floating controls.
+
+Use the native dialog modal state for focus containment and scene input blocking. Countries and trip lists use the short sheet; trip details/editing use the expanded sheet. Use explicit Close and backdrop dismissal; no draggable heights in the MVP. The form fields scroll while actions and navigation remain visible. `visualViewport` sizes the sheet above the mobile keyboard; include safe-area padding. Use `--color-sheet` for mobile readability.
+
+Check Escape and focus return, switching tabs, a nested confirmation dialog, draft retention and keyboard-sized viewport changes when modifying this shell. Do not give individual features independent mobile overlays.

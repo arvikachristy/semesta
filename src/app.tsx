@@ -3,8 +3,7 @@ import type { IFrameReading } from './performance/frame-monitor';
 import { useEffect, useRef, useState } from 'react';
 import { countries } from './data/countries';
 import { useCountrySelection } from './hooks/use-country-selection';
-import { CountrySelector } from './components/country-selector';
-import { UpcomingTrips } from './components/trips/upcoming-trips';
+import { MobilePanels } from './components/mobile/mobile-panels';
 import type { CountryList } from './types/country';
 import type { CountryStatus } from './types/country-status';
 import { continentDefinitions } from './types/continent';
@@ -53,14 +52,13 @@ export const App = () => {
   return (
     <main>
       <FpsToken reading={frameReading} />
-      <CountrySelector
+      <MobilePanels
         showedCountries={showedCountries}
         statuses={statuses}
         disabled={!ready}
         onToggle={onToggle}
         onClear={onClear}
       />
-      <UpcomingTrips />
       <ul className="visually-hidden" id="continent-descriptions">
         {continentDefinitions.map((continent) => (
           <li key={continent.id}>
