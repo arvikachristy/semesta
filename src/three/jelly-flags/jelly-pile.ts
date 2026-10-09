@@ -1,88 +1,51 @@
 import * as THREE from 'three';
 import type { createSoftBody } from './jelly-soft-body';
 import { jellyParameters } from './jelly-parameters';
+import { createCollisionBroadphase } from './collision-broadphase';
 
 export const pileParameters = {
   dropInterval: 0.25,
-  collisionCellSize: 0.15,
-  contactMargin: 0.002,
+  dropAngle: 2.3999632297,
+  dropRadiusStep: 0.6180339887,
+  contactMargin: 0.0001,
   maxContactCorrection: 0.05,
   wallClearance: 0.015,
-  wakePenetration: 0.002,
+  wakePenetration: 0.008,
   neighbourMargin: 0.01,
 };
 interface ICollisionBody {
   body: ReturnType<typeof createSoftBody>;
   origin: THREE.Vector3;
-  faces: Array<readonly [number, number, number]>;
-  hash: Map<string, number[]>;
   bounds: THREE.Box3;
+  boundsRevision: number;
 }
+const ContactAxis = { X: 'x', Y: 'y', Z: 'z' } as const;
+type TContactAxis = (typeof ContactAxis)[keyof typeof ContactAxis];
+const horizontalAxes = [ContactAxis.X, ContactAxis.Z];
 
-// All particles share a glass-local frame. Surface contacts transfer corrections to both volumes.
+// Bodies retain their tetrahedral deformation. Between bodies, conservative bounds
+// contacts make dense stacks stable without testing every particle against every tet.
 export const createJellyPile = () => {
   const bodies = new Map<ReturnType<typeof createSoftBody>, ICollisionBody>();
   const entries: ICollisionBody[] = [];
-  const indexed = new Set<ICollisionBody>();
-  const triangle = new THREE.Triangle();
-  const normal = new THREE.Vector3();
-  const query = new THREE.Vector3();
-  const closest = new THREE.Vector3();
-  const nearest = new THREE.Vector3();
-  const weights = new THREE.Vector3();
-  const ab = new THREE.Vector3();
-  const ac = new THREE.Vector3();
-  const ad = new THREE.Vector3();
-  const ap = new THREE.Vector3();
-  const cross = new THREE.Vector3();
+  const visitOverlaps = createCollisionBroadphase<ICollisionBody>();
   const world = new THREE.Vector3();
+  const correction = new THREE.Vector3();
+  const contactBounds = new THREE.Box3();
   let accumulator = 0;
-  const key = (x: number, y: number, z: number) => `${x}:${y}:${z}`;
-  const cell = (value: number) => Math.floor(value / pileParameters.collisionCellSize);
 
-  const add = (body: ReturnType<typeof createSoftBody>) => {
-    if (bodies.has(body)) {
-      return;
-    }
-    const faces = new Map<string, readonly [number, number, number]>();
-    for (const { ids } of body.tets) {
-      for (let opposite = 0; opposite < 4; opposite++) {
-        const remaining = ids.filter((_, index) => index !== opposite);
-        const a = remaining[0];
-        let b = remaining[1];
-        let c = remaining[2];
-        const faceKey = [...remaining].sort((x, y) => x - y).join(':');
-        if (faces.has(faceKey)) {
-          faces.delete(faceKey);
-          continue;
-        }
-        triangle.set(body.rest[a], body.rest[b], body.rest[c]).getNormal(normal);
-        if (normal.dot(query.subVectors(body.rest[ids[opposite]], body.rest[a])) > 0) {
-          [b, c] = [c, b];
-        }
-        faces.set(faceKey, [a, b, c]);
+  const refreshBounds = () => {
+    for (const entry of entries) {
+      if (entry.body.isSleeping() && entry.boundsRevision === entry.body.getRevision()) {
+        continue;
+      }
+      entry.boundsRevision = entry.body.getRevision();
+      entry.bounds.makeEmpty();
+      for (const position of entry.body.positions) {
+        entry.bounds.expandByPoint(world.copy(position).add(entry.origin));
       }
     }
-    const entry: ICollisionBody = {
-      body,
-      origin: body.container?.origin ?? new THREE.Vector3(),
-      faces: [...faces.values()],
-      hash: new Map(),
-      bounds: new THREE.Box3(),
-    };
-    bodies.set(body, entry);
-    entries.push(entry);
   };
-
-  const contactBounds = new THREE.Box3();
-  const refreshBounds = () =>
-    bodies.forEach((entry) => {
-      entry.bounds.makeEmpty();
-      entry.body.positions.forEach((position) =>
-        entry.bounds.expandByPoint(world.copy(position).add(entry.origin)),
-      );
-    });
-  // Wake the touching group when its support moves or disappears, leaving distant piles asleep.
   const wakeConnected = (seed: ICollisionBody) => {
     const visited = new Set<ICollisionBody>([seed]);
     const queue = [seed];
@@ -98,123 +61,70 @@ export const createJellyPile = () => {
       }
     }
   };
-
-  const indexBody = (entry: ICollisionBody) => {
-    const { positions, tets } = entry.body;
-    entry.hash.forEach((bucket) => {
-      bucket.length = 0;
-    });
-    tets.forEach((tet, index) => {
-      const [a, b, c, d] = tet.ids;
-      const pa = positions[a];
-      const pb = positions[b];
-      const pc = positions[c];
-      const pd = positions[d];
-      const minX = cell(Math.min(pa.x, pb.x, pc.x, pd.x));
-      const maxX = cell(Math.max(pa.x, pb.x, pc.x, pd.x));
-      const minY = cell(Math.min(pa.y, pb.y, pc.y, pd.y));
-      const maxY = cell(Math.max(pa.y, pb.y, pc.y, pd.y));
-      const minZ = cell(Math.min(pa.z, pb.z, pc.z, pd.z));
-      const maxZ = cell(Math.max(pa.z, pb.z, pc.z, pd.z));
-      for (let x = minX; x <= maxX; x++) {
-        for (let y = minY; y <= maxY; y++) {
-          for (let z = minZ; z <= maxZ; z++) {
-            const bucketKey = key(x, y, z);
-            const bucket = entry.hash.get(bucketKey);
-            if (bucket) {
-              bucket.push(index);
-            } else {
-              entry.hash.set(bucketKey, [index]);
-            }
-          }
-        }
-      }
-    });
-  };
-  const contains = (entry: ICollisionBody, point: THREE.Vector3) => {
-    const candidates = entry.hash.get(key(cell(point.x), cell(point.y), cell(point.z)));
-    if (!candidates) {
-      return false;
+  const translate = (entry: ICollisionBody, amount: number, axis: TContactAxis) => {
+    correction.set(0, 0, 0);
+    correction[axis] = amount;
+    for (const position of entry.body.positions) {
+      position.add(correction);
     }
-    for (const index of candidates) {
-      const ids = entry.body.tets[index].ids;
-      const a = entry.body.positions[ids[0]];
-      const b = entry.body.positions[ids[1]];
-      const c = entry.body.positions[ids[2]];
-      const d = entry.body.positions[ids[3]];
-      ab.subVectors(b, a);
-      ac.subVectors(c, a);
-      ad.subVectors(d, a);
-      ap.subVectors(point, a);
-      const determinant = ab.dot(cross.crossVectors(ac, ad));
-      if (Math.abs(determinant) < 1e-12) {
-        continue;
-      }
-      const wb = ap.dot(cross.crossVectors(ac, ad)) / determinant;
-      const wc = ab.dot(cross.crossVectors(ap, ad)) / determinant;
-      const wd = ab.dot(cross.crossVectors(ac, ap)) / determinant;
-      const wa = 1 - wb - wc - wd;
-      if (Math.min(wa, wb, wc, wd) > 1e-7) {
-        return true;
+    entry.bounds.translate(correction);
+  };
+  const collide = (first: ICollisionBody, second: ICollisionBody) => {
+    const a = first.bounds;
+    const b = second.bounds;
+    let axis: TContactAxis = ContactAxis.Y;
+    let penetration = Math.min(a.max.y - b.min.y, b.max.y - a.min.y);
+    for (const candidate of horizontalAxes) {
+      const overlap = Math.min(
+        a.max[candidate] - b.min[candidate],
+        b.max[candidate] - a.min[candidate],
+      );
+      if (overlap < penetration) {
+        penetration = overlap;
+        axis = candidate;
       }
     }
-    return false;
-  };
-  const collide = (source: ICollisionBody, target: ICollisionBody) => {
-    if (!source.bounds.intersectsBox(target.bounds)) {
+    if (penetration <= 0) {
       return;
     }
-    for (const position of source.body.positions) {
-      query.copy(position).add(source.origin).sub(target.origin);
-      if (!contains(target, query)) {
-        continue;
+    const sign = a.min[axis] + a.max[axis] < b.min[axis] + b.max[axis] ? -1 : 1;
+    const depth = Math.min(
+      penetration + pileParameters.contactMargin,
+      pileParameters.maxContactCorrection,
+    );
+    if (axis === ContactAxis.Y) {
+      // The lower volume supports the upper one. Avoid forcing an entire sleeping
+      // pile into the floor when another jelly lands on top.
+      const upper = sign < 0 ? second : first;
+      const lower = sign < 0 ? first : second;
+      if (penetration > pileParameters.wakePenetration && lower.body.isSleeping()) {
+        lower.body.wake();
       }
-      let distance = Infinity;
-      let face: readonly [number, number, number] | null = null;
-      for (const candidate of target.faces) {
-        const [a, b, c] = candidate;
-        triangle.set(target.body.positions[a], target.body.positions[b], target.body.positions[c]);
-        triangle.closestPointToPoint(query, closest);
-        const squared = closest.distanceToSquared(query);
-        if (squared < distance) {
-          distance = squared;
-          face = candidate;
-          nearest.copy(closest);
+      if (upper.body.isSleeping()) {
+        if (penetration <= pileParameters.wakePenetration) {
+          return;
         }
+        upper.body.wake();
       }
-      if (!face) {
-        continue;
-      }
-      const a = target.body.positions[face[0]];
-      const b = target.body.positions[face[1]];
-      const c = target.body.positions[face[2]];
-      triangle.set(a, b, c).getNormal(normal);
-      triangle.getBarycoord(nearest, weights);
-      const depth = Math.min(
-        Math.sqrt(distance) + pileParameters.contactMargin,
-        pileParameters.maxContactCorrection,
-      );
-      if (Math.sqrt(distance) > pileParameters.wakePenetration) {
-        if (source.body.isSleeping()) {
-          wakeConnected(source);
-        }
-        if (target.body.isSleeping()) {
-          wakeConnected(target);
-        }
-      }
-      // Sleeping bodies support gentle resting contact without restarting their sleep timers.
-      const sourceWeight = source.body.isSleeping() ? 0 : 1;
-      const targetWeight = target.body.isSleeping() ? 0 : 1;
-      const denominator = sourceWeight + targetWeight * weights.lengthSq();
-      if (denominator === 0) {
-        continue;
-      }
-      const correction = depth / denominator;
-      position.addScaledVector(normal, correction * sourceWeight);
-      a.addScaledVector(normal, -correction * weights.x * targetWeight);
-      b.addScaledVector(normal, -correction * weights.y * targetWeight);
-      c.addScaledVector(normal, -correction * weights.z * targetWeight);
+      translate(upper, depth, axis);
+      return;
     }
+    if (penetration > pileParameters.wakePenetration) {
+      if (first.body.isSleeping()) {
+        first.body.wake();
+      }
+      if (second.body.isSleeping()) {
+        second.body.wake();
+      }
+    }
+    const firstWeight = Number(!first.body.isSleeping());
+    const secondWeight = Number(!second.body.isSleeping());
+    const total = firstWeight + secondWeight;
+    if (total === 0) {
+      return;
+    }
+    translate(first, (sign * depth * firstWeight) / total, axis);
+    translate(second, (-sign * depth * secondWeight) / total, axis);
   };
 
   const update = (delta: number) => {
@@ -222,52 +132,45 @@ export const createJellyPile = () => {
       accumulator = 0;
       return;
     }
-    refreshBounds();
-    entries.forEach((entry) => {
-      if (entry.body.isGrabbed()) {
-        wakeConnected(entry);
-      }
-    });
     const p = jellyParameters.physics;
     accumulator = Math.min(accumulator + delta, p.timestep * p.maxSubsteps);
     while (accumulator >= p.timestep) {
-      bodies.forEach(({ body }) => body.predict());
-      for (let iteration = 0; iteration < p.iterations; iteration++) {
-        bodies.forEach(({ body }) => body.solveConstraints());
-        if (bodies.size > 1 && (iteration === 0 || iteration === p.iterations - 1)) {
-          refreshBounds();
-          indexed.clear();
-          for (let a = 0; a < entries.length; a++) {
-            for (let b = a + 1; b < entries.length; b++) {
-              if (
-                (entries[a].body.isSleeping() && entries[b].body.isSleeping()) ||
-                !entries[a].bounds.intersectsBox(entries[b].bounds)
-              ) {
-                continue;
-              }
-              const first = entries[a];
-              const second = entries[b];
-              if (!indexed.has(first)) {
-                indexBody(first);
-                indexed.add(first);
-              }
-              if (!indexed.has(second)) {
-                indexBody(second);
-                indexed.add(second);
-              }
-              collide(entries[a], entries[b]);
-              collide(entries[b], entries[a]);
-            }
-          }
-        }
-        bodies.forEach(({ body }) => body.constrainEnvironment());
+      for (const { body } of entries) {
+        body.predict();
       }
-      bodies.forEach(({ body }) => body.finishStep());
+      for (let iteration = 0; iteration < p.iterations; iteration++) {
+        for (const { body } of entries) {
+          body.solveConstraints();
+        }
+        refreshBounds();
+        visitOverlaps(entries, collide);
+        for (const { body } of entries) {
+          body.constrainEnvironment();
+        }
+      }
+      for (const { body } of entries) {
+        body.finishStep();
+      }
       accumulator -= p.timestep;
     }
   };
   return {
-    add,
+    getAwakeCount: () =>
+      entries.reduce((count, entry) => count + Number(!entry.body.isSleeping()), 0),
+    add: (body: ReturnType<typeof createSoftBody>) => {
+      if (bodies.has(body)) {
+        return;
+      }
+      const entry: ICollisionBody = {
+        body,
+        origin: body.container?.origin ?? new THREE.Vector3(),
+        bounds: new THREE.Box3(),
+        boundsRevision: -1,
+      };
+      bodies.set(body, entry);
+      entries.push(entry);
+    },
+    update,
     remove: (body: ReturnType<typeof createSoftBody>) => {
       const entry = bodies.get(body);
       if (entry) {
@@ -277,11 +180,9 @@ export const createJellyPile = () => {
         bodies.delete(body);
       }
     },
-    update,
     dispose: () => {
       bodies.clear();
       entries.length = 0;
-      indexed.clear();
     },
   };
 };

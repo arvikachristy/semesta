@@ -164,3 +164,14 @@ canvas {
 .fps-token-time {
   font-size: 0.7rem;
 }
+
+.country-search {
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 0.65rem;
+  border: 1px solid #ad8589;
+  border-radius: 0.5rem;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+}

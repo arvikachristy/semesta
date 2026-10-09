@@ -170,7 +170,11 @@ export const createSoftBody = (
       }
     }
   };
-  const constrainEnvironment = () => positions.forEach(constrainParticle);
+  const constrainEnvironment = () => {
+    if (!sleeping) {
+      positions.forEach(constrainParticle);
+    }
+  };
   const predict = () => {
     if (sleeping) {
       return;

@@ -18,7 +18,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "benchmark": "node scripts/benchmark-countries.mjs",
+    "test:browser": "node scripts/check-countries.mjs"
   },
   "dependencies": {
     "react": "19.3.0",
@@ -27,6 +29,7 @@
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
+    "@playwright/test": "^1.63.0",
     "@types/node": "22.20.4",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",

@@ -4,7 +4,10 @@ import * as THREE from 'three';
 import type { CountryList } from '../../types/country';
 import { countries } from '../../data/countries';
 
-const textureHeight = 512;
+import { jellyPerformance } from './jelly-performance';
+import { flagArtwork } from '../../data/flag-definitions';
+
+const { textureHeight } = jellyPerformance;
 
 // Surface UVs are baked from rest coordinates, never current position.
 export const createFlagPattern = async (code: CountryList) => {
@@ -68,7 +71,8 @@ export const createFlagPattern = async (code: CountryList) => {
   const background =
     pattern.type === FlagPatternType.Svg
       ? pattern.background
-      : (pattern.colors.find((color) => color.toLowerCase() === '#ffffff') ?? pattern.colors[0]);
+      : (pattern.colors.find((color) => color.toLowerCase() === flagArtwork.white) ??
+        pattern.colors[0]);
   context.fillStyle = background;
   context.fillRect(0, 0, canvas.width, canvas.height);
   const drawWidth = Math.min(canvas.width, (canvas.height * size.width) / size.height);

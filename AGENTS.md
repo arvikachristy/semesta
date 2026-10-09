@@ -10,7 +10,10 @@
 - Preserve the current continent-glass composition and country jelly interactions; do not add unrelated decoration. Add dependencies or directories only for a current implementation need. Keep the README accurate.
 - Before handoff, run `npm run check` and `npm run build`, then verify behavior affected by the change. Report checks that could not run.
 
-- Store repeated string values in a shared enum or named key-value object and reference that source instead of duplicating literals. Reuse existing country, pattern, event, and attribute constants.
+- Store repeated domain values (country IDs, storage keys, event names, palettes and performance settings) in a shared enum or named key-value object and reference that source instead of duplicating literals. Reuse existing country, pattern, event, and attribute constants.
 - Avoid type assertions/casts (`as SomeType`, angle-bracket casts, and double casts). Prefer inference, explicit declarations, discriminated unions, runtime validation, or type guards. Use an assertion only as a documented last resort when the API cannot be typed or narrowed safely. `as const` is allowed for literal inference; it must not be used to disguise an unsafe cast.
 
 - Country names, continents and flag artwork share `src/data/countries.ts`, keyed by `CountryList`. Derive checklist groups from that registry and keep selected countries as enum IDs, not duplicated country objects.
+
+- Keep selection persistence behind `ICountrySelectionRepository`; components and Three.js must not access browser or account storage directly. Persist country IDs only.
+- Keep performance controls in `jelly-performance.ts`, and benchmark large catalogue changes with `npm run benchmark`. Do not claim GPU timings from render submission time or assume that sleeping jellies stop costing GPU work.

@@ -3,7 +3,21 @@ import { defineConfig, globalIgnores } from 'eslint/config';
 import react from 'eslint-plugin-react';
 import tseslint from 'typescript-eslint';
 
+const GlobalAccess = { ReadOnly: 'readonly' };
+
 export default defineConfig([
+  {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        process: GlobalAccess.ReadOnly,
+        console: GlobalAccess.ReadOnly,
+        window: GlobalAccess.ReadOnly,
+        document: GlobalAccess.ReadOnly,
+        performance: GlobalAccess.ReadOnly,
+      },
+    },
+  },
   {
     files: ['**/*.{js,mjs,ts,tsx}'],
     extends: [js.configs.recommended, tseslint.configs.recommended],
