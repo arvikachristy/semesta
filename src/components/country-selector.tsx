@@ -1,3 +1,5 @@
+import { Button, ButtonVariant } from './ui/button';
+import ui from './ui/ui.module.css';
 import { memo, useEffect, useRef, useState } from 'react';
 import { countryGroups } from '../data/countries';
 import type { CountryList } from '../types/country';
@@ -73,9 +75,10 @@ export const CountrySelector = memo(
 
     return (
       <div className="country-selector" ref={root}>
-        <button
+        <Button
           type="button"
           disabled={disabled}
+          className="country-trigger"
           ref={trigger}
           aria-expanded={open}
           aria-controls="country-checklist"
@@ -83,22 +86,22 @@ export const CountrySelector = memo(
         >
           Countries <span>{showedCountries.length} selected</span>
           <span aria-hidden="true">{open ? '⌄' : '⌃'}</span>
-        </button>
+        </Button>
         {open && (
-          <div className="country-checklist" id="country-checklist">
+          <div className={`${ui.surface} ${ui.raised} country-checklist`} id="country-checklist">
             <div className="country-actions">
               <span>{showedCountries.length} selected</span>
-              <button
+              <Button
                 type="button"
                 ref={clearButton}
                 disabled={disabled || showedCountries.length === 0}
                 onClick={() => setConfirming(true)}
               >
                 {selectorText.clear}
-              </button>
+              </Button>
             </div>
             <input
-              className="country-search"
+              className={`${ui.control} country-search`}
               type="search"
               aria-label={selectorText.search}
               placeholder={selectorText.search}
@@ -113,6 +116,7 @@ export const CountrySelector = memo(
                   <label className="country-option" key={country.code}>
                     <input
                       type="checkbox"
+                      className={ui.checkbox}
                       value={country.code}
                       checked={selected.has(country.code)}
                       onChange={(event) => onToggle(country.code, event.currentTarget.checked)}
@@ -131,7 +135,7 @@ export const CountrySelector = memo(
         )}
         {confirming && (
           <dialog
-            className="country-confirmation"
+            className={`${ui.surface} ${ui.raised} country-confirmation`}
             ref={dialog}
             aria-labelledby="clear-country-title"
             aria-describedby="clear-country-description"
@@ -141,12 +145,13 @@ export const CountrySelector = memo(
             <p id="clear-country-description">
               This removes every selected jelly. You can add countries again anytime.
             </p>
-            <div className="country-confirmation-actions">
-              <button type="button" autoFocus onClick={closeConfirmation}>
+            <div className={`${ui.actions} country-confirmation-actions`}>
+              <Button type="button" autoFocus onClick={closeConfirmation}>
                 {selectorText.cancel}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant={ButtonVariant.Primary}
                 disabled={disabled}
                 onClick={() => {
                   onClear();
@@ -154,7 +159,7 @@ export const CountrySelector = memo(
                 }}
               >
                 {selectorText.clear}
-              </button>
+              </Button>
             </div>
           </dialog>
         )}

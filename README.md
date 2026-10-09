@@ -21,6 +21,21 @@ Open **Countries** at the bottom to search and tick any of the 195 states (193 U
 
 The token at the top right shows FPS and average milliseconds per frame, sampled from the scene loop once per second. Green **Butter mode** means at least 50 FPS, amber **Jelly legs** means 30–49 FPS, and red **Potato mode** means below 30 FPS. Hidden-tab pauses reset sampling. This measures frame pacing; it does not isolate CPU or GPU cost. Thresholds and labels live in `src/performance/frame-monitor.ts`.
 
+## Upcoming trips MVP
+
+**Upcoming trips** opens a glass timeline panel on the right (collapsed initially on mobile). Dated trips appear chronologically, with undated trips last. Rows show compact dates and a circular flag thumbnail for the first destination; the **+** button creates a trip. Select a row to see its destinations and notes, edit it, or delete with confirmation. **All trips** returns to the timeline. Use **Save trip** to keep changes. Collapsing the panel retains the current draft, but reloading discards unsaved edits.
+
+Trips are separate from the cups: planning or deleting a trip never changes selected jellies. Destinations reuse the existing country registry and `CountryList` IDs. Trips are saved only in this browser under `semesta.upcoming-trips`; they do not sync across devices. Storage failures show a session-only warning. `ITripRepository` can later be backed by account storage without changing the panel.
+
+```mermaid
+flowchart LR
+  panel["UpcomingTrips: choose, create, delete"] --> editor["TripEditor: name, dates, country IDs, notes"]
+  editor --> state["useTrips: saved trip list"]
+  state <--> storage["ITripRepository → localStorage"]
+  registry["Existing countries registry"] --> editor
+  storage -. "future adapter" .-> account["Account storage"]
+```
+
 ## How the files fit together
 
 ```mermaid
@@ -131,3 +146,7 @@ The texture is marked as sRGB. `jelly-material.ts` then applies colour-dependent
 Vercel hosts the static Vite build. Import the personal GitHub repository into a Hobby project, set the production branch to `master`, and keep the root directory at the repository root. `vercel.json` installs with the pinned npm 11 version, runs lint, TypeScript and tests before the build, and publishes `dist`. Formatting is checked by GitHub CI; it is kept out of Vercel’s build because the host reported its copy of `vercel.json` as unformatted despite the committed file passing CI. No environment variables are required. Both `/` and `/countryjellies/` are generated HTML routes; flag SVGs are served from `/flags/`.
 
 Pull requests get preview deployments; merges into `master` deploy production. Vercel's Git connection must be authorized through your account before the first deployment. The Hobby plan is intended for personal, non-commercial use. Selection storage is scoped to the deployed origin, so localhost selections do not transfer to the production domain.
+
+## Interface design
+
+The DOM interface follows [Rose Glass](docs/design-system.md): shared glass surfaces, consistent 44px controls, burgundy actions and serif headings. Design values live in `src/styles/tokens.css`; reusable controls and recipes live in `src/components/ui/`. Read the guide before adding UI. Native calendar/option popups retain the browser's own appearance.

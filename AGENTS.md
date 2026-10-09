@@ -17,3 +17,11 @@
 
 - Keep selection persistence behind `ICountrySelectionRepository`; components and Three.js must not access browser or account storage directly. Persist country IDs only.
 - Keep performance controls in `jelly-performance.ts`, and benchmark large catalogue changes with `npm run benchmark`. Do not claim GPU timings from render submission time or assume that sleeping jellies stop costing GPU work.
+
+## UI design system
+
+- Before creating or changing DOM UI, read `docs/design-system.md` (Rose Glass), `src/styles/tokens.css` and `src/components/ui/ui.module.css`.
+- Use the shared `Button` with `ButtonVariant`; ESLint rejects raw buttons outside UI primitives. Use `ui.field`, `ui.control`, `ui.checkbox`, `ui.actions`, and `ui.surface` for their corresponding native elements.
+- Keep feature CSS for layout. Reuse tokens for colours, typography, control sizes, radii, spacing and states. Extend an existing recipe before introducing a new visual variant; do not restyle buttons/fields separately inside a feature.
+- Preserve native date/select behaviour. Their OS/browser popups are an explicit exception to visual theming; a custom calendar needs a deliberate accessible component, not ad hoc CSS or a fake input.
+- Verify UI alongside the country picker and trip editor at desktop and mobile widths, including focus, disabled states, field alignment and scrolling. Update the design guide when intentionally changing a shared pattern.

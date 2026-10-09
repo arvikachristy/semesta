@@ -45,5 +45,19 @@ export default defineConfig([
       'react/no-multi-comp': ['error', { ignoreStateless: false }],
     },
   },
+  {
+    files: ['src/**/*.tsx'],
+    ignores: ['src/components/ui/**', '**/*.spec.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'JSXOpeningElement[name.name="button"]',
+          message:
+            'Use the shared Button and ButtonVariant from components/ui/button. See docs/design-system.md.',
+        },
+      ],
+    },
+  },
   globalIgnores(['.next/**', 'dist/**', 'node_modules/**']),
 ]);

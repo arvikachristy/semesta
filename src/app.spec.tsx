@@ -36,6 +36,23 @@ afterEach(async () => {
 });
 
 describe('application selection state', () => {
+  it('keeps trip planning independent of the renderer and selected jellies', async () => {
+    await act(async () => root.render(<App />));
+    const initialCalls = setCountries.mock.calls.length;
+    const initialSelection = localStorage.getItem(selectionStorage.key);
+    const tripPanel = host.querySelector('aside[aria-label="Upcoming trips"]');
+    const newTrip = [...(tripPanel?.querySelectorAll('button') ?? [])].find(
+      (button) => button.getAttribute('aria-label') === 'New trip',
+    );
+    if (!newTrip) {
+      throw new Error('Missing new trip action');
+    }
+    await act(async () => newTrip.click());
+    expect(tripPanel?.querySelector('form')).not.toBeNull();
+    expect(startPlayground).toHaveBeenCalledOnce();
+    expect(setCountries.mock.calls).toHaveLength(initialCalls);
+    expect(localStorage.getItem(selectionStorage.key)).toBe(initialSelection);
+  });
   it('restores an intentionally empty selection before reconciling the scene', async () => {
     localStorage.setItem(
       selectionStorage.key,

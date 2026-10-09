@@ -1,0 +1,194 @@
+.panel {
+  position: absolute;
+  top: max(7rem, calc(env(safe-area-inset-top) + 6rem));
+  right: max(1rem, env(safe-area-inset-right));
+  z-index: 1;
+  width: min(24rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 13rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-5) 1rem;
+}
+.header h2 {
+  flex: 1;
+  margin: 0;
+  min-width: 0;
+  font-weight: 400;
+}
+.panel .heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0;
+  border-radius: var(--radius-control);
+  font-family: var(--font-display);
+  font-size: var(--text-title);
+  text-align: left;
+}
+.collapseIndicator {
+  font-family: var(--font-body);
+  font-size: var(--text-label);
+  color: var(--color-muted);
+}
+.body {
+  padding: 0 var(--space-5) var(--space-5);
+  font-size: var(--text-body);
+  line-height: 1.5;
+}
+.editor {
+  display: grid;
+  gap: var(--space-4);
+}
+.dates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+.editorActions {
+  position: sticky;
+  bottom: 0;
+  padding-block: var(--space-2);
+  background: var(--color-glass-raised);
+  backdrop-filter: var(--glass-filter);
+  border-radius: var(--radius-control);
+}
+.destinations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.destinations li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding-left: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-round);
+}
+.details h3 {
+  margin: 1rem 0 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-display);
+  font-size: var(--text-title);
+  font-weight: 400;
+}
+.dateSummary {
+  font-size: var(--text-small);
+  color: var(--color-muted);
+}
+.notes {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.warning {
+  font-size: var(--text-small);
+}
+.deleteConfirmation {
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--color-border);
+}
+@media (max-width: 600px) {
+  .panel {
+    width: min(24rem, calc(100vw - 2rem));
+    max-height: min(65dvh, calc(100dvh - 13rem));
+  }
+}
+
+.empty {
+  margin: 1.25rem 0 2rem;
+  color: var(--color-muted);
+}
+.timeline {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 2.75rem;
+  bottom: 2.75rem;
+  left: 3.25rem;
+  width: 1px;
+  background: var(--color-border);
+}
+.panel .tripRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.75rem 3.25rem minmax(0, 1fr) 0.5rem;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  padding: 1.25rem 0;
+  border-radius: var(--radius-control);
+  text-align: left;
+}
+.tripRow::before {
+  content: '';
+  position: absolute;
+  left: calc(3.25rem - 3px);
+  top: calc(50% - 3px);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-muted);
+}
+.tripRow:hover {
+  background: var(--color-hover);
+}
+.dateMarker {
+  display: grid;
+  gap: 0.15rem;
+  font-size: var(--text-small);
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+.dateMarker small {
+  font-size: 0.65rem;
+  white-space: nowrap;
+}
+.thumbnail {
+  display: block;
+  width: 3.25rem;
+  height: 3.25rem;
+  overflow: hidden;
+  border: 1px solid var(--color-glass-edge);
+  border-radius: 50%;
+  background: var(--color-control);
+  box-shadow: var(--shadow-small);
+}
+.thumbnail img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.tripSummary {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.tripName {
+  font-family: var(--font-display);
+  font-size: var(--text-item);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.chevron {
+  font-size: 1.5rem;
+  font-weight: 300;
+  color: var(--color-muted);
+}
+.panel .back {
+  padding-left: 0;
+  font-size: var(--text-label);
+}

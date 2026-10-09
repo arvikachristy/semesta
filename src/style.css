@@ -25,8 +25,8 @@ main {
 body {
   margin: 0;
   overflow: hidden;
-  background: #f3c9c7;
-  font-family: system-ui, sans-serif;
+  background: var(--color-world);
+  font-family: var(--font-body);
 }
 
 main {
@@ -48,24 +48,14 @@ canvas {
   z-index: 1;
   width: min(24rem, calc(100vw - 2rem));
   transform: translateX(-50%);
-  color: #63323a;
+  color: var(--color-ink);
 }
-.country-selector button {
-  display: flex;
-  align-items: center;
+.country-trigger {
   justify-content: space-between;
-  gap: 0.75rem;
   width: 100%;
-  min-height: 3rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid #ad8589;
-  border-radius: 999px;
-  background: #fff9f8;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
+  gap: var(--space-3);
 }
-.country-selector button span {
+.country-trigger span {
   font-size: 0.8rem;
 }
 .country-checklist {
@@ -76,9 +66,6 @@ canvas {
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 1rem;
-  border: 1px solid #ad8589;
-  border-radius: 1rem;
-  background: #fff9f8;
 }
 .country-checklist fieldset {
   margin: 0;
@@ -103,21 +90,9 @@ canvas {
   min-height: 2.75rem;
   cursor: pointer;
 }
-.country-option input {
-  width: 1.1rem;
-  height: 1.1rem;
-  margin: 0;
-  accent-color: #63323a;
-}
 .country-option small {
   font-size: 0.7rem;
 }
-.country-selector button:focus-visible,
-.country-option input:focus-visible {
-  outline: 2px solid #63323a;
-  outline-offset: 3px;
-}
-
 .fps-token {
   position: absolute;
   top: max(1rem, env(safe-area-inset-top));
@@ -129,23 +104,23 @@ canvas {
   min-width: 10.5rem;
   padding: 0.75rem 1rem;
   border: 1px solid currentColor;
-  border-radius: 1.25rem;
-  background: #fff9f8;
-  color: #63323a;
+  border-radius: var(--radius-control);
+  background: var(--color-glass-raised);
+  color: var(--color-ink);
   pointer-events: none;
   font-variant-numeric: tabular-nums;
 }
 .fps-token[data-status='good'] {
-  color: #285b3b;
-  background: #eef7ee;
+  color: var(--color-success);
+  background: var(--color-success-surface);
 }
 .fps-token[data-status='medium'] {
-  color: #805016;
-  background: #fff3d9;
+  color: var(--color-warning);
+  background: var(--color-warning-surface);
 }
 .fps-token[data-status='bad'] {
-  color: #943a48;
-  background: #ffe8eb;
+  color: var(--color-error);
+  background: var(--color-error-surface);
 }
 .fps-token-face {
   font-size: 1.4rem;
@@ -166,63 +141,29 @@ canvas {
 }
 
 .country-search {
-  width: 100%;
-  margin-bottom: 1rem;
-  padding: 0.65rem;
-  border: 1px solid #ad8589;
-  border-radius: 0.5rem;
-  color: inherit;
-  background: transparent;
-  font: inherit;
+  margin-bottom: var(--space-4);
 }
-
 .country-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
-  font-size: 0.8rem;
-}
-.country-actions button {
-  width: auto;
-  min-height: 2.5rem;
-  padding: 0.4rem 0.85rem;
-}
-.country-selector button:disabled {
-  opacity: 0.45;
-  cursor: default;
+  gap: var(--space-4);
+  margin-bottom: var(--space-3);
+  font-size: var(--text-small);
 }
 .country-confirmation {
   width: min(24rem, calc(100vw - 2rem));
-  padding: 1.5rem;
-  border: 1px solid #ad8589;
-  border-radius: 1.25rem;
-  background: #fff9f8;
-  color: inherit;
+  padding: var(--space-5);
 }
 .country-confirmation::backdrop {
-  background: rgb(99 50 58 / 25%);
+  background: var(--color-backdrop);
 }
 .country-confirmation h2 {
   margin: 0;
-  font-size: 1.1rem;
+  font: 400 var(--text-title) / 1.2 var(--font-display);
 }
 .country-confirmation p {
-  margin: 0.75rem 0 1.25rem;
-  font-size: 0.9rem;
+  margin: var(--space-3) 0 var(--space-5);
+  font-size: var(--text-body);
   line-height: 1.5;
-}
-.country-confirmation-actions {
-  display: flex;
-  gap: 0.75rem;
-}
-.country-confirmation-actions button {
-  justify-content: center;
-  padding: 0.65rem;
-  font-size: 0.85rem;
-}
-.country-confirmation-actions button:last-child {
-  background: #63323a;
-  color: #fff9f8;
 }
