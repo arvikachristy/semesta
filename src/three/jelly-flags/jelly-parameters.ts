@@ -1,7 +1,7 @@
 // Physics uses world-sized local units. Constraint strengths are in the range 0-1.
 export const jellyParameters = {
   physics: {
-    cells: [4, 3, 2] as const,
+    cells: [3, 2, 1] as const,
     timestep: 1 / 60,
     maxSubsteps: 3,
     iterations: 5,

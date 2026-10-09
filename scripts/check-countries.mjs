@@ -8,6 +8,11 @@ try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') {
+      errors.push(`${message.text()} (${message.location().url})`);
+    }
+  });
   await page.goto('http://127.0.0.1:5173/');
   const countries = await page.evaluate(
     async () => (await import('/src/types/country.ts')).CountryList,

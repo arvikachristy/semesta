@@ -6,7 +6,7 @@ interface IBoundedBody {
 }
 
 // Sweep along the stack's vertical axis. Bodies separated in height never enter
-// the expensive particle/tetrahedron contact tests. Reuse the sorted array.
+// contact response. Reuse the sorted array instead of allocating pairs each frame.
 export const createCollisionBroadphase = <T extends IBoundedBody>() => {
   const sorted: T[] = [];
   return (entries: readonly T[], collide: (first: T, second: T) => void) => {

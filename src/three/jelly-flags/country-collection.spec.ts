@@ -8,6 +8,8 @@ import { createGlassSet } from '../glasses/glass-set';
 import { CountryList } from '../../types/country';
 import { CountryStatus } from '../../types/country-status';
 import { ContinentId } from '../../types/continent';
+import { countryIds } from '../../data/countries';
+import { jellyPerformance } from './jelly-performance';
 
 const setup = () => {
   const glasses = createGlassSet();
@@ -57,6 +59,17 @@ const setup = () => {
 };
 
 describe('country collection reconciliation', () => {
+  it('bounds a mass insertion and eventually admits queued flags even while the pile stays awake', async () => {
+    const s = setup();
+    const ready = s.collection.setCountries(countryIds.slice(0, 40));
+    s.pending.forEach((entry) => entry.resolve());
+    await ready;
+    s.collection.update(5);
+    expect(s.collection.blocks).toHaveLength(jellyPerformance.maxAwakeAcrossGlasses);
+    s.collection.update(jellyPerformance.maxDropPause + 0.01);
+    expect(s.collection.blocks).toHaveLength(jellyPerformance.maxAwakeAcrossGlasses + 1);
+    s.dispose();
+  });
   it('invalidates shadows for insertion, deformation and removal, then becomes quiet', async () => {
     const s = setup();
     const ready = s.collection.setCountries([CountryList.Indonesia]);
