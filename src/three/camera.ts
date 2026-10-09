@@ -1,10 +1,12 @@
 import * as THREE from 'three';
+import { createCameraPan } from './pan';
 
 // Y points up. Fit the whole circle while preserving the downward viewing angle.
 export const createCamera = (compositionBounds: THREE.Box3) => {
   const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 200);
   const cameraTarget = compositionBounds.getCenter(new THREE.Vector3());
   const cameraOffset = new THREE.Vector3(0, 4.5, 8);
+  const panBetween = createCameraPan(camera, cameraTarget, compositionBounds);
   const minDistance = 3;
   let maxDistance = 22;
   const corner = new THREE.Vector3();
@@ -50,5 +52,5 @@ export const createCamera = (compositionBounds: THREE.Box3) => {
     );
   };
 
-  return { camera, cameraTarget, cameraOffset, zoomBy, fitViewport };
+  return { camera, cameraTarget, cameraOffset, zoomBy, panBetween, fitViewport };
 };
