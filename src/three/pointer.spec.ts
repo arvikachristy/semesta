@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { createFlagBlock } from './jelly-flags/flag-block';
 import { createGlassSet } from './glasses/glass-set';
 import { bindPointerEvents } from './pointer';
+import { createCameraPan } from './pan';
 
 const Events = {
   down: 'pointerdown',
@@ -23,6 +24,13 @@ describe('pointer gestures', () => {
   let unbind: () => void;
   let glassPoint: THREE.Vector2;
   const zoomBy = vi.fn();
+  const frames = new Map<number, FrameRequestCallback>();
+  let nextFrame = 0;
+  const flushGesture = () => {
+    const callbacks = [...frames.values()];
+    frames.clear();
+    callbacks.forEach((callback) => callback(performance.now()));
+  };
   const captures = new Set<number>();
   const send = (type: string, x: number, y: number, options: PointerEventInit = {}) =>
     canvas.dispatchEvent(
@@ -37,10 +45,25 @@ describe('pointer gestures', () => {
       }),
     );
   const bind = (blocks: ReturnType<typeof createFlagBlock>[] = []) => {
-    unbind = bindPointerEvents({ canvas, camera, cameraTarget, blocks, glasses, zoomBy }).unbind;
+    unbind = bindPointerEvents({
+      canvas,
+      camera,
+      blocks,
+      glasses,
+      zoomBy,
+      panBetween: createCameraPan(camera, cameraTarget, glasses.bounds),
+    }).unbind;
   };
 
   beforeEach(() => {
+    frames.clear();
+    nextFrame = 0;
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      const id = ++nextFrame;
+      frames.set(id, callback);
+      return id;
+    });
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id));
     zoomBy.mockClear();
     canvas = document.createElement('canvas');
     document.body.append(canvas);
@@ -71,6 +94,7 @@ describe('pointer gestures', () => {
     canvas.remove();
     captures.clear();
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it.each(Object.values(PointerTypes))(
@@ -151,7 +175,13 @@ describe('pointer gestures', () => {
       syncSurface: vi.fn(),
       getBody: () => null,
     };
-    const binding = bindPointerEvents({ canvas, camera, cameraTarget, blocks: [block], glasses });
+    const binding = bindPointerEvents({
+      canvas,
+      camera,
+      blocks: [block],
+      glasses,
+      panBetween: createCameraPan(camera, cameraTarget, glasses.bounds),
+    });
     unbind = binding.unbind;
     const { x, y } = glassPoint;
     send(Events.down, x, y);
@@ -195,26 +225,70 @@ describe('pointer gestures', () => {
     expect(glasses.object.rotation.y).toBe(0);
   });
 
-  it('zooms with both touch pointers and suppresses rotation/panning until all fingers lift', () => {
+  it('zooms and pans with both touch pointers, then waits for all fingers to lift', () => {
     const before = cameraTarget.clone();
     const first = { pointerType: PointerTypes.touch, pointerId: 1 };
     const second = { pointerType: PointerTypes.touch, pointerId: 2, isPrimary: false };
-    send(Events.down, 10, 10, first);
-    send(Events.down, 110, 10, second);
-    send(Events.move, 160, 10, second);
+    send(Events.down, 10, 300, first);
+    send(Events.down, 110, 300, second);
+    send(Events.move, 160, 300, second);
+    flushGesture();
     expect(zoomBy).toHaveBeenLastCalledWith(1.5);
-    send(Events.move, -40, 10, first);
+    send(Events.move, -40, 300, first);
+    flushGesture();
     expect(zoomBy).toHaveBeenLastCalledWith(200 / 150);
     expect(cameraTarget.equals(before)).toBe(true);
     expect(glasses.object.rotation.y).toBe(0);
-    send(Events.up, 160, 10, second);
+    const afterGesture = cameraTarget.clone();
+    send(Events.up, 160, 300, second);
     send(Events.move, 100, 100, first);
-    expect(cameraTarget.equals(before)).toBe(true);
+    expect(cameraTarget.equals(afterGesture)).toBe(true);
     send(Events.up, 100, 100, first);
     expect(captures.size).toBe(0);
     send(Events.down, 10, 10, first);
     send(Events.move, 60, 10, first);
     expect(cameraTarget.x).toBeLessThan(before.x);
+  });
+
+  it.each(Object.values(PointerTypes))(
+    'pans beyond the old clamp with %s without moving the glasses',
+    (pointerType) => {
+      const before = glasses.object.position.clone();
+      send(Events.down, 10, 300, { pointerType });
+      send(Events.move, 1000, 300, { pointerType });
+      expect(cameraTarget.x).toBeLessThan(-0.8);
+      expect(glasses.object.position.equals(before)).toBe(true);
+      expect(glasses.object.rotation.y).toBe(0);
+    },
+  );
+
+  it('pans with a two-finger drag beginning over a glass', () => {
+    const before = cameraTarget.clone();
+    const { x, y } = glassPoint;
+    const first = { pointerType: PointerTypes.touch, pointerId: 1 };
+    const second = { pointerType: PointerTypes.touch, pointerId: 2, isPrimary: false };
+    send(Events.down, x, y, first);
+    send(Events.down, x + 100, y, second);
+    send(Events.move, x + 50, y, first);
+    send(Events.move, x + 150, y, second);
+    flushGesture();
+    expect(cameraTarget.x).toBeLessThan(before.x);
+    expect(glasses.object.rotation.y).toBe(0);
+    send(Events.up, x + 50, y, first);
+    send(Events.up, x + 150, y, second);
+    expect(captures.size).toBe(0);
+  });
+
+  it('does not temporarily zoom when both fingers move together in a frame', () => {
+    const first = { pointerType: PointerTypes.touch, pointerId: 1 };
+    const second = { pointerType: PointerTypes.touch, pointerId: 2, isPrimary: false };
+    send(Events.down, 10, 300, first);
+    send(Events.down, 110, 300, second);
+    send(Events.move, 90, 300, first);
+    send(Events.move, 190, 300, second);
+    flushGesture();
+    expect(zoomBy).not.toHaveBeenCalled();
+    expect(cameraTarget.x).toBeLessThan(0);
   });
 
   it.each([Events.cancel, Events.lost, Events.blur])(

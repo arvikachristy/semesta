@@ -28,7 +28,9 @@ export const startPlayground = (
   const quality = createRenderQuality();
   const scene = createScene();
   const glasses = createGlassSet();
-  const { camera, cameraTarget, cameraOffset, zoomBy, fitViewport } = createCamera(glasses.bounds);
+  const { camera, cameraTarget, cameraOffset, zoomBy, panBetween, fitViewport } = createCamera(
+    glasses.bounds,
+  );
   const lighting = createLights(renderer);
   const { ambientLight, directionalLight } = lighting;
   scene.environment = lighting.environment;
@@ -43,10 +45,10 @@ export const startPlayground = (
   input = bindPointerEvents({
     canvas,
     camera,
-    cameraTarget,
     blocks: collection.blocks,
     glasses,
     zoomBy,
+    panBetween,
   });
   const onResize = () => {
     resize(renderer, camera, quality.getScale());

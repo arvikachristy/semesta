@@ -16,20 +16,20 @@ const PointerType = { Touch: 'touch' };
 interface IPointerOptions {
   canvas: HTMLCanvasElement;
   camera: THREE.PerspectiveCamera;
-  cameraTarget: THREE.Vector3;
   blocks: ReturnType<typeof createFlagBlock>[];
   glasses: ReturnType<typeof createGlassSet>;
   zoomBy?: (factor: number) => void;
+  panBetween: (from: THREE.Vector2, to: THREE.Vector2) => void;
 }
 
 // A hit creates a camera-facing grab plane. Ray points are converted to the body's local space.
 export const bindPointerEvents = ({
   canvas,
   camera,
-  cameraTarget,
   blocks,
   glasses,
   zoomBy,
+  panBetween,
 }: IPointerOptions) => {
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
@@ -37,22 +37,55 @@ export const bindPointerEvents = ({
   const point = new THREE.Vector3();
   const normal = new THREE.Vector3();
   const previous = new THREE.Vector2();
+  const previousPanPointer = new THREE.Vector2();
+  const pinchCentre = new THREE.Vector2();
+  const previousPinchCentre = new THREE.Vector2();
   let activePointer: number | null = null;
   let grabbed: ReturnType<typeof createFlagBlock> | null = null;
   let rotatingGlasses = false;
   const touches = new Map<number, THREE.Vector2>();
   let pinching = false;
   let previousPinchDistance = 0;
+  let pinchFrame: number | null = null;
   const pinchDistance = () => {
     const [first, second] = touches.values();
     return first && second ? first.distanceTo(second) : 0;
   };
-  const updateRay = (event: PointerEvent) => {
+  const setNdc = (target: THREE.Vector2, x: number, y: number) => {
     const bounds = canvas.getBoundingClientRect();
-    pointer.set(
-      ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
-      1 - ((event.clientY - bounds.top) / bounds.height) * 2,
+    target.set(
+      ((x - bounds.left) / bounds.width) * 2 - 1,
+      1 - ((y - bounds.top) / bounds.height) * 2,
     );
+  };
+  const updatePinchCentre = () => {
+    const [first, second] = touches.values();
+    if (first && second) {
+      setNdc(pinchCentre, (first.x + second.x) / 2, (first.y + second.y) / 2);
+    }
+  };
+  const cancelPinchFrame = () => {
+    if (pinchFrame !== null) {
+      cancelAnimationFrame(pinchFrame);
+      pinchFrame = null;
+    }
+  };
+  const applyPinch = () => {
+    cancelPinchFrame();
+    if (!pinching || touches.size < 2) {
+      return;
+    }
+    updatePinchCentre();
+    panBetween(previousPinchCentre, pinchCentre);
+    previousPinchCentre.copy(pinchCentre);
+    const distance = pinchDistance();
+    if (distance > 0 && previousPinchDistance > 0 && distance !== previousPinchDistance) {
+      zoomBy?.(distance / previousPinchDistance);
+    }
+    previousPinchDistance = distance;
+  };
+  const updateRay = (event: PointerEvent) => {
+    setNdc(pointer, event.clientX, event.clientY);
     camera.updateMatrixWorld();
     blocks.forEach((block) => block.object.updateWorldMatrix(true, true));
     glasses.object.updateWorldMatrix(true, true);
@@ -79,6 +112,7 @@ export const bindPointerEvents = ({
       touches.set(event.pointerId, new THREE.Vector2(event.clientX, event.clientY));
       canvas.setPointerCapture(event.pointerId);
       if (touches.size >= 2) {
+        cancelPinchFrame();
         // Keep both captures, but cancel the one-finger action without launching a jelly.
         grabbed?.endGrab(false);
         grabbed = null;
@@ -86,6 +120,8 @@ export const bindPointerEvents = ({
         activePointer = null;
         pinching = true;
         previousPinchDistance = pinchDistance();
+        updatePinchCentre();
+        previousPinchCentre.copy(pinchCentre);
         return;
       }
       if (pinching) {
@@ -99,6 +135,7 @@ export const bindPointerEvents = ({
     const intersection = hit();
     activePointer = event.pointerId;
     previous.set(event.clientX, event.clientY);
+    previousPanPointer.copy(pointer);
     if (intersection) {
       grabbed = blocks.find((block) => intersection.object.parent === block.object) ?? null;
       if (grabbed) {
@@ -116,11 +153,14 @@ export const bindPointerEvents = ({
     if (touch) {
       touch.set(event.clientX, event.clientY);
       if (pinching) {
-        const distance = pinchDistance();
-        if (distance > 0 && previousPinchDistance > 0) {
-          zoomBy?.(distance / previousPinchDistance);
+        if (touches.size < 2) {
+          return;
         }
-        previousPinchDistance = distance;
+        // Read both fingers once per frame: their separate events must not create
+        // a temporary pinch or hit zoom limits during a parallel two-finger pan.
+        if (pinchFrame === null) {
+          pinchFrame = requestAnimationFrame(applyPinch);
+        }
         return;
       }
     }
@@ -140,20 +180,19 @@ export const bindPointerEvents = ({
       // Only turn around world Y: the circle and all glass bases stay on the floor.
       glasses.rotateBy((event.clientX - previous.x) / canvas.clientWidth);
     } else {
-      cameraTarget.x = THREE.MathUtils.clamp(
-        cameraTarget.x - ((event.clientX - previous.x) / canvas.clientWidth) * 4,
-        -0.8,
-        0.8,
-      );
-      cameraTarget.z = THREE.MathUtils.clamp(
-        cameraTarget.z - ((event.clientY - previous.y) / canvas.clientHeight) * 4,
-        -1.2,
-        1.2,
-      );
+      panBetween(previousPanPointer, pointer);
     }
     previous.set(event.clientX, event.clientY);
+    previousPanPointer.copy(pointer);
   };
   const up = (event: PointerEvent) => {
+    if (touches.has(event.pointerId) && pinchFrame !== null) {
+      if (event.type === PointerEventName.Up) {
+        applyPinch();
+      } else {
+        cancelPinchFrame();
+      }
+    }
     if (touches.delete(event.pointerId)) {
       if (pinching) {
         if (canvas.hasPointerCapture(event.pointerId)) {
@@ -161,6 +200,8 @@ export const bindPointerEvents = ({
         }
         // After one finger lifts, wait for all fingers to lift before panning again.
         previousPinchDistance = pinchDistance();
+        updatePinchCentre();
+        previousPinchCentre.copy(pinchCentre);
         pinching = touches.size > 0;
         canvas.style.cursor = Cursor.Grab;
         return;
@@ -171,6 +212,7 @@ export const bindPointerEvents = ({
     }
   };
   const cancel = () => {
+    cancelPinchFrame();
     const ids = [...touches.keys()];
     touches.clear();
     pinching = false;
