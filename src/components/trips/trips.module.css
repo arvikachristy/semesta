@@ -40,9 +40,13 @@
   font-size: var(--text-body);
   line-height: 1.5;
 }
-.editor {
+.editor,
+.editorFields {
   display: grid;
   gap: var(--space-4);
+}
+.editorFields {
+  align-content: start;
 }
 .dates {
   display: grid;
@@ -191,4 +195,61 @@
 .panel .back {
   padding-left: 0;
   font-size: var(--text-label);
+}
+
+.panel[data-mobile='true'] {
+  position: static;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+.panel[data-mobile='true'] .header {
+  flex: 0 0 auto;
+  padding: var(--space-2) var(--space-5);
+}
+.panel[data-mobile='true'] .collapseIndicator {
+  display: none;
+}
+.panel[data-mobile='true'] .body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 0;
+}
+.panel[data-mobile='true'][data-editing='true'] .body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.panel[data-mobile='true'] .body[hidden] {
+  display: none;
+}
+.panel[data-mobile='true'] .editor {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 0;
+}
+.panel[data-mobile='true'] .editorFields {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+  flex: 1;
+  padding: var(--space-1);
+}
+.panel[data-mobile='true'] .editorActions {
+  position: static;
+  flex: 0 0 auto;
+  background: transparent;
+  backdrop-filter: none;
 }

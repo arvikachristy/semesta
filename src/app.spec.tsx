@@ -22,6 +22,27 @@ const click = async (query: string) => {
   await act(async () => element.click());
 };
 beforeEach(() => {
+  // jsdom has no dialog implementation; browser tests verify native modal behaviour.
+  Object.defineProperties(HTMLDialogElement.prototype, {
+    show: {
+      configurable: true,
+      value(this: HTMLDialogElement) {
+        this.open = true;
+      },
+    },
+    showModal: {
+      configurable: true,
+      value(this: HTMLDialogElement) {
+        this.open = true;
+      },
+    },
+    close: {
+      configurable: true,
+      value(this: HTMLDialogElement) {
+        this.open = false;
+      },
+    },
+  });
   localStorage.clear();
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.mocked(startPlayground).mockReturnValue({ setCountries, dispose });
@@ -31,11 +52,46 @@ beforeEach(() => {
 afterEach(async () => {
   await act(async () => root.unmount());
   host.remove();
+  for (const method of ['show', 'showModal', 'close']) {
+    Reflect.deleteProperty(HTMLDialogElement.prototype, method);
+  }
   vi.clearAllMocks();
   vi.unstubAllGlobals();
 });
 
 describe('application selection state', () => {
+  it('opens one mobile sheet at a time and preserves a trip draft after switching and closing', async () => {
+    vi.stubGlobal('innerWidth', 390);
+    await act(async () => root.render(<App />));
+    const shell = host.querySelector('dialog');
+    expect(shell?.getAttribute('data-active')).toBe('');
+    await click('nav button:nth-child(2)');
+    expect(shell?.getAttribute('data-active')).toBe('trips');
+    await click('button[aria-label="New trip"]');
+    const input = host.querySelector('form input');
+    if (!(input instanceof HTMLInputElement)) {
+      throw new Error('Missing trip name');
+    }
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(
+        input,
+        'Summer plans',
+      );
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await click('nav button:first-child');
+    expect(shell?.getAttribute('data-active')).toBe('countries');
+    expect(host.querySelector('.country-checklist')).not.toBeNull();
+    await click('nav button:nth-child(2)');
+    expect(input.value).toBe('Summer plans');
+    await click('button[aria-label="Close sheet"]');
+    expect(shell?.getAttribute('data-active')).toBe('');
+    await click('nav button:nth-child(2)');
+    expect(host.querySelector('form input')).toBe(input);
+    expect(input.value).toBe('Summer plans');
+    expect(startPlayground).toHaveBeenCalledOnce();
+  });
+
   it('keeps trip planning independent of the renderer and selected jellies', async () => {
     await act(async () => root.render(<App />));
     const initialCalls = setCountries.mock.calls.length;

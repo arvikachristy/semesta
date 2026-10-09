@@ -1,3 +1,5 @@
+import { mobilePanelText } from '../../types/mobile-panel';
+import type { IMobilePanelState } from '../../types/mobile-panel';
 import { Button, ButtonVariant } from '../ui/button';
 import ui from '../ui/ui.module.css';
 import { memo, useState } from 'react';
@@ -11,19 +13,29 @@ import styles from './trips.module.css';
 const tripUi = {
   panelId: 'upcoming-trips-panel',
   newEditorKey: 'new-trip',
-  compactWidth: 600,
   newTrip: 'New trip',
 };
 
-export const UpcomingTrips = memo(() => {
+interface IUpcomingTripsProps {
+  mobilePanel?: IMobilePanelState;
+}
+
+export const UpcomingTrips = memo(({ mobilePanel }: IUpcomingTripsProps) => {
   const { trips, ready, warning, saveTrip, removeTrip } = useTrips();
-  const [open, setOpen] = useState(() => window.innerWidth > tripUi.compactWidth);
+  const [desktopOpen, setOpen] = useState(true);
+  const open = mobilePanel?.open ?? desktopOpen;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const selected = trips.find((trip) => trip.id === selectedId);
   return (
-    <aside className={`${ui.surface} ${styles.panel}`} aria-label="Upcoming trips">
+    <aside
+      className={`${ui.surface} ${styles.panel}`}
+      aria-label="Upcoming trips"
+      data-mobile={Boolean(mobilePanel)}
+      data-expanded={editing || Boolean(selected)}
+      data-editing={editing}
+    >
       <header className={styles.header}>
         <h2>
           <Button
@@ -32,7 +44,7 @@ export const UpcomingTrips = memo(() => {
             type="button"
             aria-expanded={open}
             aria-controls={tripUi.panelId}
-            onClick={() => setOpen((current) => !current)}
+            onClick={() => (mobilePanel ? mobilePanel.onClose() : setOpen((current) => !current))}
           >
             Upcoming trips
             <span className={styles.collapseIndicator} aria-hidden="true">
@@ -55,6 +67,16 @@ export const UpcomingTrips = memo(() => {
         >
           +
         </Button>
+        {mobilePanel && (
+          <Button
+            data-sheet-close
+            variant={ButtonVariant.Quiet}
+            onClick={mobilePanel.onClose}
+            aria-label={mobilePanelText.close}
+          >
+            {mobilePanelText.closeLabel}
+          </Button>
+        )}
       </header>
       <div className={styles.body} id={tripUi.panelId} hidden={!open}>
         {warning && (
