@@ -128,6 +128,6 @@ The texture is marked as sRGB. `jelly-material.ts` then applies colour-dependent
 
 ## Deployment
 
-Vercel hosts the static Vite build. Import the personal GitHub repository into a Hobby project, set the production branch to `master`, and keep the root directory at the repository root. `vercel.json` specifies `npm ci`, the checks followed by the build, and the `dist` output directory. No environment variables are required. Both `/` and `/countryjellies/` are generated HTML routes; flag SVGs are served from `/flags/`.
+Vercel hosts the static Vite build. Import the personal GitHub repository into a Hobby project, set the production branch to `master`, and keep the root directory at the repository root. `vercel.json` installs with the pinned npm 11 version, runs lint, TypeScript and tests before the build, and publishes `dist`. Formatting is checked by GitHub CI; it is kept out of Vercel’s build because the host reported its copy of `vercel.json` as unformatted despite the committed file passing CI. No environment variables are required. Both `/` and `/countryjellies/` are generated HTML routes; flag SVGs are served from `/flags/`.
 
 Pull requests get preview deployments; merges into `master` deploy production. Vercel's Git connection must be authorized through your account before the first deployment. The Hobby plan is intended for personal, non-commercial use. Selection storage is scoped to the deployed origin, so localhost selections do not transfer to the production domain.
