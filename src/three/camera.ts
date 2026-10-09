@@ -41,11 +41,14 @@ export const createCamera = (compositionBounds: THREE.Box3) => {
   };
   fitViewport();
 
-  const adjustZoom = (delta: number) => {
+  const zoomBy = (factor: number) => {
+    if (!Number.isFinite(factor) || factor <= 0) {
+      return;
+    }
     cameraOffset.setLength(
-      THREE.MathUtils.clamp(cameraOffset.length() + delta, minDistance, maxDistance),
+      THREE.MathUtils.clamp(cameraOffset.length() / factor, minDistance, maxDistance),
     );
   };
 
-  return { camera, cameraTarget, cameraOffset, adjustZoom, fitViewport };
+  return { camera, cameraTarget, cameraOffset, zoomBy, fitViewport };
 };

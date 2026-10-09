@@ -11,6 +11,7 @@ enum PointerEventName {
   Blur = 'blur',
 }
 const Cursor = { Grab: 'grab', Grabbing: 'grabbing', Pointer: 'pointer' };
+const PointerType = { Touch: 'touch' };
 
 interface IPointerOptions {
   canvas: HTMLCanvasElement;
@@ -18,6 +19,7 @@ interface IPointerOptions {
   cameraTarget: THREE.Vector3;
   blocks: ReturnType<typeof createFlagBlock>[];
   glasses: ReturnType<typeof createGlassSet>;
+  zoomBy?: (factor: number) => void;
 }
 
 // A hit creates a camera-facing grab plane. Ray points are converted to the body's local space.
@@ -27,6 +29,7 @@ export const bindPointerEvents = ({
   cameraTarget,
   blocks,
   glasses,
+  zoomBy,
 }: IPointerOptions) => {
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
@@ -37,6 +40,13 @@ export const bindPointerEvents = ({
   let activePointer: number | null = null;
   let grabbed: ReturnType<typeof createFlagBlock> | null = null;
   let rotatingGlasses = false;
+  const touches = new Map<number, THREE.Vector2>();
+  let pinching = false;
+  let previousPinchDistance = 0;
+  const pinchDistance = () => {
+    const [first, second] = touches.values();
+    return first && second ? first.distanceTo(second) : 0;
+  };
   const updateRay = (event: PointerEvent) => {
     const bounds = canvas.getBoundingClientRect();
     pointer.set(
@@ -65,6 +75,23 @@ export const bindPointerEvents = ({
     canvas.style.cursor = Cursor.Grab;
   };
   const down = (event: PointerEvent) => {
+    if (event.pointerType === PointerType.Touch && event.button === 0) {
+      touches.set(event.pointerId, new THREE.Vector2(event.clientX, event.clientY));
+      canvas.setPointerCapture(event.pointerId);
+      if (touches.size >= 2) {
+        // Keep both captures, but cancel the one-finger action without launching a jelly.
+        grabbed?.endGrab(false);
+        grabbed = null;
+        rotatingGlasses = false;
+        activePointer = null;
+        pinching = true;
+        previousPinchDistance = pinchDistance();
+        return;
+      }
+      if (pinching) {
+        return;
+      }
+    }
     if (!event.isPrimary || event.button !== 0 || activePointer !== null) {
       return;
     }
@@ -85,6 +112,18 @@ export const bindPointerEvents = ({
     canvas.style.cursor = Cursor.Grabbing;
   };
   const move = (event: PointerEvent) => {
+    const touch = touches.get(event.pointerId);
+    if (touch) {
+      touch.set(event.clientX, event.clientY);
+      if (pinching) {
+        const distance = pinchDistance();
+        if (distance > 0 && previousPinchDistance > 0) {
+          zoomBy?.(distance / previousPinchDistance);
+        }
+        previousPinchDistance = distance;
+        return;
+      }
+    }
     if (!event.isPrimary || (activePointer !== null && activePointer !== event.pointerId)) {
       return;
     }
@@ -115,11 +154,34 @@ export const bindPointerEvents = ({
     previous.set(event.clientX, event.clientY);
   };
   const up = (event: PointerEvent) => {
+    if (touches.delete(event.pointerId)) {
+      if (pinching) {
+        if (canvas.hasPointerCapture(event.pointerId)) {
+          canvas.releasePointerCapture(event.pointerId);
+        }
+        // After one finger lifts, wait for all fingers to lift before panning again.
+        previousPinchDistance = pinchDistance();
+        pinching = touches.size > 0;
+        canvas.style.cursor = Cursor.Grab;
+        return;
+      }
+    }
     if (event.pointerId === activePointer) {
       release(event.type === PointerEventName.Up);
     }
   };
-  const cancel = () => release();
+  const cancel = () => {
+    const ids = [...touches.keys()];
+    touches.clear();
+    pinching = false;
+    previousPinchDistance = 0;
+    release();
+    ids.forEach((id) => {
+      if (canvas.hasPointerCapture(id)) {
+        canvas.releasePointerCapture(id);
+      }
+    });
+  };
   canvas.addEventListener(PointerEventName.Down, down);
   canvas.addEventListener(PointerEventName.Move, move);
   canvas.addEventListener(PointerEventName.Up, up);
@@ -133,7 +195,7 @@ export const bindPointerEvents = ({
       }
     },
     unbind: () => {
-      release();
+      cancel();
       canvas.removeEventListener(PointerEventName.Down, down);
       canvas.removeEventListener(PointerEventName.Move, move);
       canvas.removeEventListener(PointerEventName.Up, up);

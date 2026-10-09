@@ -22,6 +22,7 @@ describe('pointer gestures', () => {
   let cameraTarget: THREE.Vector3;
   let unbind: () => void;
   let glassPoint: THREE.Vector2;
+  const zoomBy = vi.fn();
   const captures = new Set<number>();
   const send = (type: string, x: number, y: number, options: PointerEventInit = {}) =>
     canvas.dispatchEvent(
@@ -36,10 +37,11 @@ describe('pointer gestures', () => {
       }),
     );
   const bind = (blocks: ReturnType<typeof createFlagBlock>[] = []) => {
-    unbind = bindPointerEvents({ canvas, camera, cameraTarget, blocks, glasses }).unbind;
+    unbind = bindPointerEvents({ canvas, camera, cameraTarget, blocks, glasses, zoomBy }).unbind;
   };
 
   beforeEach(() => {
+    zoomBy.mockClear();
     canvas = document.createElement('canvas');
     document.body.append(canvas);
     vi.spyOn(canvas, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 1000, 800));
@@ -165,6 +167,20 @@ describe('pointer gestures', () => {
     expect(captures.size).toBe(0);
     send(Events.move, x + 100, y);
     expect(block.moveGrab).toHaveBeenCalledOnce();
+    send(Events.down, x, y, { pointerType: PointerTypes.touch });
+    send(Events.down, x + 100, y, {
+      pointerType: PointerTypes.touch,
+      pointerId: 2,
+      isPrimary: false,
+    });
+    expect(block.endGrab).toHaveBeenLastCalledWith(false);
+    send(Events.up, x, y, { pointerType: PointerTypes.touch });
+    send(Events.up, x + 100, y, {
+      pointerType: PointerTypes.touch,
+      pointerId: 2,
+      isPrimary: false,
+    });
+    expect(block.endGrab).toHaveBeenLastCalledWith(false);
     mesh.geometry.dispose();
     mesh.material.dispose();
   });
@@ -178,4 +194,45 @@ describe('pointer gestures', () => {
     send(Events.move, x + 100, y);
     expect(glasses.object.rotation.y).toBe(0);
   });
+
+  it('zooms with both touch pointers and suppresses rotation/panning until all fingers lift', () => {
+    const before = cameraTarget.clone();
+    const first = { pointerType: PointerTypes.touch, pointerId: 1 };
+    const second = { pointerType: PointerTypes.touch, pointerId: 2, isPrimary: false };
+    send(Events.down, 10, 10, first);
+    send(Events.down, 110, 10, second);
+    send(Events.move, 160, 10, second);
+    expect(zoomBy).toHaveBeenLastCalledWith(1.5);
+    send(Events.move, -40, 10, first);
+    expect(zoomBy).toHaveBeenLastCalledWith(200 / 150);
+    expect(cameraTarget.equals(before)).toBe(true);
+    expect(glasses.object.rotation.y).toBe(0);
+    send(Events.up, 160, 10, second);
+    send(Events.move, 100, 100, first);
+    expect(cameraTarget.equals(before)).toBe(true);
+    send(Events.up, 100, 100, first);
+    expect(captures.size).toBe(0);
+    send(Events.down, 10, 10, first);
+    send(Events.move, 60, 10, first);
+    expect(cameraTarget.x).toBeLessThan(before.x);
+  });
+
+  it.each([Events.cancel, Events.lost, Events.blur])(
+    'cleans up a pinch on %s without stale gestures',
+    (eventName) => {
+      const first = { pointerType: PointerTypes.touch, pointerId: 1 };
+      const second = { pointerType: PointerTypes.touch, pointerId: 2, isPrimary: false };
+      send(Events.down, 10, 10, first);
+      send(Events.down, 110, 10, second);
+      if (eventName === Events.blur) {
+        window.dispatchEvent(new Event(eventName));
+      } else {
+        send(eventName, 10, 10, first);
+        send(eventName, 110, 10, second);
+      }
+      expect(captures.size).toBe(0);
+      send(Events.move, 150, 10, second);
+      expect(zoomBy).not.toHaveBeenCalled();
+    },
+  );
 });
