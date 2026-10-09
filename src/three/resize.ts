@@ -5,9 +5,10 @@ import type * as THREE from 'three';
 export const resize = (
   renderer: Pick<THREE.WebGLRenderer, 'setPixelRatio' | 'setSize'>,
   camera: THREE.PerspectiveCamera,
+  resolutionScale = 1,
 ) => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setPixelRatio(getRenderPixelRatio(window.devicePixelRatio));
+  renderer.setPixelRatio(getRenderPixelRatio(window.devicePixelRatio, resolutionScale));
   renderer.setSize(window.innerWidth, window.innerHeight);
 };

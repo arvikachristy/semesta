@@ -10,6 +10,7 @@ import { createGlassSet } from './glasses/glass-set';
 import { createLights } from './lights';
 import { bindPointerEvents } from './pointer';
 import { createRenderer } from './renderer';
+import { createRenderQuality, getRenderPixelRatio } from './render-parameters';
 import { resize } from './resize';
 import { createScene } from './scene';
 
@@ -23,6 +24,7 @@ export const startPlayground = (
 ) => {
   // React supplies the canvas. These are the raw Three.js pieces inside it.
   const renderer = createRenderer(canvas);
+  const quality = createRenderQuality();
   const scene = createScene();
   const glasses = createGlassSet();
   const { camera, cameraTarget, cameraOffset, adjustZoom, fitViewport } = createCamera(
@@ -41,7 +43,7 @@ export const startPlayground = (
   scene.add(ambientLight, directionalLight, floor, glasses.object);
   input = bindPointerEvents({ canvas, camera, cameraTarget, blocks: collection.blocks, glasses });
   const onResize = () => {
-    resize(renderer, camera);
+    resize(renderer, camera, quality.getScale());
     fitViewport();
   };
   const onWheel = (event: WheelEvent) => {
@@ -52,7 +54,13 @@ export const startPlayground = (
   canvas.addEventListener('wheel', onWheel, { passive: false });
 
   // The render loop keeps the camera, hover, and composition rotation in sync.
-  const frameMonitor = createFrameMonitor((reading) => onFrameReading?.(reading));
+  const frameMonitor = createFrameMonitor((reading) => {
+    const ratio = getRenderPixelRatio(window.devicePixelRatio, quality.sample(reading.fps));
+    if (renderer.getPixelRatio() !== ratio) {
+      renderer.setPixelRatio(ratio);
+    }
+    onFrameReading?.(reading);
+  });
   const visibilityEvent = 'visibilitychange';
   document.addEventListener(visibilityEvent, frameMonitor.reset);
   let previousTime = performance.now();

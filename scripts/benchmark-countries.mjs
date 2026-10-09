@@ -17,6 +17,11 @@ try {
   await page.routeWebSocket('**', () => {});
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') {
+      errors.push(message.text());
+    }
+  });
   // Instrument the served dev module only. Nothing is exposed by the production app.
   await page.route('**/src/three/playground.ts*', async (route) => {
     const response = await route.fetch();
@@ -75,6 +80,7 @@ try {
         slowFrames: samples.filter((sample) => sample.frameMs > 50).length,
         jellies: collection.blocks.length,
         awake: collection.blocks.filter((block) => !block.getBody().isSleeping()).length,
+        pixelRatio: renderer.getPixelRatio(),
         drawCalls: renderer.info.render.calls,
         triangles: renderer.info.render.triangles,
         textures: renderer.info.memory.textures,

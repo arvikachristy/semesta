@@ -9,6 +9,7 @@ import { jellyParameters } from './jelly-parameters';
 import { CountryStatus } from '../../types/country-status';
 import { createLoadQueue } from './load-queue';
 import { jellyPerformance } from './jelly-performance';
+import { createJellyBatches } from './jelly-batches';
 
 interface IEntry {
   block: ReturnType<typeof createFlagBlock>;
@@ -32,12 +33,14 @@ export const createCountryCollection = ({
 }: ICollectionOptions) => {
   const entries = new Map<CountryList, IEntry>();
   const loadQueue = createLoadQueue(jellyPerformance.concurrentLoads);
+  const batches = createJellyBatches();
   const piles = new Map<TContinentId, ReturnType<typeof createJellyPile>>();
   const nextDrop = new Map<TContinentId, number>();
   const lastInsertion = new Map<TContinentId, number>();
   // Stable array shared with pointer handling; reconciliation changes its contents in place.
   const blocks: ReturnType<typeof createFlagBlock>[] = [];
   let elapsed = 0;
+  let lastDropTime = 0;
   let disposed = false;
   let membershipChanged = false;
   const remove = (country: CountryList) => {
@@ -151,8 +154,18 @@ export const createCountryCollection = ({
     let changed = membershipChanged;
     membershipChanged = false;
     elapsed += delta;
+    let awake = 0;
+    piles.forEach((pile) => {
+      awake += pile.getAwakeCount();
+    });
     entries.forEach((entry, country) => {
       if (entry.inserted || elapsed < entry.readyAt) {
+        return;
+      }
+      if (
+        awake >= jellyPerformance.maxAwakeAcrossGlasses &&
+        elapsed - lastDropTime < jellyPerformance.maxDropPause
+      ) {
         return;
       }
       if (
@@ -172,6 +185,8 @@ export const createCountryCollection = ({
         piles.set(entry.continent, pile);
       }
       pile.add(body);
+      awake++;
+      lastDropTime = elapsed;
       parent.add(entry.block.object);
       blocks.push(entry.block);
       entry.inserted = true;
@@ -183,6 +198,7 @@ export const createCountryCollection = ({
     blocks.forEach((block) => {
       changed = block.syncSurface() || changed;
     });
+    batches.update(blocks);
     return changed;
   };
   return {
@@ -192,6 +208,7 @@ export const createCountryCollection = ({
     dispose: () => {
       disposed = true;
       loadQueue.dispose();
+      batches.dispose();
       for (const country of entries.keys()) {
         remove(country);
       }

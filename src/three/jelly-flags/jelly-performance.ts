@@ -2,6 +2,7 @@
 export const jellyPerformance = {
   textureHeight: 128,
   maxAwakeBeforeDrop: 3,
+  maxAwakeAcrossGlasses: 12,
   maxDropPause: 0.75,
   surfaceSegments: 3,
   concurrentLoads: 1,
