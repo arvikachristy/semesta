@@ -15,6 +15,7 @@ export const useTrips = (repository: ITripRepository = localRepository) => {
   const [warning, setWarning] = useState('');
   const writableRepository = useRef<ITripRepository | null>(null);
   const saveQueue = useRef(Promise.resolve());
+  const loadedValue = useRef<typeof trips | null>(null);
   useEffect(() => {
     let active = true;
     setReady(false);
@@ -23,6 +24,7 @@ export const useTrips = (repository: ITripRepository = localRepository) => {
       .load()
       .then((stored) => {
         if (active) {
+          loadedValue.current = stored;
           setTrips(stored);
           setWarning('');
           writableRepository.current = repository;
@@ -40,7 +42,7 @@ export const useTrips = (repository: ITripRepository = localRepository) => {
     };
   }, [repository]);
   useEffect(() => {
-    if (ready && writableRepository.current === repository) {
+    if (ready && writableRepository.current === repository && trips !== loadedValue.current) {
       saveQueue.current = saveQueue.current
         .then(() => repository.save(trips))
         .catch(() => {

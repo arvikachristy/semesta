@@ -23,9 +23,9 @@ The token at the top right shows FPS and average milliseconds per frame, sampled
 
 ## Upcoming trips MVP
 
-**Upcoming trips** opens a glass timeline panel on the right on desktop. On mobile, the bottom **Countries / Trips** bar opens one bottom sheet at a time. Browsing uses a half-height sheet; trip details and editing expand it to nearly the full visible screen. Close, Escape, or a backdrop tap dismisses the sheet. Drafts survive dismissal and switching sheets; the scene cannot receive gestures while a sheet is open. The form scrolls above fixed actions, and sheet height follows the visual viewport when a keyboard opens. Dated trips appear chronologically, with undated trips last. Rows show compact dates and a circular flag thumbnail for the first destination; the **+** button creates a trip. Select a row to see its destinations and notes, edit it, or delete with confirmation. **All trips** returns to the timeline. Use **Save trip** to keep changes. Collapsing the panel retains the current draft, but reloading discards unsaved edits.
+**Upcoming trips** opens a glass timeline panel on the right on desktop. On mobile, the bottom **Countries / Trips / Account** bar opens one bottom sheet at a time. Browsing uses a half-height sheet; trip details and editing expand it to nearly the full visible screen. Close, Escape, or a backdrop tap dismisses the sheet. Drafts survive dismissal and switching sheets; the scene cannot receive gestures while a sheet is open. The form scrolls above fixed actions, and sheet height follows the visual viewport when a keyboard opens. Dated trips appear chronologically, with undated trips last. Rows show compact dates and a circular flag thumbnail for the first destination; the **+** button creates a trip. Select a row to see its destinations and notes, edit it, or delete with confirmation. **All trips** returns to the timeline. Use **Save trip** to keep changes. Collapsing the panel retains the current draft, but reloading discards unsaved edits.
 
-Trips are separate from the cups: planning or deleting a trip never changes selected jellies. Destinations reuse the existing country registry and `CountryList` IDs. Trips are saved only in this browser under `semesta.upcoming-trips`; they do not sync across devices. Storage failures show a session-only warning. `ITripRepository` can later be backed by account storage without changing the panel.
+Trips are separate from the cups: planning or deleting a trip never changes selected jellies. Destinations reuse the existing country registry and `CountryList` IDs. Guest trips are saved in this browser under `semesta.upcoming-trips`. Optional email-code or Google sign-in backs up countries and trips across devices once Supabase is configured. Storage failures show a warning. Both guest and account persistence use the existing repository interfaces. See [account setup](docs/account-setup.md) for the SQL migration, authentication providers and email delivery configuration.
 
 ```mermaid
 flowchart LR
@@ -33,7 +33,7 @@ flowchart LR
   editor --> state["useTrips: saved trip list"]
   state <--> storage["ITripRepository → localStorage"]
   registry["Existing countries registry"] --> editor
-  storage -. "future adapter" .-> account["Account storage"]
+  storage --> account["Optional account backup: local cache + Supabase"]
 ```
 
 ## How the files fit together
@@ -45,7 +45,7 @@ flowchart TD
   registry["data/countries.ts + country/continent enums: artwork and metadata"] --> selector
   selector --> selected["use-country-selection: showedCountries CountryList array"]
   selected <--> persistence["use-country-selection → storage/country-selection: versioned local IDs"]
-  persistence -. "future adapter" .-> remote["account storage"]
+  persistence --> remote["Optional account repository"]
   catalogue["country-catalogue + flag-definitions: metadata and artwork defaults"] --> registry
   catalogue --> assets["public/flags: pinned local SVGs"]
   selected --> collection["country-collection.ts: reconcile, load, drop, remove"]

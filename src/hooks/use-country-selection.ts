@@ -11,6 +11,7 @@ export const useCountrySelection = (repository: ICountrySelectionRepository = lo
   const [showedCountries, setShowedCountries] = useState<CountryList[]>([]);
   const [ready, setReady] = useState(false);
   const saveQueue = useRef(Promise.resolve());
+  const loadedValue = useRef<typeof showedCountries | null>(null);
   const hydratedRepository = useRef<ICountrySelectionRepository | null>(null);
   useEffect(() => {
     let active = true;
@@ -22,6 +23,7 @@ export const useCountrySelection = (repository: ICountrySelectionRepository = lo
       .then((countries) => {
         if (active) {
           hydratedRepository.current = repository;
+          loadedValue.current = countries;
           setShowedCountries(countries);
           setReady(true);
         }
@@ -32,7 +34,11 @@ export const useCountrySelection = (repository: ICountrySelectionRepository = lo
   }, [repository]);
 
   useEffect(() => {
-    if (ready && hydratedRepository.current === repository) {
+    if (
+      ready &&
+      hydratedRepository.current === repository &&
+      showedCountries !== loadedValue.current
+    ) {
       // Preserve write order even if a future network adapter saves asynchronously.
       saveQueue.current = saveQueue.current
         .then(() => repository.save(showedCountries))

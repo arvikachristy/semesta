@@ -45,6 +45,7 @@
   background: var(--color-sheet);
   overflow: hidden;
 }
+.shell[data-mobile='true'][data-active='account']:not([data-active='']),
 .shell[data-mobile='true'][data-active='trips']:has([data-expanded='true']) {
   --sheet-height: max(
     0px,
