@@ -1,4 +1,4 @@
-export const MobilePanel = { Countries: 'countries', Trips: 'trips' } as const;
+export const MobilePanel = { Countries: 'countries', Trips: 'trips', Account: 'account' } as const;
 export type TMobilePanel = (typeof MobilePanel)[keyof typeof MobilePanel];
 
 export interface IMobilePanelState {

@@ -73,6 +73,6 @@ describe('upcoming trips panel', () => {
     expect(host.querySelector('form')).not.toBeNull();
     await click('Cancel');
     expect(host.querySelector('form')).toBeNull();
-    expect(JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips).toEqual([]);
+    expect(localStorage.getItem(tripStorage.key)).toBeNull();
   });
 });

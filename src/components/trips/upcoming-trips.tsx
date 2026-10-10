@@ -1,3 +1,4 @@
+import { useAccount } from '../../account/account-context';
 import { mobilePanelText } from '../../types/mobile-panel';
 import type { IMobilePanelState } from '../../types/mobile-panel';
 import { Button, ButtonVariant } from '../ui/button';
@@ -21,7 +22,7 @@ interface IUpcomingTripsProps {
 }
 
 export const UpcomingTrips = memo(({ mobilePanel }: IUpcomingTripsProps) => {
-  const { trips, ready, warning, saveTrip, removeTrip } = useTrips();
+  const { trips, ready, warning, saveTrip, removeTrip } = useTrips(useAccount().trips);
   const [desktopOpen, setOpen] = useState(true);
   const open = mobilePanel?.open ?? desktopOpen;
   const [selectedId, setSelectedId] = useState<string | null>(null);

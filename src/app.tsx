@@ -1,3 +1,4 @@
+import { useAccount } from './account/account-context';
 import { FpsToken } from './components/fps-token';
 import type { IFrameReading } from './performance/frame-monitor';
 import { useEffect, useRef, useState } from 'react';
@@ -13,7 +14,8 @@ export const App = () => {
   const [frameReading, setFrameReading] = useState<IFrameReading | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playgroundRef = useRef<ReturnType<typeof startPlayground> | null>(null);
-  const { showedCountries, ready, onToggle, onClear } = useCountrySelection();
+  const account = useAccount();
+  const { showedCountries, ready, onToggle, onClear } = useCountrySelection(account.countries);
   const [statuses, setStatuses] = useState<Partial<Record<CountryList, CountryStatus>>>({});
 
   useEffect(() => {

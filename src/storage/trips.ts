@@ -9,7 +9,7 @@ export interface ITripRepository {
   save: (trips: readonly ITrip[]) => Promise<void>;
 }
 
-const isTripRecord = (value: unknown): value is ITrip => {
+export const isTripRecord = (value: unknown): value is ITrip => {
   if (typeof value !== 'object' || value === null) {
     return false;
   }

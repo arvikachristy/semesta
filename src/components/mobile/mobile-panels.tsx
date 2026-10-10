@@ -1,3 +1,5 @@
+import { AccountPanel } from '../account/account-panel';
+import { useAccount } from '../../account/account-context';
 import { MobilePanel, mobilePanelText } from '../../types/mobile-panel';
 import type { TMobilePanel } from '../../types/mobile-panel';
 import { memo, useEffect, useRef, useState } from 'react';
@@ -12,10 +14,15 @@ const panelConfig = {
   breakpoint: 600,
   resizeEvent: 'resize',
   viewportScrollEvent: 'scroll',
-  labels: { [MobilePanel.Countries]: 'Countries', [MobilePanel.Trips]: 'Trips' },
+  labels: {
+    [MobilePanel.Countries]: 'Countries',
+    [MobilePanel.Trips]: 'Trips',
+    [MobilePanel.Account]: 'Account',
+  },
 };
 
 export const MobilePanels = memo((props: ICountrySelectorProps) => {
+  const account = useAccount();
   const [mobile, setMobile] = useState(() => window.innerWidth <= panelConfig.breakpoint);
   const [active, setActive] = useState<TMobilePanel | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -125,8 +132,16 @@ export const MobilePanels = memo((props: ICountrySelectorProps) => {
         </div>
         <div className={styles.feature} hidden={mobile && active !== MobilePanel.Trips}>
           <UpcomingTrips
+            key={account.userId}
             mobilePanel={
               mobile ? { open: active === MobilePanel.Trips, onClose: dismiss } : undefined
+            }
+          />
+        </div>
+        <div className={styles.feature} hidden={mobile && active !== MobilePanel.Account}>
+          <AccountPanel
+            mobilePanel={
+              mobile ? { open: active === MobilePanel.Account, onClose: dismiss } : undefined
             }
           />
         </div>
@@ -143,7 +158,9 @@ export const MobilePanels = memo((props: ICountrySelectorProps) => {
             disabled={panel === MobilePanel.Countries && props.disabled}
             onClick={() => setActive((current) => (current === panel ? null : panel))}
           >
-            {panelConfig.labels[panel]}
+            {panel === MobilePanel.Account && account.hasTrips && account.email === null
+              ? 'Save plans'
+              : panelConfig.labels[panel]}
           </Button>
         ))}
       </nav>
