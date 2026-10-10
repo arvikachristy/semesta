@@ -13,6 +13,8 @@ Read these before making a component. Feature CSS Modules arrange content; share
 
 ## Visual rules
 
+When an interaction is needed by multiple features, build it once under `src/components/shared/` and compose it into each feature. Keep filtering, search and selection behavior in that shared component; wrappers may choose different layouts or modes. Shared controls must use the Rose Glass primitives and tokens below, while feature CSS controls only local layout.
+
 | Element     | Rule                                                                                                                                                                                                                   |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Surfaces    | Use `ui.surface`; add `ui.raised` for a checklist or modal requiring more contrast. Blur once at the panel level, not around every field.                                                                              |

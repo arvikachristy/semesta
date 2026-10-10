@@ -2,16 +2,16 @@ import type { IMobilePanelState } from '../types/mobile-panel';
 import { Button, ButtonVariant } from './ui/button';
 import ui from './ui/ui.module.css';
 import { memo, useEffect, useRef, useState } from 'react';
-import { countryGroups } from '../data/countries';
 import type { CountryList } from '../types/country';
-import { CountryStatus } from '../types/country-status';
+import type { CountryStatus } from '../types/country-status';
+import { CountryPicker, CountryPickerMode } from './shared/country-picker/country-picker';
 
 enum SelectorEvent {
   KeyDown = 'keydown',
   PointerDown = 'pointerdown',
 }
 const SelectorKey = { Escape: 'Escape' };
-const selectorText = { search: 'Search countries', clear: 'Clear all', cancel: 'Keep flags' };
+const selectorText = { clear: 'Clear all', cancel: 'Keep flags' };
 export interface ICountrySelectorProps {
   mobilePanel?: IMobilePanelState;
   disabled?: boolean;
@@ -44,17 +44,6 @@ export const CountrySelector = memo(
         dialog.current?.showModal();
       }
     }, [confirming]);
-    const [search, setSearch] = useState('');
-    const query = search.trim().toLocaleLowerCase();
-    const groups = countryGroups
-      .map((group) => ({
-        ...group,
-        countries: group.countries.filter((country) =>
-          `${country.name} ${country.code}`.toLocaleLowerCase().includes(query),
-        ),
-      }))
-      .filter((group) => group.countries.length > 0);
-    const selected = new Set(showedCountries);
     const root = useRef<HTMLDivElement>(null);
     const trigger = useRef<HTMLButtonElement>(null);
     useEffect(() => {
@@ -111,37 +100,13 @@ export const CountrySelector = memo(
                 {selectorText.clear}
               </Button>
             </div>
-            <input
-              className={`${ui.control} country-search`}
-              type="search"
-              aria-label={selectorText.search}
-              placeholder={selectorText.search}
-              value={search}
-              onChange={(event) => setSearch(event.currentTarget.value)}
+            <CountryPicker
+              mode={CountryPickerMode.Checklist}
+              selectedCountries={showedCountries}
+              statuses={statuses}
+              disabled={disabled}
+              onToggle={onToggle}
             />
-            {groups.length === 0 && <p>No countries found.</p>}
-            {groups.map((group) => (
-              <fieldset key={group.id}>
-                <legend>{group.name}</legend>
-                {group.countries.map((country) => (
-                  <label className="country-option" key={country.code}>
-                    <input
-                      type="checkbox"
-                      className={ui.checkbox}
-                      value={country.code}
-                      checked={selected.has(country.code)}
-                      onChange={(event) => onToggle(country.code, event.currentTarget.checked)}
-                    />
-                    <span>{country.name}</span>
-                    {statuses[country.code] === CountryStatus.Loading &&
-                      selected.has(country.code) && <small>Loading…</small>}
-                    {statuses[country.code] === CountryStatus.Error && (
-                      <small role="alert">Could not load. Untick and tick to retry.</small>
-                    )}
-                  </label>
-                ))}
-              </fieldset>
-            ))}
           </div>
         )}
         {confirming && (

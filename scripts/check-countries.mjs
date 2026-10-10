@@ -30,25 +30,40 @@ try {
   const checkbox = (country) => page.locator(`input[value="${country}"]`);
   await selected(1);
   await trigger.click();
-  assert.equal(await page.getByRole('checkbox').count(), 195);
+  assert.equal(await page.getByRole('checkbox').count(), 199);
+  assert.ok(
+    (await page.locator('legend').allTextContents()).some((label) => label.includes('1/48')),
+  );
+  assert.ok(
+    (await page.locator('legend').allTextContents()).some((label) => label.includes('0/0')),
+  );
   assert.equal(await checkbox(countries.Indonesia).isChecked(), true);
+  await searchFor(page, 'england');
+  assert.equal(await page.getByRole('checkbox').count(), 1);
+  assert.equal(await checkbox(countries.England).isChecked(), false);
+  await checkbox(countries.England).check();
+  await selected(2);
+  await searchFor(page, 'united kingdom');
+  assert.equal(await page.getByRole('checkbox').count(), 1);
+  assert.equal(await checkbox(countries.UnitedKingdom).isChecked(), false);
+  await searchFor(page, '');
+  await checkbox(countries.England).uncheck();
   await checkbox(countries.Kazakhstan).check();
   await selected(2);
   await page.reload();
   await selected(2);
   await trigger.click();
   assert.equal(await checkbox(countries.Kazakhstan).isChecked(), true);
-  const search = page.getByRole('searchbox');
-  await search.fill('kaz');
+  await searchFor(page, 'kaz');
   assert.equal(await page.getByRole('checkbox').count(), 1);
   await checkbox(countries.Kazakhstan).uncheck();
-  await search.fill('');
+  await searchFor(page, '');
   await checkbox(countries.Indonesia).uncheck();
   await page.goto('http://127.0.0.1:5173/countryjellies/');
   await selected(0);
   await page.setViewportSize({ width: 390, height: 844 });
   await trigger.click();
-  await search.fill('indonesia');
+  await searchFor(page, 'indonesia');
   await checkbox(countries.Indonesia).check();
   await selected(1);
   const bounds = await page.locator('.country-checklist').boundingBox();
@@ -58,8 +73,12 @@ try {
   assert.equal(await trigger.getAttribute('aria-expanded'), 'false');
   assert.deepEqual(errors, []);
   console.log(
-    'Passed: 195 options, search, persistence across both routes, empty selection, mobile layout and Escape.',
+    'Passed: 199 options, constituent flags, continent counts, search, persistence, mobile layout and Escape.',
   );
 } finally {
   await browser.close();
+}
+
+async function searchFor(page, value) {
+  await page.getByRole('searchbox').fill(value);
 }
