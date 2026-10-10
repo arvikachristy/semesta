@@ -77,6 +77,28 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-round);
 }
+.countryPicker {
+  display: grid;
+  gap: var(--space-2);
+}
+.countryPickerTrigger {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  cursor: pointer;
+}
+.countryPickerTrigger::-webkit-details-marker {
+  display: none;
+}
+.countryPicker[open] > div {
+  max-height: 14rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-glass-raised);
+}
 .details h3 {
   margin: 1rem 0 0;
   overflow-wrap: anywhere;

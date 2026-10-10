@@ -1,9 +1,10 @@
 import { Button, ButtonVariant } from '../ui/button';
 import ui from '../ui/ui.module.css';
 import { useState } from 'react';
-import { countries, countryGroups, countryIds } from '../../data/countries';
+import { countries } from '../../data/countries';
 import { emptyTripDetails } from '../../types/trip';
 import type { TTripDetails } from '../../types/trip';
+import { CountryPicker, CountryPickerMode } from '../shared/country-picker/country-picker';
 import styles from './trips.module.css';
 
 interface ITripEditorProps {
@@ -66,33 +67,25 @@ export const TripEditor = ({ initial = emptyTripDetails, onSave, onCancel }: ITr
             />
           </label>
         </div>
-        <label className={ui.field}>
-          {fieldLabels.destinations}
-          <select
-            className={ui.control}
-            aria-label={fieldLabels.destinations}
-            value=""
-            onChange={(event) => {
-              const country = countryIds.find((id) => id === event.currentTarget.value);
-              if (country && !draft.countryIds.includes(country)) {
-                update({ countryIds: [...draft.countryIds, country] });
+        <div className={ui.field}>
+          <span>{fieldLabels.destinations}</span>
+          <details className={styles.countryPicker}>
+            <summary className={`${ui.control} ${styles.countryPickerTrigger}`}>
+              Add a country…
+            </summary>
+            <CountryPicker
+              mode={CountryPickerMode.Add}
+              selectedCountries={draft.countryIds}
+              onToggle={(country, checked) =>
+                update({
+                  countryIds: checked
+                    ? [...draft.countryIds, country]
+                    : draft.countryIds.filter((selected) => selected !== country),
+                })
               }
-            }}
-          >
-            <option value="">Add a country…</option>
-            {countryGroups.map((group) => (
-              <optgroup key={group.id} label={group.name}>
-                {group.countries
-                  .filter((country) => !draft.countryIds.includes(country.code))
-                  .map((country) => (
-                    <option key={country.code} value={country.code}>
-                      {country.name}
-                    </option>
-                  ))}
-              </optgroup>
-            ))}
-          </select>
-        </label>
+            />
+          </details>
+        </div>
         {draft.countryIds.length > 0 && (
           <ul className={styles.destinations} aria-label="Trip destinations">
             {draft.countryIds.map((id) => (

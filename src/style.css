@@ -67,32 +67,6 @@ canvas {
   overscroll-behavior: contain;
   padding: 1rem;
 }
-.country-checklist fieldset {
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-.country-checklist fieldset + fieldset {
-  margin-top: 1rem;
-}
-.country-checklist legend {
-  margin-bottom: 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.country-option {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.6rem;
-  min-height: 2.75rem;
-  cursor: pointer;
-}
-.country-option small {
-  font-size: 0.7rem;
-}
 .fps-token {
   position: absolute;
   top: max(1rem, env(safe-area-inset-top));
@@ -140,9 +114,6 @@ canvas {
   font-size: 0.7rem;
 }
 
-.country-search {
-  margin-bottom: var(--space-4);
-}
 .country-actions {
   display: flex;
   align-items: center;

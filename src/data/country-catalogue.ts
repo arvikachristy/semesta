@@ -5,6 +5,8 @@ import { ContinentId } from '../types/continent';
 import { createCountryDefinition } from './flag-definitions';
 import type { ICountryDefinition } from './flag-definitions';
 
+const ukConstituentFlagSize = { width: 3.0, height: 2.0 };
+
 export const countryCatalogue: Record<CountryList, ICountryDefinition> = {
   [CountryList.Indonesia]: createCountryDefinition(CountryList.Indonesia, {
     name: 'Indonesia',
@@ -298,6 +300,11 @@ export const countryCatalogue: Record<CountryList, ICountryDefinition> = {
     name: 'El Salvador',
     continent: ContinentId.NorthAmerica,
     size: { width: 1005.0, height: 567.0 },
+  }),
+  [CountryList.England]: createCountryDefinition(CountryList.England, {
+    name: 'England',
+    continent: ContinentId.Europe,
+    size: ukConstituentFlagSize,
   }),
   [CountryList.EquatorialGuinea]: createCountryDefinition(CountryList.EquatorialGuinea, {
     name: 'Equatorial Guinea',
@@ -634,6 +641,11 @@ export const countryCatalogue: Record<CountryList, ICountryDefinition> = {
     continent: ContinentId.NorthAmerica,
     size: { width: 1000.0, height: 600.0 },
   }),
+  [CountryList.NorthernIreland]: createCountryDefinition(CountryList.NorthernIreland, {
+    name: 'Northern Ireland',
+    continent: ContinentId.Europe,
+    size: ukConstituentFlagSize,
+  }),
   [CountryList.Niger]: createCountryDefinition(CountryList.Niger, {
     name: 'Niger',
     continent: ContinentId.Africa,
@@ -781,6 +793,11 @@ export const countryCatalogue: Record<CountryList, ICountryDefinition> = {
     name: 'Sierra Leone',
     continent: ContinentId.Africa,
     size: { width: 9.0, height: 6.0 },
+  }),
+  [CountryList.Scotland]: createCountryDefinition(CountryList.Scotland, {
+    name: 'Scotland',
+    continent: ContinentId.Europe,
+    size: ukConstituentFlagSize,
   }),
   [CountryList.Singapore]: createCountryDefinition(CountryList.Singapore, {
     name: 'Singapore',
@@ -971,6 +988,11 @@ export const countryCatalogue: Record<CountryList, ICountryDefinition> = {
     name: 'Vietnam',
     continent: ContinentId.Asia,
     size: { width: 30.0, height: 20.0 },
+  }),
+  [CountryList.Wales]: createCountryDefinition(CountryList.Wales, {
+    name: 'Wales',
+    continent: ContinentId.Europe,
+    size: ukConstituentFlagSize,
   }),
   [CountryList.Yemen]: createCountryDefinition(CountryList.Yemen, {
     name: 'Yemen',

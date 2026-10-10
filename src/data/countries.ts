@@ -5,15 +5,13 @@ export { countries };
 export type { ICountryDefinition } from './flag-definitions';
 
 export const countryIds = Object.values(CountryList);
-export const countryGroups = continentDefinitions
-  .map((continent) => ({
-    ...continent,
-    countries: countryIds
-      .map((id) => countries[id])
-      .filter((country) => country.continent === continent.id)
-      .sort((a, b) => a.name.localeCompare(b.name)),
-  }))
-  .filter((group) => group.countries.length > 0);
+export const countryGroups = continentDefinitions.map((continent) => ({
+  ...continent,
+  countries: countryIds
+    .map((id) => countries[id])
+    .filter((country) => country.continent === continent.id)
+    .sort((a, b) => a.name.localeCompare(b.name)),
+}));
 export const defaultCountries: CountryList[] = [CountryList.Indonesia];
 
 export const toggleCountry = (

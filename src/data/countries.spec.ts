@@ -6,9 +6,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { glassParameters } from '../three/glasses/glass-parameters';
 
 describe('country registry and selection', () => {
-  it('covers exactly 195 states with local SVGs and fits the per-continent selection limit', () => {
-    expect(countryIds).toHaveLength(195);
-    expect(new Set(countryIds).size).toBe(195);
+  it('covers 195 sovereign states and four UK constituent nations with local SVGs', () => {
+    expect(countryIds).toHaveLength(199);
+    expect(new Set(countryIds).size).toBe(199);
     for (const code of countryIds) {
       const file = new URL(`../../public/flags/${code.toLowerCase()}.svg`, import.meta.url);
       expect(existsSync(file), code).toBe(true);
@@ -16,12 +16,19 @@ describe('country registry and selection', () => {
       expect(countries[code].size.width).toBeGreaterThan(0);
       expect(countries[code].size.height).toBeGreaterThan(0);
     }
-    expect(countryGroups.map((group) => group.countries.length)).toEqual([44, 48, 54, 14, 12, 23]);
+    expect(countryGroups.map((group) => group.countries.length)).toEqual([
+      48, 48, 54, 14, 0, 12, 23,
+    ]);
     expect(countryGroups.every((group) => group.countries.length <= glassParameters.capacity)).toBe(
       true,
     );
     expect(countryIds).toContain(CountryList.HolySee);
     expect(countryIds).toContain(CountryList.Palestine);
+    expect(countryIds).toContain(CountryList.UnitedKingdom);
+    expect(countryIds).toContain(CountryList.England);
+    expect(countryIds).toContain(CountryList.Scotland);
+    expect(countryIds).toContain(CountryList.Wales);
+    expect(countryIds).toContain(CountryList.NorthernIreland);
   });
   it('derives each checkbox and flag from the same enum-keyed record', () => {
     expect(Object.keys(countries).sort()).toEqual([...countryIds].sort());
@@ -36,6 +43,11 @@ describe('country registry and selection', () => {
     expect(listed.sort()).toEqual([...countryIds].sort());
     expect(countries[CountryList.Kazakhstan].continent).toBe(ContinentId.Asia);
     expect(countries[CountryList.France].continent).toBe(ContinentId.Europe);
+    expect(countries[CountryList.England].continent).toBe(ContinentId.Europe);
+    expect(countries[CountryList.NorthernIreland].continent).toBe(ContinentId.Europe);
+    expect(countries[CountryList.Scotland].continent).toBe(ContinentId.Europe);
+    expect(countries[CountryList.Wales].continent).toBe(ContinentId.Europe);
+    expect(countries[CountryList.UnitedKingdom].code).not.toBe(countries[CountryList.England].code);
   });
   it('starts with Indonesia and supports multiple unique selections or no jellies', () => {
     expect(defaultCountries).toEqual([CountryList.Indonesia]);
