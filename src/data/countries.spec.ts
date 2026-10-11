@@ -6,9 +6,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { glassParameters } from '../three/glasses/glass-parameters';
 
 describe('country registry and selection', () => {
-  it('covers 195 sovereign states and four UK constituent nations with local SVGs', () => {
-    expect(countryIds).toHaveLength(199);
-    expect(new Set(countryIds).size).toBe(199);
+  it('replaces the UK picker entry with its four constituent nations', () => {
+    expect(countryIds).toHaveLength(198);
+    expect(new Set(countryIds).size).toBe(198);
     for (const code of countryIds) {
       const file = new URL(`../../public/flags/${code.toLowerCase()}.svg`, import.meta.url);
       expect(existsSync(file), code).toBe(true);
@@ -17,21 +17,23 @@ describe('country registry and selection', () => {
       expect(countries[code].size.height).toBeGreaterThan(0);
     }
     expect(countryGroups.map((group) => group.countries.length)).toEqual([
-      48, 48, 54, 14, 0, 12, 23,
+      47, 48, 54, 14, 0, 12, 23,
     ]);
     expect(countryGroups.every((group) => group.countries.length <= glassParameters.capacity)).toBe(
       true,
     );
     expect(countryIds).toContain(CountryList.HolySee);
     expect(countryIds).toContain(CountryList.Palestine);
-    expect(countryIds).toContain(CountryList.UnitedKingdom);
+    expect(countryIds).not.toContain(CountryList.UnitedKingdom);
     expect(countryIds).toContain(CountryList.England);
     expect(countryIds).toContain(CountryList.Scotland);
     expect(countryIds).toContain(CountryList.Wales);
     expect(countryIds).toContain(CountryList.NorthernIreland);
   });
   it('derives each checkbox and flag from the same enum-keyed record', () => {
-    expect(Object.keys(countries).sort()).toEqual([...countryIds].sort());
+    expect(Object.keys(countries).sort()).toEqual(
+      [...countryIds, CountryList.UnitedKingdom].sort(),
+    );
     const listed = countryGroups.flatMap((group) =>
       group.countries.map((country) => {
         expect(country.continent).toBe(group.id);

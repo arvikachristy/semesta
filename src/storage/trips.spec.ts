@@ -14,6 +14,10 @@ const trip = {
 const encode = (trips: unknown[]) => JSON.stringify({ version: tripStorage.version, trips });
 
 describe('upcoming trip storage', () => {
+  it('preserves saved UK trips without guessing a constituent nation', () => {
+    const legacyTrip = { ...trip, countryIds: [CountryList.UnitedKingdom] };
+    expect(decodeTrips(encode([legacyTrip]))).toEqual([legacyTrip]);
+  });
   it('starts empty, validates countries and dates, and deduplicates IDs', () => {
     expect(decodeTrips(null)).toEqual([]);
     expect(
