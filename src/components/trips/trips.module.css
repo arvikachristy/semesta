@@ -121,6 +121,72 @@
   padding-top: 0.25rem;
   border-top: 1px solid var(--color-border);
 }
+.planning {
+  display: grid;
+  gap: var(--space-3);
+  margin-block: var(--space-5);
+}
+.planningForm {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.planning h4 {
+  margin: 0;
+  font: 400 var(--text-item) / 1.3 var(--font-display);
+}
+.planning p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.planningProgress {
+  width: 100%;
+  height: var(--space-3);
+  accent-color: var(--color-accent);
+}
+.planningCategory {
+  min-width: 0;
+  padding-block: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+.planningCategory summary {
+  min-height: var(--control-height);
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: var(--text-item);
+}
+.planningCategory summary:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 3px;
+}
+.planningCategory > p {
+  margin-bottom: var(--space-4);
+  color: var(--color-muted);
+}
+.planningItems {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+}
+.planningItem {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.bookingStatus {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--control-height);
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.bookingStatus small {
+  display: block;
+  color: var(--color-muted);
+}
 @media (max-width: 600px) {
   .panel {
     width: min(24rem, calc(100vw - 2rem));

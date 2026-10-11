@@ -8,6 +8,7 @@ import { countries } from '../../data/countries';
 import { useTrips } from '../../hooks/use-trips';
 import { TripEditor } from './trip-editor';
 import { TripList } from './trip-list';
+import { TripPlanning } from './trip-planning';
 import { getTripDates } from './trip-presentation';
 import styles from './trips.module.css';
 
@@ -120,6 +121,11 @@ export const UpcomingTrips = memo(({ mobilePanel }: IUpcomingTripsProps) => {
                 'Destinations to decide'}
             </p>
             {selected.notes && <p className={styles.notes}>{selected.notes}</p>}
+            <TripPlanning
+              key={selected.id}
+              items={selected.planning ?? []}
+              onChange={(planning) => saveTrip(selected.id, { ...selected, planning })}
+            />
             {deleting ? (
               <div className={styles.deleteConfirmation} role="alert">
                 <p>Delete this trip? Its details will be removed.</p>
