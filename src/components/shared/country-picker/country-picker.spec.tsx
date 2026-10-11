@@ -33,7 +33,16 @@ describe('shared country picker', () => {
   it('shares name and country-code search across grouped checklist countries', async () => {
     await act(async () => renderPicker(CountryPickerMode.Checklist));
     expect(host.textContent).toContain('1/48');
-    expect(host.textContent).toContain('0/48');
+    expect(host.textContent).toContain('0/47');
+    expect(host.querySelector(`input[value="${CountryList.UnitedKingdom}"]`)).toBeNull();
+    for (const country of [
+      CountryList.England,
+      CountryList.Scotland,
+      CountryList.Wales,
+      CountryList.NorthernIreland,
+    ]) {
+      expect(host.querySelector(`input[value="${country}"]`)).not.toBeNull();
+    }
     const search = host.querySelector('input[type="search"]');
     if (!(search instanceof HTMLInputElement)) {
       throw new Error('Missing country search');

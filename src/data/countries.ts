@@ -4,7 +4,9 @@ import { countryCatalogue as countries } from './country-catalogue';
 export { countries };
 export type { ICountryDefinition } from './flag-definitions';
 
-export const countryIds = Object.values(CountryList);
+// Keep legacy IDs readable in saved trips; only destination IDs appear in pickers.
+export const storedCountryIds = Object.values(CountryList);
+export const countryIds = storedCountryIds.filter((id) => id !== CountryList.UnitedKingdom);
 export const countryGroups = continentDefinitions.map((continent) => ({
   ...continent,
   countries: countryIds

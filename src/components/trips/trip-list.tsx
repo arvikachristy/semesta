@@ -9,11 +9,13 @@ interface ITripListProps {
   onSelect: (id: string) => void;
 }
 
+const maximumFlagSlices = 6;
+
 export const TripList = ({ trips, onSelect }: ITripListProps) => (
   <ol className={styles.timeline} aria-label="Planned trips">
     {sortTrips(trips).map((trip) => {
       const dates = getTripDates(trip);
-      const country = trip.countryIds[0];
+      const visibleCountries = trip.countryIds.slice(0, maximumFlagSlices);
       return (
         <li key={trip.id}>
           <Button
@@ -28,7 +30,17 @@ export const TripList = ({ trips, onSelect }: ITripListProps) => (
               <small>{dates.days}</small>
             </span>
             <span className={styles.thumbnail} aria-hidden="true">
-              {country && <img src={flagAssetPath(country)} alt="" loading="lazy" />}
+              {visibleCountries.map((country, index) => (
+                <img
+                  key={country}
+                  src={flagAssetPath(country)}
+                  alt=""
+                  loading="lazy"
+                  style={{
+                    maskImage: `conic-gradient(from ${index * (360 / visibleCountries.length)}deg, black 0deg ${360 / visibleCountries.length}deg, transparent ${360 / visibleCountries.length}deg 360deg)`,
+                  }}
+                />
+              ))}
             </span>
             <span className={styles.tripSummary}>
               <span className={styles.tripName}>{trip.name}</span>

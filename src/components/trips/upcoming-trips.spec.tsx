@@ -33,6 +33,34 @@ afterEach(async () => {
 });
 
 describe('upcoming trips panel', () => {
+  it('shows at most six country flags in equal radial slices', async () => {
+    const countryIds = [
+      CountryList.Indonesia,
+      CountryList.France,
+      CountryList.Germany,
+      CountryList.Poland,
+      CountryList.Nepal,
+      CountryList.Brunei,
+      CountryList.Kazakhstan,
+    ];
+    localStorage.setItem(
+      tripStorage.key,
+      JSON.stringify({
+        version: tripStorage.version,
+        trips: [{ ...emptyTripDetails, id: 'multi', name: 'World trip', countryIds }],
+      }),
+    );
+    await act(async () => root.render(<UpcomingTrips />));
+    const flags = [...host.querySelectorAll('ol img')];
+    expect(flags).toHaveLength(6);
+    flags.forEach((flag, index) => {
+      expect(flag.getAttribute('style')).toContain(
+        `conic-gradient(from ${index * 60}deg, black 0deg 60deg, transparent 60deg 360deg)`,
+      );
+    });
+    expect(flags.some((flag) => flag.getAttribute('src')?.includes('KZ'))).toBe(false);
+  });
+
   it('restores trips, cancels deletion, then removes only the chosen trip', async () => {
     const first = {
       ...emptyTripDetails,

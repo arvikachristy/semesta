@@ -30,7 +30,7 @@ try {
   const checkbox = (country) => page.locator(`input[value="${country}"]`);
   await selected(1);
   await trigger.click();
-  assert.equal(await page.getByRole('checkbox').count(), 199);
+  assert.equal(await page.getByRole('checkbox').count(), 198);
   assert.ok(
     (await page.locator('legend').allTextContents()).some((label) => label.includes('1/48')),
   );
@@ -44,8 +44,8 @@ try {
   await checkbox(countries.England).check();
   await selected(2);
   await searchFor(page, 'united kingdom');
-  assert.equal(await page.getByRole('checkbox').count(), 1);
-  assert.equal(await checkbox(countries.UnitedKingdom).isChecked(), false);
+  assert.equal(await page.getByRole('checkbox').count(), 0);
+  assert.equal(await checkbox(countries.UnitedKingdom).count(), 0);
   await searchFor(page, '');
   await checkbox(countries.England).uncheck();
   await checkbox(countries.Kazakhstan).check();
@@ -73,7 +73,7 @@ try {
   assert.equal(await trigger.getAttribute('aria-expanded'), 'false');
   assert.deepEqual(errors, []);
   console.log(
-    'Passed: 199 options, constituent flags, continent counts, search, persistence, mobile layout and Escape.',
+    'Passed: 198 options, constituent flags, no UK overlap, continent counts, search, persistence, mobile layout and Escape.',
   );
 } finally {
   await browser.close();

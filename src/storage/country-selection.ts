@@ -1,4 +1,4 @@
-import { countryIds, defaultCountries } from '../data/countries';
+import { storedCountryIds, defaultCountries } from '../data/countries';
 import type { CountryList } from '../types/country';
 
 export const selectionStorage = { key: 'semesta.country-selection', version: 1 };
@@ -10,7 +10,7 @@ export interface ICountrySelectionRepository {
 
 export const normalizeCountrySelection = (values: readonly unknown[]): CountryList[] => {
   const selected = new Set(values);
-  return countryIds.filter((country) => selected.has(country));
+  return storedCountryIds.filter((country) => selected.has(country));
 };
 
 export const decodeCountrySelection = (raw: string | null): CountryList[] => {
