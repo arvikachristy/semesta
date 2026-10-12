@@ -2,7 +2,6 @@ import { chromium } from '@playwright/test';
 import assert from 'node:assert/strict';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-
 const browser = await chromium.launch({ headless: true, channel: 'chrome' });
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
@@ -30,39 +29,34 @@ try {
   });
   await page.reload();
   await page.getByRole('button', { name: 'Open Planning preview' }).click();
-  await page.getByRole('button', { name: '‹ Back to collection' }).click();
   const planning = page.getByRole('region', { name: 'Trip Studio planning' });
-  await planning
-    .locator('summary')
-    .filter({ hasText: /^Choose optional categories$/ })
-    .click();
+  await planning.getByRole('button', { name: 'Choose optional categories', exact: true }).click();
+  const choices = page.getByRole('dialog', { name: 'Choose optional categories', exact: true });
   for (const label of ['Transportation', 'Accommodation', 'Travel essentials']) {
-    await planning.getByRole('checkbox', { name: label, exact: true }).check();
+    await choices.getByRole('checkbox', { name: label, exact: true }).check();
   }
-  await planning
-    .locator('summary')
-    .filter({ hasText: /^Add transportation$/ })
-    .click();
-  await planning.getByLabel('Transportation name').fill('Train to Paris');
-  await planning.locator('form').first().getByLabel('Details').fill('12 May · Booking ABC · €120');
-  await planning.getByRole('button', { name: 'Add transportation', exact: true }).click();
+  await choices.getByRole('button', { name: 'Done', exact: true }).click();
+  const add = async (label, action, name, details = '') => {
+    await planning.locator('summary').filter({ hasText: label }).click();
+    await planning.getByRole('button', { name: action, exact: true }).click();
+    const form = page.getByRole('dialog', { name: action, exact: true });
+    await form.locator('input[name="name"]').fill(name);
+    await form.getByLabel('Details', { exact: true }).fill(details);
+    await form.getByRole('button', { name: action, exact: true }).click();
+  };
+  await add(
+    'Flights & Transport',
+    'Add transportation',
+    'Train to Paris',
+    '12 May · Booking ABC · €120',
+  );
   await planning
     .locator('summary')
     .filter({ hasText: /Train to Paris/ })
     .click();
   await planning.getByRole('checkbox', { name: /Train to Paris/ }).check();
-  await planning
-    .locator('summary')
-    .filter({ hasText: /^Add accommodation$/ })
-    .click();
-  await planning.getByLabel('Accommodation name').fill('Paris hotel');
-  await planning.getByRole('button', { name: 'Add accommodation', exact: true }).click();
-  await planning
-    .locator('summary')
-    .filter({ hasText: /^Add travel essentials$/ })
-    .click();
-  await planning.getByLabel('Travel essentials name').fill('Insurance');
-  await planning.getByRole('button', { name: 'Add travel essentials', exact: true }).click();
+  await add('Accommodation', 'Add accommodation', 'Paris hotel');
+  await add('Travel essentials', 'Add travel essentials', 'Insurance');
   await planning
     .locator('summary')
     .filter({ hasText: /Insurance/ })
@@ -72,22 +66,29 @@ try {
   await page.screenshot({ path: join(tmpdir(), 'semesta-planning-desktop.png') });
   await page.reload();
   await page.getByRole('button', { name: 'Open Planning preview' }).click();
-  await page.getByRole('button', { name: '‹ Back to collection' }).click();
+  await planning
+    .locator('summary')
+    .filter({ hasText: /Flights & Transport/ })
+    .click();
   await planning
     .locator('summary')
     .filter({ hasText: /Train to Paris/ })
     .click();
   assert.equal(await planning.getByRole('checkbox', { name: /Train to Paris/ }).isChecked(), true);
   await planning.getByRole('button', { name: 'Edit Train to Paris', exact: true }).click();
-  await planning.getByLabel('Name', { exact: true }).fill('Eurostar');
-  await planning.getByRole('button', { name: 'Save details', exact: true }).click();
+  const editor = page.getByRole('dialog', { name: 'Edit Train to Paris', exact: true });
+  await editor.getByLabel('Name', { exact: true }).fill('Eurostar');
+  await editor.getByRole('button', { name: 'Save details', exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole('button', { name: 'Trips', exact: true }).click();
   await planning.getByRole('checkbox', { name: /Eurostar/ }).uncheck();
   assert.match(await planning.textContent(), /1 of 3.*33%/);
   const bounds = await planning.boundingBox();
   assert.ok(bounds && bounds.x >= 0 && bounds.x + bounds.width <= 390);
   await page.screenshot({ path: join(tmpdir(), 'semesta-planning-mobile.png') });
+  await planning
+    .locator('summary')
+    .filter({ hasText: /Accommodation/ })
+    .click();
   await planning
     .locator('summary')
     .filter({ hasText: /Paris hotel/ })

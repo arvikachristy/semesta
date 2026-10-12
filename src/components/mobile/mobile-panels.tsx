@@ -13,8 +13,12 @@ import type { ITrip } from '../../types/trip';
 import type { useTrips } from '../../hooks/use-trips';
 
 interface IMobilePanelsProps extends ICountrySelectorProps {
+  studioOpen?: boolean;
+  onCollection?: () => void;
+  onTrips?: () => void;
+  listRequest?: number;
   tripSession?: ReturnType<typeof useTrips>;
-  onOpenStudio?: (trip: ITrip) => void;
+  onOpenStudio: (trip: ITrip) => void;
 }
 
 const panelConfig = {
@@ -30,16 +34,22 @@ const panelConfig = {
 
 export const MobilePanels = memo((props: IMobilePanelsProps) => {
   const account = useAccount();
-  const [mobile, setMobile] = useState(() => window.innerWidth <= panelConfig.breakpoint);
+  const [narrow, setNarrow] = useState(() => window.innerWidth <= panelConfig.breakpoint);
+  const mobile = narrow || Boolean(props.studioOpen);
   const [active, setActive] = useState<TMobilePanel | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
   const triggers = useRef<Partial<Record<TMobilePanel, HTMLButtonElement | null>>>({});
   const previous = useRef<TMobilePanel | null>(null);
   const dismiss = () => setActive(null);
+  useEffect(() => {
+    if (props.listRequest) {
+      setActive(MobilePanel.Trips);
+    }
+  }, [props.listRequest]);
 
   useEffect(() => {
-    const resize = () => setMobile(window.innerWidth <= panelConfig.breakpoint);
+    const resize = () => setNarrow(window.innerWidth <= panelConfig.breakpoint);
     window.addEventListener(panelConfig.resizeEvent, resize);
     return () => window.removeEventListener(panelConfig.resizeEvent, resize);
   }, []);
@@ -92,6 +102,7 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
       ref={dialog}
       className={`${ui.surface} ${styles.shell}`}
       data-mobile={mobile}
+      data-studio={Boolean(props.studioOpen)}
       data-active={mobile ? (active ?? '') : ''}
       role={mobile && active ? undefined : 'presentation'}
       aria-label={mobile && active ? panelConfig.labels[active] : undefined}
@@ -141,14 +152,10 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
           <UpcomingTrips
             tripSession={props.tripSession}
             key={account.userId}
-            onOpenStudio={
-              props.onOpenStudio
-                ? (trip) => {
-                    dismiss();
-                    props.onOpenStudio?.(trip);
-                  }
-                : undefined
-            }
+            onOpenStudio={(trip) => {
+              dismiss();
+              props.onOpenStudio(trip);
+            }}
             mobilePanel={
               mobile ? { open: active === MobilePanel.Trips, onClose: dismiss } : undefined
             }
@@ -172,11 +179,23 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
             variant={active === panel ? ButtonVariant.Primary : ButtonVariant.Quiet}
             aria-expanded={active === panel}
             disabled={panel === MobilePanel.Countries && props.disabled}
-            onClick={() => setActive((current) => (current === panel ? null : panel))}
+            onClick={() => {
+              if (props.studioOpen && panel === MobilePanel.Countries) {
+                dismiss();
+                props.onCollection?.();
+              } else if (props.studioOpen && panel === MobilePanel.Trips) {
+                setActive(MobilePanel.Trips);
+                props.onTrips?.();
+              } else {
+                setActive((current) => (current === panel ? null : panel));
+              }
+            }}
           >
-            {panel === MobilePanel.Account && account.hasTrips && account.email === null
-              ? 'Save plans'
-              : panelConfig.labels[panel]}
+            {props.studioOpen && panel === MobilePanel.Countries
+              ? 'Collection'
+              : panel === MobilePanel.Account && account.hasTrips && account.email === null
+                ? 'Save plans'
+                : panelConfig.labels[panel]}
           </Button>
         ))}
       </nav>

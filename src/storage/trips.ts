@@ -1,6 +1,6 @@
 import { normalizeCountrySelection } from './country-selection';
 import type { ITrip } from '../types/trip';
-import { isTripDate } from '../types/trip';
+import { isTripDate, isTripParticipant } from '../types/trip';
 import {
   isTripPlanningItem,
   isPlanningCategory,
@@ -42,7 +42,12 @@ export const isTripRecord = (value: unknown): value is ITrip => {
     (!('activePlanningCategories' in value) ||
       (Array.isArray(value.activePlanningCategories) &&
         value.activePlanningCategories.every(isPlanningCategory) &&
-        new Set(value.activePlanningCategories).size === value.activePlanningCategories.length))
+        new Set(value.activePlanningCategories).size === value.activePlanningCategories.length)) &&
+    (!('participants' in value) ||
+      (Array.isArray(value.participants) &&
+        value.participants.every(isTripParticipant) &&
+        new Set(value.participants.map((participant) => participant.id)).size ===
+          value.participants.length))
   );
 };
 

@@ -82,11 +82,16 @@ describe('application selection state', () => {
     const tripsBefore = localStorage.getItem(tripStorage.key);
     await click('button[aria-label="Open France trip"]');
     expect(host.querySelector('section[aria-label="Trip Studio"]')).not.toBeNull();
+    expect(host.querySelector('section[aria-label="Trip details"]')).toBeNull();
+    expect(host.textContent).not.toContain('Open Trip Studio');
+    expect(host.querySelector('aside[aria-label="Upcoming trips"] section')).toBeNull();
     expect(canvas?.closest('[hidden]')).not.toBeNull();
     await click('section[aria-label="Trip Studio"] button');
     expect(host.querySelector('section[aria-label="Trip Studio"]')).toBeNull();
     expect(host.querySelector('canvas')).toBe(canvas);
     expect(canvas?.closest('[hidden]')).toBeNull();
+    expect(host.querySelector('aside[aria-label="Upcoming trips"] ol')).not.toBeNull();
+    expect(host.querySelector('aside[aria-label="Upcoming trips"] section')).toBeNull();
     expect(startPlayground).toHaveBeenCalledOnce();
     expect(localStorage.getItem(tripStorage.key)).toBe(tripsBefore);
   });

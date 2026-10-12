@@ -6,6 +6,29 @@ import { accountConfig } from './account-config';
 
 const trip = { ...emptyTripDetails, id: 'trip-1', name: 'Lisbon' };
 describe('account workspace migration', () => {
+  it('validates participant data in cloud backups without requiring it on old trips', () => {
+    const record = {
+      version: accountConfig.version,
+      revision: 1,
+      dirty: false,
+      workspace: {
+        countries: [],
+        trips: [{ ...trip, participants: [{ id: 'person', name: 'Taylor' }] }],
+      },
+    };
+    expect(decodeWorkspaceRecord(JSON.parse(JSON.stringify(record)))).toEqual(record);
+    expect(() =>
+      decodeWorkspaceRecord({
+        ...record,
+        workspace: {
+          countries: [],
+          trips: [
+            { ...trip, participants: [{ id: 'person', name: 'Taylor', avatarUrl: 'data:unsafe' }] },
+          ],
+        },
+      }),
+    ).toThrow();
+  });
   it('normalizes legacy planning and validates enriched cloud backups with inactive items preserved', () => {
     const legacyItem = {
       id: 'train',

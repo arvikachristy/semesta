@@ -28,6 +28,14 @@
 .bar > button {
   flex: 1;
 }
+@media (min-width: 601px) {
+  .shell[data-studio='true'] .bar {
+    left: 50%;
+    right: auto;
+    width: min(32rem, calc(100vw - 2rem));
+    transform: translateX(-50%);
+  }
+}
 .shell[data-mobile='true'][data-active]:not([data-active='']) {
   --sheet-height: min(56dvh, var(--visible-height, 100dvh));
   position: fixed;

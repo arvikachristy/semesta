@@ -9,17 +9,22 @@ import type { CountryList } from './types/country';
 import type { CountryStatus } from './types/country-status';
 import { continentDefinitions } from './types/continent';
 import { startPlayground } from './three/playground';
-import type { ITrip } from './types/trip';
 import { TripStudio } from './components/trips/trip-studio';
 import { useTrips } from './hooks/use-trips';
 
 export const App = () => {
-  const [studioTrip, setStudioTrip] = useState<ITrip | null>(null);
+  const [studioTripId, setStudioTripId] = useState<string | null>(null);
+  const [listRequest, setListRequest] = useState(0);
+  const openTrips = () => {
+    setStudioTripId(null);
+    setListRequest((value) => value + 1);
+  };
   const [frameReading, setFrameReading] = useState<IFrameReading | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playgroundRef = useRef<ReturnType<typeof startPlayground> | null>(null);
   const account = useAccount();
   const tripSession = useTrips(account.trips);
+  const studioTrip = tripSession.trips.find((trip) => trip.id === studioTripId) ?? null;
   const { showedCountries, ready, onToggle, onClear } = useCountrySelection(account.countries);
   const [statuses, setStatuses] = useState<Partial<Record<CountryList, CountryStatus>>>({});
 
@@ -60,15 +65,6 @@ export const App = () => {
     <main>
       <div hidden={Boolean(studioTrip)}>
         <FpsToken reading={frameReading} />
-        <MobilePanels
-          tripSession={tripSession}
-          onOpenStudio={setStudioTrip}
-          showedCountries={showedCountries}
-          statuses={statuses}
-          disabled={!ready}
-          onToggle={onToggle}
-          onClear={onClear}
-        />
         <ul className="visually-hidden" id="continent-descriptions">
           {continentDefinitions.map((continent) => (
             <li key={continent.id}>
@@ -87,12 +83,26 @@ export const App = () => {
           aria-label="Three playground: select countries below, grab their jellies inside the glasses, drag a glass to turn the circle, or drag the background to pan."
         />
       </div>
+      <MobilePanels
+        tripSession={tripSession}
+        onOpenStudio={(trip) => setStudioTripId(trip.id)}
+        studioOpen={Boolean(studioTrip)}
+        onCollection={openTrips}
+        onTrips={openTrips}
+        listRequest={listRequest}
+        showedCountries={showedCountries}
+        statuses={statuses}
+        disabled={!ready}
+        onToggle={onToggle}
+        onClear={onClear}
+      />
       {studioTrip && (
         <TripStudio
           key={studioTrip.id}
           trip={studioTrip}
           tripSession={tripSession}
-          onBack={() => setStudioTrip(null)}
+          onBack={openTrips}
+          onTrips={openTrips}
         />
       )}
     </main>

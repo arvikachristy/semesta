@@ -99,13 +99,6 @@
   border-radius: var(--radius-control);
   background: var(--color-glass-raised);
 }
-.details h3 {
-  margin: 1rem 0 0;
-  overflow-wrap: anywhere;
-  font-family: var(--font-display);
-  font-size: var(--text-title);
-  font-weight: 400;
-}
 .dateSummary {
   font-size: var(--text-small);
   color: var(--color-muted);
@@ -116,10 +109,6 @@
 }
 .warning {
   font-size: var(--text-small);
-}
-.deleteConfirmation {
-  padding-top: 0.25rem;
-  border-top: 1px solid var(--color-border);
 }
 .planning {
   display: grid;
@@ -315,10 +304,6 @@
   font-size: 1.5rem;
   font-weight: 300;
   color: var(--color-muted);
-}
-.panel .back {
-  padding-left: 0;
-  font-size: var(--text-label);
 }
 
 .panel[data-mobile='true'] {

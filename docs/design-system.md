@@ -68,6 +68,14 @@ Token naming follows the [Design Tokens Community Group](https://www.w3.org/comm
 
 ## Mobile sheets
 
+Trip Studio keeps the collection mounted and uses the existing navigation shell for
+Collection, Trips and Account access. Its abstract SVG journey and transparent
+readiness panel lead into collapsed booking tickets. Category selection, traveller
+management and booking create/edit actions use the shared native Overlay dialog;
+forms are mounted only on request. Escape and Close dismiss overlays, focus returns
+to the opener, and native date/time inputs retain their usual behaviour. All ticket
+content and progress come from the existing planning model and repository.
+
 At 600px and below, route the Countries, Trips and Account interfaces through `MobilePanels`. It owns the single active sheet and bottom navigation. Keep feature components mounted so closing a sheet or switching tabs preserves drafts. Desktop keeps its existing floating controls.
 
 Use the native dialog modal state for focus containment and scene input blocking. Countries and trip lists use the short sheet; trip details/editing use the expanded sheet. Use explicit Close and backdrop dismissal; no draggable heights in the MVP. The form fields scroll while actions and navigation remain visible. `visualViewport` sizes the sheet above the mobile keyboard; include safe-area padding. Use `--color-sheet` for mobile readability.

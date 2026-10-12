@@ -1,12 +1,19 @@
 # Semesta
 
 Selecting a trip opens Trip Studio using the existing planner and trip repository.
+The destination, abstract journey route and readiness panel form the main workspace.
+Collapsed category tickets use real bookings, with create/edit forms in compact
+dialogs. Travellers are optional real trip data; initials appear when no avatar is
+provided. Collection, Trips and account navigation stay available throughout.
 Choose optional Transportation, Accommodation, Activities, Restaurants and Travel
 essentials categories. Turning a category off preserves its items but excludes them
 from readiness; empty categories never lower progress. Category and overall bars
 count Booked items (Ready for essentials). Expand an item to change Idea, To book,
 or Booked status and edit its date/time, details, reference and http/https link.
 Back to collection restores the glasses and existing trip editing controls.
+Trip rows and successful trip creation open Studio directly. Returning shows the
+compact chronological trip list; metadata editing and confirmed deletion live in
+Studio's More menu. There is no intermediate sidebar trip-details view.
 
 Local trips and account backups use the same validators and keep storage version 1.
 Legacy completed booleans map to Booked or To book, with every item and ID retained.

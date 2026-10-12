@@ -9,6 +9,20 @@ import { tripStorage } from '../../storage/trips';
 const host = document.createElement('div');
 let root: ReturnType<typeof createRoot>;
 beforeEach(() => {
+  Object.defineProperties(HTMLDialogElement.prototype, {
+    showModal: {
+      configurable: true,
+      value(this: HTMLDialogElement) {
+        this.open = true;
+      },
+    },
+    close: {
+      configurable: true,
+      value(this: HTMLDialogElement) {
+        this.open = false;
+      },
+    },
+  });
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   localStorage.clear();
   document.body.append(host);
@@ -18,8 +32,83 @@ afterEach(async () => {
   await act(async () => root.unmount());
   host.remove();
   vi.unstubAllGlobals();
+  Reflect.deleteProperty(HTMLDialogElement.prototype, 'showModal');
+  Reflect.deleteProperty(HTMLDialogElement.prototype, 'close');
 });
 describe('Trip Studio planning', () => {
+  it('edits metadata without replacing bookings, and requires confirmation before deletion', async () => {
+    const trip = {
+      ...emptyTripDetails,
+      id: 'lisbon',
+      name: 'Lisbon',
+      notes: 'Remember the train',
+      planning: [
+        {
+          id: 'train',
+          category: 'transportation',
+          name: 'Train',
+          details: 'Keep this',
+          completed: true,
+        },
+      ],
+      participants: [{ id: 'person', name: 'Taylor' }],
+    };
+    localStorage.setItem(tripStorage.key, JSON.stringify({ version: 1, trips: [trip] }));
+    const onBack = vi.fn();
+    await act(async () =>
+      root.render(
+        <TripStudio trip={{ ...emptyTripDetails, id: trip.id, name: trip.name }} onBack={onBack} />,
+      ),
+    );
+    const click = async (name: string) => {
+      const button = [...host.querySelectorAll('button')].find(
+        (element) => element.textContent === name,
+      );
+      if (!button) {
+        throw new Error(`Missing ${name}`);
+      }
+      await act(async () => button.click());
+    };
+    await click('Edit trip');
+    const input = host.querySelector('dialog[aria-label="Edit trip"] input');
+    if (!(input instanceof HTMLInputElement)) {
+      throw new Error('Missing metadata editor');
+    }
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(
+        input,
+        'Lisbon summer',
+      );
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await click('Save trip');
+    const saved = JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips[0];
+    expect(saved).toMatchObject({
+      id: 'lisbon',
+      name: 'Lisbon summer',
+      notes: trip.notes,
+      participants: trip.participants,
+    });
+    expect(saved.planning[0]).toMatchObject({
+      id: 'train',
+      name: 'Train',
+      completed: true,
+      status: 'booked',
+    });
+    await click('Delete trip');
+    await click('Keep trip');
+    expect(JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips).toHaveLength(1);
+    await click('Delete trip');
+    const confirm = [...host.querySelectorAll('dialog[aria-label="Delete trip"] button')].find(
+      (button) => button.textContent === 'Delete trip',
+    );
+    if (!(confirm instanceof HTMLButtonElement)) {
+      throw new Error('Missing confirmation');
+    }
+    await act(async () => confirm.click());
+    expect(JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips).toEqual([]);
+    expect(onBack).toHaveBeenCalledOnce();
+  });
   it('uses saved legacy bookings and keeps inactive category items through editing and reload', async () => {
     const trip = {
       ...emptyTripDetails,
@@ -50,9 +139,20 @@ describe('Trip Studio planning', () => {
     expect(host.textContent).toContain('France');
     expect(host.textContent).toContain('Night train');
     expect(host.textContent).toContain('50%');
-    const choices = host.querySelectorAll(
-      'section[aria-label="Trip Studio planning"] > details input',
+    expect(host.querySelector('form')).toBeNull();
+    expect(
+      host.querySelectorAll(
+        'section[aria-label="Trip Studio planning"] > div:last-of-type > details[open]',
+      ),
+    ).toHaveLength(0);
+    const choose = [...host.querySelectorAll('button')].find(
+      (button) => button.textContent === 'Choose optional categories',
     );
+    if (!choose) {
+      throw new Error('Missing category action');
+    }
+    await act(async () => choose.click());
+    const choices = host.querySelectorAll('dialog input');
     const accommodation = choices[1];
     if (!(accommodation instanceof HTMLInputElement)) {
       throw new Error('Missing accommodation choice');
