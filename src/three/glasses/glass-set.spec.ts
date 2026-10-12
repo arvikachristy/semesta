@@ -62,10 +62,15 @@ describe('glass circle', () => {
     const meshes = object.children.filter((child) => child instanceof THREE.Mesh);
     const first = meshes[0];
     expect(meshes).toHaveLength(7);
-    meshes.forEach((mesh) => {
-      expect(mesh.geometry).toBe(first.geometry);
-      expect(mesh.material).toBe(first.material);
-    });
+    meshes
+      .filter((mesh) => mesh.name !== 'oceania')
+      .forEach((mesh) => {
+        expect(mesh.geometry).toBe(first.geometry);
+        expect(mesh.material).toBe(first.material);
+      });
+    const coupe = meshes.find((mesh) => mesh.name === 'oceania')!;
+    expect(coupe.geometry).not.toBe(first.geometry);
+    const coupeDispose = vi.spyOn(coupe.geometry, 'dispose');
     const geometryDispose = vi.spyOn(first.geometry, 'dispose');
     const material = first.material;
     if (Array.isArray(material)) {
@@ -74,6 +79,7 @@ describe('glass circle', () => {
     const materialDispose = vi.spyOn(material, 'dispose');
     dispose();
     expect(geometryDispose).toHaveBeenCalledTimes(1);
+    expect(coupeDispose).toHaveBeenCalledTimes(1);
     expect(materialDispose).toHaveBeenCalledTimes(1);
     expect(object.children).toHaveLength(0);
     sets.pop();
@@ -94,7 +100,7 @@ describe('glass circle', () => {
         const position = glass.getWorldPosition(new THREE.Vector3());
         const towardCamera = camera.position.clone().sub(position).setY(0).normalize();
         expect(glass.getWorldDirection(new THREE.Vector3()).dot(towardCamera)).toBeCloseTo(1);
-        expect(glass.children).toHaveLength(3);
+        expect(glass.children).toHaveLength(glass.name === 'oceania' ? 5 : 3);
       });
     }
   });

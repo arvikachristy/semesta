@@ -4,6 +4,7 @@ import { jellyParameters } from './jelly-parameters';
 export interface IJellyContainer {
   origin: THREE.Vector3;
   radius: number;
+  wallAt?: (height: number) => { radius: number; slope: number };
   floor: number;
   ceiling: number;
 }
@@ -112,9 +113,12 @@ export const createSoftBody = (
   const center = new THREE.Vector3();
   const meanVelocity = new THREE.Vector3();
   const incomingVelocity = rest.map(() => new THREE.Vector3());
+  const stepStart = rest.map((point) => point.clone());
+  const quietReference = rest.map((point) => point.clone());
   let grabbed = false;
   let sleeping = false;
   let quietTime = 0;
+  let motionSpeed = Infinity;
   let revision = 0;
   const wake = () => {
     if (sleeping) {
@@ -161,12 +165,36 @@ export const createSoftBody = (
     position.y = Math.max(floorLevel(), position.y);
     if (container) {
       position.y = Math.min(container.ceiling - container.origin.y, position.y);
+      if (container.wallAt) {
+        // Project along the sloped wall normal, so gravity slides a jelly down
+        // the bowl instead of repeatedly squeezing it horizontally.
+        for (let iteration = 0; iteration < 4; iteration++) {
+          const x = position.x + container.origin.x;
+          const z = position.z + container.origin.z;
+          const radius = Math.hypot(x, z);
+          const wall = container.wallAt(position.y + container.origin.y);
+          const penetration = radius - wall.radius;
+          if (penetration <= 1e-8 || radius < 1e-8) {
+            break;
+          }
+          const amount = penetration / (1 + wall.slope ** 2);
+          position.x -= (x / radius) * amount;
+          position.z -= (z / radius) * amount;
+          position.y = THREE.MathUtils.clamp(
+            position.y + wall.slope * amount,
+            floorLevel(),
+            container.ceiling - container.origin.y,
+          );
+        }
+      }
       const x = position.x + container.origin.x;
       const z = position.z + container.origin.z;
       const radius = Math.hypot(x, z);
-      if (radius > container.radius) {
-        position.x = (x * container.radius) / radius - container.origin.x;
-        position.z = (z * container.radius) / radius - container.origin.z;
+      const wallRadius =
+        container.wallAt?.(position.y + container.origin.y).radius ?? container.radius;
+      if (radius > wallRadius) {
+        position.x = (x * wallRadius) / radius - container.origin.x;
+        position.z = (z * wallRadius) / radius - container.origin.z;
       }
     }
   };
@@ -193,6 +221,7 @@ export const createSoftBody = (
 
     for (let i = 0; i < positions.length; i++) {
       previous[i].copy(positions[i]);
+      stepStart[i].copy(positions[i]);
       if (!weights[i]) {
         continue;
       }
@@ -301,21 +330,33 @@ export const createSoftBody = (
         const x = positions[i].x + container.origin.x;
         const z = positions[i].z + container.origin.z;
         const radius = Math.hypot(x, z);
-        if (radius >= container.radius - 1e-5) {
-          normal.set(-x / radius, 0, -z / radius);
+        const wall = container.wallAt?.(positions[i].y + container.origin.y);
+        if (radius > 1e-8 && radius >= (wall?.radius ?? container.radius) - 1e-5) {
+          normal.set(-x / radius, wall?.slope ?? 0, -z / radius).normalize();
           const approach = incomingVelocity[i].dot(normal);
           if (approach < 0) {
             velocities[i].addScaledVector(
               normal,
-              -approach * p.restitution - velocities[i].dot(normal),
+              -approach * (wall && approach > -p.bounceThreshold ? 0 : p.restitution) -
+                velocities[i].dot(normal),
             );
           }
+        }
+        if (wall && radius >= wall.radius - 1e-5) {
+          const normalSpeed = velocities[i].dot(normal);
+          velocities[i]
+            .addScaledVector(normal, -normalSpeed)
+            .multiplyScalar(Math.exp(-p.floorFriction * dt))
+            .addScaledVector(normal, normalSpeed);
         }
         if (positions[i].y + container.origin.y >= container.ceiling - 1e-5) {
           velocities[i].y = Math.min(0, -Math.abs(incomingVelocity[i].y) * p.restitution);
         }
       }
-      maximumSpeed = Math.max(maximumSpeed, velocities[i].length());
+      maximumSpeed = Math.max(
+        maximumSpeed,
+        container?.wallAt ? positions[i].distanceTo(stepStart[i]) / dt : velocities[i].length(),
+      );
       for (const plane of bounds) {
         const approach = incomingVelocity[i].dot(plane.normal);
         if (plane.distanceToPoint(positions[i]) <= p.screenMargin + 1e-5 && approach < 0) {
@@ -326,10 +367,39 @@ export const createSoftBody = (
         }
       }
     }
-    quietTime = !grabbed && maximumSpeed < p.sleepSpeed * scale ? quietTime + dt : 0;
+    motionSpeed = maximumSpeed;
+    if (container?.wallAt) {
+      // A shallow packed bowl retains tiny contact corrections. Sleep on bounded
+      // positional drift over the quiet window, not correction-derived velocity.
+      const quietDistance = p.sleepSpeed * scale * p.sleepAfter;
+      const quiet =
+        !grabbed &&
+        positions.every((point, i) => point.distanceTo(quietReference[i]) < quietDistance);
+      quietTime = quiet ? quietTime + dt : 0;
+      if (!quiet) {
+        positions.forEach((point, i) => quietReference[i].copy(point));
+      }
+    } else {
+      quietTime = !grabbed && maximumSpeed < p.sleepSpeed * scale ? quietTime + dt : 0;
+    }
     if (quietTime >= p.sleepAfter) {
       sleeping = true;
       velocities.forEach((velocity) => velocity.set(0, 0, 0));
+    }
+  };
+  const correctContact = (correction: THREE.Vector3) => {
+    // Resolve overlap without turning solver separation into an upward launch.
+    const direction = scratch.copy(correction).normalize();
+    for (let i = 0; i < positions.length; i++) {
+      const approach =
+        (positions[i].x - previous[i].x) * direction.x +
+        (positions[i].y - previous[i].y) * direction.y +
+        (positions[i].z - previous[i].z) * direction.z;
+      positions[i].add(correction);
+      previous[i].add(correction);
+      if (approach < 0) {
+        previous[i].addScaledVector(direction, approach);
+      }
     }
   };
   const step = () => {
@@ -401,11 +471,13 @@ export const createSoftBody = (
     predict,
     solveConstraints,
     constrainEnvironment,
+    correctContact,
     finishStep,
     container,
     wake,
     isSleeping: () => sleeping,
     isGrabbed: () => grabbed,
+    hasContactMotion: () => grabbed || (!sleeping && motionSpeed > p.bounceThreshold * scale),
     getRevision: () => revision,
   };
 };

@@ -64,12 +64,19 @@ export const createJellyPile = () => {
   const translate = (entry: ICollisionBody, amount: number, axis: TContactAxis) => {
     correction.set(0, 0, 0);
     correction[axis] = amount;
-    for (const position of entry.body.positions) {
-      position.add(correction);
+    if (entry.body.container?.wallAt) {
+      entry.body.correctContact(correction);
+    } else {
+      for (const position of entry.body.positions) {
+        position.add(correction);
+      }
     }
     entry.bounds.translate(correction);
   };
   const collide = (first: ICollisionBody, second: ICollisionBody) => {
+    const curved = Boolean(first.body.container?.wallAt && second.body.container?.wallAt);
+    const canWake = !curved || first.body.hasContactMotion() || second.body.hasContactMotion();
+    const wakePenetration = pileParameters.wakePenetration;
     const a = first.bounds;
     const b = second.bounds;
     let axis: TContactAxis = ContactAxis.Y;
@@ -97,11 +104,11 @@ export const createJellyPile = () => {
       // pile into the floor when another jelly lands on top.
       const upper = sign < 0 ? second : first;
       const lower = sign < 0 ? first : second;
-      if (penetration > pileParameters.wakePenetration && lower.body.isSleeping()) {
+      if (canWake && penetration > wakePenetration && lower.body.isSleeping()) {
         lower.body.wake();
       }
       if (upper.body.isSleeping()) {
-        if (penetration <= pileParameters.wakePenetration) {
+        if (!canWake || penetration <= wakePenetration) {
           return;
         }
         upper.body.wake();
@@ -109,7 +116,7 @@ export const createJellyPile = () => {
       translate(upper, depth, axis);
       return;
     }
-    if (penetration > pileParameters.wakePenetration) {
+    if (canWake && penetration > wakePenetration) {
       if (first.body.isSleeping()) {
         first.body.wake();
       }

@@ -150,3 +150,9 @@ Pull requests get preview deployments; merges into `master` deploy production. V
 ## Interface design
 
 The DOM interface follows [Rose Glass](docs/design-system.md): shared glass surfaces, consistent 44px controls, burgundy actions and serif headings. Design values live in `src/styles/tokens.css`; reusable controls and recipes live in `src/components/ui/`. Read the guide before adding UI. Native calendar/option popups retain the browser's own appearance.
+
+## Oceania coupe preview
+
+On `feat/continent-cocktail-glasses`, Oceania alone uses a deeper stemmed coupe with a narrower opening, enlarged gold continent artwork, a curved gold OCEANIA wordmark on the bowl, and gold foot and stem-collar accents. The shared camera settings are unchanged. Its bowl volume is derived from the catalogue's 14 Oceania entries, the shared jelly size and a conservative 25% packing estimate for the shallow bowl, with 10% volume headroom. The bowl is larger than the initial 50% estimate so the collision solver has room to settle the full set. The stem and foot do not contribute capacity. The other six vessels retain their original cylindrical geometry and dimensions, so cross-continent volume ratios are not yet implemented.
+
+`src/three/glasses/oceania-coupe.ts` defines the bowl profile, integrated capacity, hollow geometry and fitted artwork. Oceania's jellies use that same interior profile for wall constraints and sloped collision normals. Overlap corrections do not become launch impulses; wall friction and motion-aware sleeping prevent persistent contact chatter. Regression scenarios cover 1, 7 and 14 jellies, including grab/release and removal from the full pile. Start the worktree with `npm run dev -- --port 5174`, then choose Oceania countries in the country picker to fill the coupe.

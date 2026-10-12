@@ -1,5 +1,7 @@
 import { countries, countryIds } from '../../data/countries';
 import type { CountryList } from '../../types/country';
+import { ContinentId } from '../../types/continent';
+import { oceaniaCoupe, coupeWallAt } from '../glasses/oceania-coupe';
 import type { TContinentId } from '../../types/continent';
 import type { createGlassSet } from '../glasses/glass-set';
 import { glassDimensions, glassParameters } from '../glasses/glass-parameters';
@@ -81,7 +83,17 @@ export const createCountryCollection = ({
       const continent = countries[country].continent;
       const count = counts.get(continent) ?? 0;
       counts.set(continent, count + 1);
-      if (count >= glassParameters.capacity) {
+      const isCoupe = continent === ContinentId.Oceania;
+      const floor = isCoupe ? oceaniaCoupe.floor : glassParameters.baseThickness;
+      const ceiling = isCoupe
+        ? oceaniaCoupe.ceiling
+        : glassParameters.baseThickness +
+          glassDimensions.interiorHeight -
+          glassDimensions.topBuffer;
+      const innerRadius = isCoupe
+        ? coupeWallAt(ceiling - jellyParameters.surface.height * glassParameters.jellyScale).radius
+        : glassDimensions.interiorDiameter / 2;
+      if (count >= (isCoupe ? oceaniaCoupe.capacity : glassParameters.capacity)) {
         throw new Error('Continent country limit exceeded');
       }
       if (entries.has(country)) {
@@ -90,12 +102,20 @@ export const createCountryCollection = ({
       const block = createBlock({
         scale: glassParameters.jellyScale,
         container: {
-          radius: glassDimensions.interiorDiameter / 2 - pileParameters.wallClearance,
-          floor: glassParameters.baseThickness,
-          ceiling:
-            glassParameters.baseThickness +
-            glassDimensions.interiorHeight -
-            glassDimensions.topBuffer,
+          radius: innerRadius - pileParameters.wallClearance,
+          floor,
+          ceiling,
+          ...(isCoupe
+            ? {
+                wallAt: (height: number) => {
+                  const wall = coupeWallAt(height);
+                  return {
+                    radius: Math.max(0, wall.radius - pileParameters.wallClearance),
+                    slope: wall.slope,
+                  };
+                },
+              }
+            : {}),
         },
       });
       block.object.name = country;
@@ -103,7 +123,7 @@ export const createCountryCollection = ({
       const radius =
         Math.max(
           0,
-          glassDimensions.interiorDiameter / 2 -
+          innerRadius -
             (Math.hypot(jellyParameters.surface.width, jellyParameters.surface.depth) *
               glassParameters.jellyScale) /
               2 -
@@ -111,11 +131,7 @@ export const createCountryCollection = ({
         ) * Math.sqrt((count * pileParameters.dropRadiusStep) % 1);
       block.object.position.set(
         Math.sin(angle) * radius,
-        glassParameters.baseThickness +
-          glassDimensions.interiorHeight -
-          glassDimensions.topBuffer -
-          (jellyParameters.surface.height * glassParameters.jellyScale) / 2 -
-          0.02,
+        ceiling - (jellyParameters.surface.height * glassParameters.jellyScale) / 2 - 0.02,
         Math.cos(angle) * radius,
       );
       const entry: IEntry = {

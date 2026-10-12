@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest';
 import { createCamera } from './camera';
 import { createGlassSet } from './glasses/glass-set';
 import { panParameters } from './pan';
-
 const syncCamera = (view: ReturnType<typeof createCamera>) => {
   view.camera.position.copy(view.cameraTarget).add(view.cameraOffset);
   view.camera.lookAt(view.cameraTarget);
