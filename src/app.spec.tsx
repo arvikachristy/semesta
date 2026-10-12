@@ -8,6 +8,8 @@ import { startPlayground } from './three/playground';
 import { CountryList } from './types/country';
 import { CountryStatus } from './types/country-status';
 import { selectionStorage } from './storage/country-selection';
+import { tripStorage } from './storage/trips';
+import { emptyTripDetails } from './types/trip';
 
 vi.mock('./three/playground', () => ({ startPlayground: vi.fn() }));
 const host = document.createElement('div');
@@ -60,6 +62,34 @@ afterEach(async () => {
 });
 
 describe('application selection state', () => {
+  it('opens Trip Studio and restores the collection without recreating the canvas', async () => {
+    localStorage.setItem(
+      tripStorage.key,
+      JSON.stringify({
+        version: tripStorage.version,
+        trips: [
+          {
+            ...emptyTripDetails,
+            id: 'studio',
+            name: 'France trip',
+            countryIds: [CountryList.France],
+          },
+        ],
+      }),
+    );
+    await act(async () => root.render(<App />));
+    const canvas = host.querySelector('canvas');
+    const tripsBefore = localStorage.getItem(tripStorage.key);
+    await click('button[aria-label="Open France trip"]');
+    expect(host.querySelector('section[aria-label="Trip Studio"]')).not.toBeNull();
+    expect(canvas?.closest('[hidden]')).not.toBeNull();
+    await click('section[aria-label="Trip Studio"] button');
+    expect(host.querySelector('section[aria-label="Trip Studio"]')).toBeNull();
+    expect(host.querySelector('canvas')).toBe(canvas);
+    expect(canvas?.closest('[hidden]')).toBeNull();
+    expect(startPlayground).toHaveBeenCalledOnce();
+    expect(localStorage.getItem(tripStorage.key)).toBe(tripsBefore);
+  });
   it('opens one mobile sheet at a time and preserves a trip draft after switching and closing', async () => {
     vi.stubGlobal('innerWidth', 390);
     await act(async () => root.render(<App />));

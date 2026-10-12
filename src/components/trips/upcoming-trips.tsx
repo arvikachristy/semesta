@@ -11,6 +11,7 @@ import { TripList } from './trip-list';
 import { TripPlanning } from './trip-planning';
 import { getTripDates } from './trip-presentation';
 import styles from './trips.module.css';
+import type { ITrip } from '../../types/trip';
 
 const tripUi = {
   panelId: 'upcoming-trips-panel',
@@ -20,9 +21,10 @@ const tripUi = {
 
 interface IUpcomingTripsProps {
   mobilePanel?: IMobilePanelState;
+  onOpenStudio?: (trip: ITrip) => void;
 }
 
-export const UpcomingTrips = memo(({ mobilePanel }: IUpcomingTripsProps) => {
+export const UpcomingTrips = memo(({ mobilePanel, onOpenStudio }: IUpcomingTripsProps) => {
   const { trips, ready, warning, saveTrip, removeTrip } = useTrips(useAccount().trips);
   const [desktopOpen, setOpen] = useState(true);
   const open = mobilePanel?.open ?? desktopOpen;
@@ -121,6 +123,9 @@ export const UpcomingTrips = memo(({ mobilePanel }: IUpcomingTripsProps) => {
                 'Destinations to decide'}
             </p>
             {selected.notes && <p className={styles.notes}>{selected.notes}</p>}
+            {onOpenStudio && (
+              <Button onClick={() => onOpenStudio(selected)}>Open Trip Studio</Button>
+            )}
             <TripPlanning
               key={selected.id}
               items={selected.planning ?? []}
@@ -157,7 +162,18 @@ export const UpcomingTrips = memo(({ mobilePanel }: IUpcomingTripsProps) => {
             )}
           </section>
         ) : trips.length ? (
-          <TripList trips={trips} onSelect={setSelectedId} />
+          <TripList
+            trips={trips}
+            onSelect={(id) => {
+              const trip = trips.find((item) => item.id === id);
+              if (onOpenStudio && trip) {
+                setSelectedId(id);
+                onOpenStudio(trip);
+              } else {
+                setSelectedId(id);
+              }
+            }}
+          />
         ) : (
           <p className={styles.empty}>No trips yet.</p>
         )}

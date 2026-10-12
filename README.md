@@ -1,5 +1,12 @@
 # Semesta
 
+Selecting a trip opens Trip Studio, a full-screen preview using the trip's actual
+destinations and dates with typed sample bookings and participant initials. Flights
+and accommodation are shown first; activities and restaurants are optional. Expand
+a category to see its tickets, or choose optional categories to explore progress.
+Preview choices are not saved and do not change real booking data. Back to collection
+restores the glasses and the existing trip details/editing controls.
+
 Open a trip to plan transportation, accommodation, activities, restaurants and travel
 essentials. Add multiple items with dates, addresses, prices or booking references in
 their details; mark them booked (or ready for essentials) to update the progress bar.

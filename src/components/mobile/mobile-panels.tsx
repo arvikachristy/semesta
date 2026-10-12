@@ -9,6 +9,11 @@ import { UpcomingTrips } from '../trips/upcoming-trips';
 import { Button, ButtonVariant } from '../ui/button';
 import ui from '../ui/ui.module.css';
 import styles from './mobile-panels.module.css';
+import type { ITrip } from '../../types/trip';
+
+interface IMobilePanelsProps extends ICountrySelectorProps {
+  onOpenStudio?: (trip: ITrip) => void;
+}
 
 const panelConfig = {
   breakpoint: 600,
@@ -21,7 +26,7 @@ const panelConfig = {
   },
 };
 
-export const MobilePanels = memo((props: ICountrySelectorProps) => {
+export const MobilePanels = memo((props: IMobilePanelsProps) => {
   const account = useAccount();
   const [mobile, setMobile] = useState(() => window.innerWidth <= panelConfig.breakpoint);
   const [active, setActive] = useState<TMobilePanel | null>(null);
@@ -133,6 +138,14 @@ export const MobilePanels = memo((props: ICountrySelectorProps) => {
         <div className={styles.feature} hidden={mobile && active !== MobilePanel.Trips}>
           <UpcomingTrips
             key={account.userId}
+            onOpenStudio={
+              props.onOpenStudio
+                ? (trip) => {
+                    dismiss();
+                    props.onOpenStudio?.(trip);
+                  }
+                : undefined
+            }
             mobilePanel={
               mobile ? { open: active === MobilePanel.Trips, onClose: dismiss } : undefined
             }

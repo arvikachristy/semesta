@@ -30,6 +30,7 @@ try {
   });
   await page.reload();
   await page.getByRole('button', { name: 'Open Planning preview' }).click();
+  await page.getByRole('button', { name: '‹ Back to collection' }).click();
   const planning = page.getByRole('region', { name: 'Trip planning' });
   await planning.getByLabel('Transportation name').fill('Train to Paris');
   await planning.locator('form').first().getByLabel('Details').fill('12 May · Booking ABC · €120');
@@ -44,6 +45,7 @@ try {
   await page.screenshot({ path: join(tmpdir(), 'semesta-planning-desktop.png') });
   await page.reload();
   await page.getByRole('button', { name: 'Open Planning preview' }).click();
+  await page.getByRole('button', { name: '‹ Back to collection' }).click();
   assert.equal(await planning.getByRole('checkbox', { name: /Train to Paris/ }).isChecked(), true);
   await planning.getByRole('button', { name: 'Edit Train to Paris', exact: true }).click();
   await planning.getByLabel('Name', { exact: true }).fill('Eurostar');
