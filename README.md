@@ -1,11 +1,16 @@
 # Semesta
 
-Selecting a trip opens Trip Studio, a full-screen preview using the trip's actual
-destinations and dates with typed sample bookings and participant initials. Flights
-and accommodation are shown first; activities and restaurants are optional. Expand
-a category to see its tickets, or choose optional categories to explore progress.
-Preview choices are not saved and do not change real booking data. Back to collection
-restores the glasses and the existing trip details/editing controls.
+Selecting a trip opens Trip Studio using the existing planner and trip repository.
+Choose optional Transportation, Accommodation, Activities, Restaurants and Travel
+essentials categories. Turning a category off preserves its items but excludes them
+from readiness; empty categories never lower progress. Category and overall bars
+count Booked items (Ready for essentials). Expand an item to change Idea, To book,
+or Booked status and edit its date/time, details, reference and http/https link.
+Back to collection restores the glasses and existing trip editing controls.
+
+Local trips and account backups use the same validators and keep storage version 1.
+Legacy completed booleans map to Booked or To book, with every item and ID retained.
+New statuses take precedence and keep the legacy boolean synchronized on save.
 
 Open a trip to plan transportation, accommodation, activities, restaurants and travel
 essentials. Add multiple items with dates, addresses, prices or booking references in

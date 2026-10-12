@@ -10,8 +10,10 @@ import { Button, ButtonVariant } from '../ui/button';
 import ui from '../ui/ui.module.css';
 import styles from './mobile-panels.module.css';
 import type { ITrip } from '../../types/trip';
+import type { useTrips } from '../../hooks/use-trips';
 
 interface IMobilePanelsProps extends ICountrySelectorProps {
+  tripSession?: ReturnType<typeof useTrips>;
   onOpenStudio?: (trip: ITrip) => void;
 }
 
@@ -137,6 +139,7 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
         </div>
         <div className={styles.feature} hidden={mobile && active !== MobilePanel.Trips}>
           <UpcomingTrips
+            tripSession={props.tripSession}
             key={account.userId}
             onOpenStudio={
               props.onOpenStudio

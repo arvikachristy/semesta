@@ -175,6 +175,39 @@
   gap: var(--space-2);
   min-width: 0;
 }
+.planningItem[data-confirmed='true'] {
+  background: var(--color-glass-raised);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-small);
+}
+.bookingSummary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--control-height);
+  padding: var(--space-3);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.bookingCategory {
+  padding-inline: var(--space-4);
+}
+.planning summary:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 3px;
+}
+.bookingSummary small {
+  display: block;
+  color: var(--color-muted);
+}
+.planningItem .planningForm {
+  padding: var(--space-3);
+}
+.planningItem a {
+  color: var(--color-accent);
+  overflow-wrap: anywhere;
+}
 .bookingStatus {
   display: flex;
   align-items: center;

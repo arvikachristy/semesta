@@ -9,7 +9,7 @@ const tripMessages = {
   saveError: 'Could not save on this device. Your changes will only last this session.',
 };
 
-export const useTrips = (repository: ITripRepository = localRepository) => {
+export const useTrips = (repository: ITripRepository = localRepository, enabled = true) => {
   const [trips, setTrips] = useState<ITrip[]>([]);
   const [ready, setReady] = useState(false);
   const [warning, setWarning] = useState('');
@@ -17,6 +17,9 @@ export const useTrips = (repository: ITripRepository = localRepository) => {
   const saveQueue = useRef(Promise.resolve());
   const loadedValue = useRef<typeof trips | null>(null);
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
     let active = true;
     setReady(false);
     writableRepository.current = null;
@@ -40,16 +43,21 @@ export const useTrips = (repository: ITripRepository = localRepository) => {
     return () => {
       active = false;
     };
-  }, [repository]);
+  }, [repository, enabled]);
   useEffect(() => {
-    if (ready && writableRepository.current === repository && trips !== loadedValue.current) {
+    if (
+      enabled &&
+      ready &&
+      writableRepository.current === repository &&
+      trips !== loadedValue.current
+    ) {
       saveQueue.current = saveQueue.current
         .then(() => repository.save(trips))
         .catch(() => {
           setWarning(tripMessages.saveError);
         });
     }
-  }, [ready, repository, trips]);
+  }, [ready, repository, trips, enabled]);
 
   const saveTrip = useCallback(
     (id: string | null, details: TTripDetails) => {

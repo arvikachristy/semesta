@@ -1,32 +1,24 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import type { ITrip } from '../../types/trip';
 import { countries } from '../../data/countries';
 import { flagAssetPath } from '../../data/flag-definitions';
 import { Button, ButtonVariant } from '../ui/button';
-import ui from '../ui/ui.module.css';
 import { getTripDates } from './trip-presentation';
-import {
-  getStudioProgress,
-  previewParticipants,
-  studioCategories,
-  StudioCategory,
-} from './studio-preview';
-import type { TStudioCategory } from './studio-preview';
-import { StudioCategorySection } from './studio-category';
+import { useAccount } from '../../account/account-context';
+import { useTrips } from '../../hooks/use-trips';
+import { TripPlanning } from './trip-planning';
 import styles from './trip-studio.module.css';
 
 interface ITripStudioProps {
+  tripSession?: ReturnType<typeof useTrips>;
   trip: ITrip;
   onBack: () => void;
 }
-export const TripStudio = ({ trip, onBack }: ITripStudioProps) => {
+export const TripStudio = ({ trip, onBack, tripSession }: ITripStudioProps) => {
   const heading = useRef<HTMLHeadingElement>(null);
-  const [enabled, setEnabled] = useState<TStudioCategory[]>([
-    StudioCategory.Flights,
-    StudioCategory.Accommodation,
-  ]);
-  const activeCategories = studioCategories.filter((category) => enabled.includes(category.id));
-  const progress = getStudioProgress(activeCategories.flatMap((category) => category.items));
+  const localSession = useTrips(useAccount().trips, !tripSession);
+  const { trips, ready, warning, saveTrip } = tripSession ?? localSession;
+  const currentTrip = trips.find((saved) => saved.id === trip.id) ?? trip;
   useEffect(() => {
     heading.current?.focus();
   }, []);
@@ -56,78 +48,21 @@ export const TripStudio = ({ trip, onBack }: ITripStudioProps) => {
             </div>
             <p className={styles.dates}>{getTripDates(trip).range}</p>
           </div>
-          <div className={styles.group}>
-            <div className={styles.avatars} aria-label="Example participants">
-              {previewParticipants.map((participant) => (
-                <span key={participant.id} title={participant.name} aria-label={participant.name}>
-                  {participant.initials}
-                </span>
-              ))}
-            </div>
-            <small>Example travel group</small>
-          </div>
         </div>
-        <section
-          className={`${ui.surface} ${styles.readiness}`}
-          aria-label="Overall trip planning progress"
-        >
-          <div>
-            <span className={styles.eyebrow}>Coming together</span>
-            <h2>{progress.percent}% ready for takeoff</h2>
-            <p>
-              {progress.booked} of {progress.total} bookings collected across your enabled
-              categories.
-            </p>
-          </div>
-          <progress
-            className={styles.progress}
-            aria-label="Overall booking progress"
-            value={progress.booked}
-            max={progress.total || 1}
+        {warning && <p role="status">{warning}</p>}
+        {ready ? (
+          <TripPlanning
+            key={currentTrip.id}
+            items={currentTrip.planning ?? []}
+            activeCategories={currentTrip.activePlanningCategories}
+            onChange={(planning) => saveTrip(currentTrip.id, { ...currentTrip, planning })}
+            onCategoriesChange={(activePlanningCategories) =>
+              saveTrip(currentTrip.id, { ...currentTrip, activePlanningCategories })
+            }
           />
-        </section>
-        <div className={styles.sectionHeading}>
-          <h2>Your travel collection</h2>
-          <span>Open a ticket to see what’s inside.</span>
-        </div>
-        <div className={styles.categories}>
-          {activeCategories.map((category) => (
-            <StudioCategorySection key={category.id} category={category} />
-          ))}
-        </div>
-        {!activeCategories.length && (
-          <p className={styles.empty}>
-            A little space for possibilities. Choose a category below when you’re ready.
-          </p>
+        ) : (
+          <p>Loading trip planning…</p>
         )}
-        <details className={styles.options}>
-          <summary>＋ Choose optional categories</summary>
-          <p>Bring only what your trip needs. Removing a category hides its preview tickets.</p>
-          <div className={styles.choices}>
-            {studioCategories.map((category) => (
-              <label key={category.id}>
-                <input
-                  className={ui.checkbox}
-                  type="checkbox"
-                  checked={enabled.includes(category.id)}
-                  onChange={(event) => {
-                    const checked = event.currentTarget.checked;
-                    setEnabled((current) =>
-                      checked
-                        ? [...current, category.id]
-                        : current.filter((id) => id !== category.id),
-                    );
-                  }}
-                />
-                {category.label}
-              </label>
-            ))}
-          </div>
-        </details>
-        <p className={styles.previewNote}>
-          Booking and participant previews · Changes here are for exploring the layout and are not
-          saved.
-        </p>
       </div>
     </section>
   );

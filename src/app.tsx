@@ -11,6 +11,7 @@ import { continentDefinitions } from './types/continent';
 import { startPlayground } from './three/playground';
 import type { ITrip } from './types/trip';
 import { TripStudio } from './components/trips/trip-studio';
+import { useTrips } from './hooks/use-trips';
 
 export const App = () => {
   const [studioTrip, setStudioTrip] = useState<ITrip | null>(null);
@@ -18,6 +19,7 @@ export const App = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playgroundRef = useRef<ReturnType<typeof startPlayground> | null>(null);
   const account = useAccount();
+  const tripSession = useTrips(account.trips);
   const { showedCountries, ready, onToggle, onClear } = useCountrySelection(account.countries);
   const [statuses, setStatuses] = useState<Partial<Record<CountryList, CountryStatus>>>({});
 
@@ -59,6 +61,7 @@ export const App = () => {
       <div hidden={Boolean(studioTrip)}>
         <FpsToken reading={frameReading} />
         <MobilePanels
+          tripSession={tripSession}
           onOpenStudio={setStudioTrip}
           showedCountries={showedCountries}
           statuses={statuses}
@@ -85,7 +88,12 @@ export const App = () => {
         />
       </div>
       {studioTrip && (
-        <TripStudio key={studioTrip.id} trip={studioTrip} onBack={() => setStudioTrip(null)} />
+        <TripStudio
+          key={studioTrip.id}
+          trip={studioTrip}
+          tripSession={tripSession}
+          onBack={() => setStudioTrip(null)}
+        />
       )}
     </main>
   );

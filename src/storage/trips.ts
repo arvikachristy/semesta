@@ -1,7 +1,11 @@
 import { normalizeCountrySelection } from './country-selection';
 import type { ITrip } from '../types/trip';
 import { isTripDate } from '../types/trip';
-import { isTripPlanningItem } from '../types/trip-planning';
+import {
+  isTripPlanningItem,
+  isPlanningCategory,
+  normalizePlanningItem,
+} from '../types/trip-planning';
 
 export const tripStorage = { key: 'semesta.upcoming-trips', version: 1 };
 
@@ -34,9 +38,16 @@ export const isTripRecord = (value: unknown): value is ITrip => {
     (!('planning' in value) ||
       (Array.isArray(value.planning) &&
         value.planning.every(isTripPlanningItem) &&
-        new Set(value.planning.map((item) => item.id)).size === value.planning.length))
+        new Set(value.planning.map((item) => item.id)).size === value.planning.length)) &&
+    (!('activePlanningCategories' in value) ||
+      (Array.isArray(value.activePlanningCategories) &&
+        value.activePlanningCategories.every(isPlanningCategory) &&
+        new Set(value.activePlanningCategories).size === value.activePlanningCategories.length))
   );
 };
+
+export const normalizeTripPlanning = (trip: ITrip): ITrip =>
+  trip.planning ? { ...trip, planning: trip.planning.map(normalizePlanningItem) } : trip;
 
 export const decodeTrips = (raw: string | null): ITrip[] => {
   if (raw === null) {
@@ -63,7 +74,9 @@ export const decodeTrips = (raw: string | null): ITrip[] => {
       ids.add(trip.id);
       return true;
     })
-    .map((trip) => ({ ...trip, countryIds: normalizeCountrySelection(trip.countryIds) }));
+    .map((trip) =>
+      normalizeTripPlanning({ ...trip, countryIds: normalizeCountrySelection(trip.countryIds) }),
+    );
 };
 
 // Only this adapter knows about browser storage; an account adapter can replace it later.
@@ -72,6 +85,9 @@ export const createLocalTripRepository = (
 ): ITripRepository => ({
   load: async () => decodeTrips(getStorage().getItem(tripStorage.key)),
   save: async (trips) => {
-    getStorage().setItem(tripStorage.key, JSON.stringify({ version: tripStorage.version, trips }));
+    getStorage().setItem(
+      tripStorage.key,
+      JSON.stringify({ version: tripStorage.version, trips: trips.map(normalizeTripPlanning) }),
+    );
   },
 });

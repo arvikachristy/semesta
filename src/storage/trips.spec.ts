@@ -14,6 +14,58 @@ const trip = {
 const encode = (trips: unknown[]) => JSON.stringify({ version: tripStorage.version, trips });
 
 describe('upcoming trip storage', () => {
+  it('migrates both legacy booleans and round-trips inactive items and enriched fields without losing IDs', async () => {
+    const planning = [
+      {
+        id: 'train',
+        category: 'transportation',
+        name: 'Train',
+        details: 'Keep me',
+        completed: true,
+      },
+      {
+        id: 'transfer',
+        category: 'transportation',
+        name: 'Transfer',
+        details: '',
+        completed: false,
+      },
+    ];
+    const records = new Map([[tripStorage.key, encode([{ ...trip, planning }])]]);
+    const repository = createLocalTripRepository(() => ({
+      getItem: (key) => records.get(key) ?? null,
+      setItem: (key, value) => {
+        records.set(key, value);
+      },
+    }));
+    const migrated = await repository.load();
+    expect(migrated[0].planning).toEqual([
+      { ...planning[0], status: 'booked' },
+      { ...planning[1], status: 'to-book' },
+    ]);
+    const enriched = {
+      ...migrated[0],
+      activePlanningCategories: [],
+      planning: migrated[0].planning?.map((item) => ({
+        ...item,
+        dateTime: '2027-05-12T14:30',
+        bookingReference: 'ABC',
+        link: 'https://example.com/booking',
+      })),
+    };
+    await repository.save([enriched]);
+    expect(await repository.load()).toEqual([enriched]);
+    expect(JSON.parse(records.get(tripStorage.key) ?? '{}').version).toBe(1);
+    for (const invalid of [
+      { status: 'invalid' },
+      { dateTime: '2027-02-30T12:30' },
+      { link: 'javascript:alert(1)' },
+    ]) {
+      expect(
+        decodeTrips(encode([{ ...enriched, planning: [{ ...planning[0], ...invalid }] }])),
+      ).toEqual([]);
+    }
+  });
   it('keeps old trips readable and validates saved planning items', () => {
     const planning = [
       {
@@ -26,7 +78,9 @@ describe('upcoming trip storage', () => {
     ];
     const plannedTrip = { ...trip, planning };
     expect(decodeTrips(encode([trip]))).toEqual([trip]);
-    expect(decodeTrips(encode([plannedTrip]))).toEqual([plannedTrip]);
+    expect(decodeTrips(encode([plannedTrip]))).toEqual([
+      { ...plannedTrip, planning: [{ ...planning[0], status: 'booked' }] },
+    ]);
     expect(
       decodeTrips(encode([{ ...trip, planning: [{ ...planning[0], category: 'invalid' }] }])),
     ).toEqual([]);

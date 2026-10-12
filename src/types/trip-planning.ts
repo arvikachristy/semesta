@@ -7,6 +7,8 @@ export const planningCategories = {
 } as const;
 
 export type TPlanningCategory = keyof typeof planningCategories;
+export const PlanningStatus = { Idea: 'idea', ToBook: 'to-book', Booked: 'booked' } as const;
+export type TPlanningStatus = (typeof PlanningStatus)[keyof typeof PlanningStatus];
 
 export interface ITripPlanningItem {
   id: string;
@@ -14,7 +16,57 @@ export interface ITripPlanningItem {
   name: string;
   details: string;
   completed: boolean;
+  status?: TPlanningStatus;
+  dateTime?: string;
+  bookingReference?: string;
+  link?: string;
 }
+
+export const isPlanningStatus = (value: unknown): value is TPlanningStatus =>
+  Object.values(PlanningStatus).some((status) => status === value);
+export const isBookingLink = (value: unknown): value is string => {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  if (!value) {
+    return true;
+  }
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:';
+  } catch {
+    return false;
+  }
+};
+export const isBookingDateTime = (value: unknown): value is string => {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  if (!value) {
+    return true;
+  }
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) {
+    return false;
+  }
+  const date = new Date(`${value}:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 16) === value;
+};
+export const getPlanningStatus = (item: ITripPlanningItem): TPlanningStatus =>
+  item.status ?? (item.completed ? PlanningStatus.Booked : PlanningStatus.ToBook);
+export const normalizePlanningItem = (item: ITripPlanningItem): ITripPlanningItem => {
+  const status = getPlanningStatus(item);
+  return { ...item, status, completed: status === PlanningStatus.Booked };
+};
+export const planningStatusLabel = (status: TPlanningStatus, category: TPlanningCategory) =>
+  status === PlanningStatus.Booked
+    ? category === 'essentials'
+      ? 'Ready'
+      : 'Booked'
+    : status === PlanningStatus.ToBook
+      ? category === 'essentials'
+        ? 'To prepare'
+        : 'To book'
+      : 'Idea';
 
 export const isPlanningCategory = (value: unknown): value is TPlanningCategory =>
   typeof value === 'string' && Object.hasOwn(planningCategories, value);
@@ -33,13 +85,25 @@ export const isTripPlanningItem = (value: unknown): value is ITripPlanningItem =
   'details' in value &&
   typeof value.details === 'string' &&
   'completed' in value &&
-  typeof value.completed === 'boolean';
+  typeof value.completed === 'boolean' &&
+  (!('status' in value) || isPlanningStatus(value.status)) &&
+  (!('dateTime' in value) || isBookingDateTime(value.dateTime)) &&
+  (!('bookingReference' in value) || typeof value.bookingReference === 'string') &&
+  (!('link' in value) || isBookingLink(value.link));
 
-export const getPlanningProgress = (items: readonly ITripPlanningItem[]) => {
-  const completed = items.filter((item) => item.completed).length;
+export const getPlanningProgress = (
+  items: readonly ITripPlanningItem[],
+  activeCategories?: readonly TPlanningCategory[],
+) => {
+  const activeItems = activeCategories
+    ? items.filter((item) => activeCategories.includes(item.category))
+    : items;
+  const completed = activeItems.filter(
+    (item) => getPlanningStatus(item) === PlanningStatus.Booked,
+  ).length;
   return {
     completed,
-    total: items.length,
-    percent: items.length ? Math.round((completed / items.length) * 100) : 0,
+    total: activeItems.length,
+    percent: activeItems.length ? Math.round((completed / activeItems.length) * 100) : 0,
   };
 };
