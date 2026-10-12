@@ -82,6 +82,11 @@ export const startPlayground = (
     frameId = requestAnimationFrame(animate);
 
     const now = performance.now();
+    if (canvas.closest('[hidden]')) {
+      previousTime = now;
+      frameMonitor.reset();
+      return;
+    }
     if (document.hidden) {
       frameMonitor.reset();
     } else {

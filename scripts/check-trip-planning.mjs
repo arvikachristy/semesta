@@ -30,20 +30,53 @@ try {
   });
   await page.reload();
   await page.getByRole('button', { name: 'Open Planning preview' }).click();
-  const planning = page.getByRole('region', { name: 'Trip planning' });
+  await page.getByRole('button', { name: '‹ Back to collection' }).click();
+  const planning = page.getByRole('region', { name: 'Trip Studio planning' });
+  await planning
+    .locator('summary')
+    .filter({ hasText: /^Choose optional categories$/ })
+    .click();
+  for (const label of ['Transportation', 'Accommodation', 'Travel essentials']) {
+    await planning.getByRole('checkbox', { name: label, exact: true }).check();
+  }
+  await planning
+    .locator('summary')
+    .filter({ hasText: /^Add transportation$/ })
+    .click();
   await planning.getByLabel('Transportation name').fill('Train to Paris');
   await planning.locator('form').first().getByLabel('Details').fill('12 May · Booking ABC · €120');
   await planning.getByRole('button', { name: 'Add transportation', exact: true }).click();
+  await planning
+    .locator('summary')
+    .filter({ hasText: /Train to Paris/ })
+    .click();
   await planning.getByRole('checkbox', { name: /Train to Paris/ }).check();
+  await planning
+    .locator('summary')
+    .filter({ hasText: /^Add accommodation$/ })
+    .click();
   await planning.getByLabel('Accommodation name').fill('Paris hotel');
   await planning.getByRole('button', { name: 'Add accommodation', exact: true }).click();
+  await planning
+    .locator('summary')
+    .filter({ hasText: /^Add travel essentials$/ })
+    .click();
   await planning.getByLabel('Travel essentials name').fill('Insurance');
   await planning.getByRole('button', { name: 'Add travel essentials', exact: true }).click();
+  await planning
+    .locator('summary')
+    .filter({ hasText: /Insurance/ })
+    .click();
   await planning.getByRole('checkbox', { name: /Insurance/ }).check();
   assert.match(await planning.textContent(), /2 of 3.*67%/);
   await page.screenshot({ path: join(tmpdir(), 'semesta-planning-desktop.png') });
   await page.reload();
   await page.getByRole('button', { name: 'Open Planning preview' }).click();
+  await page.getByRole('button', { name: '‹ Back to collection' }).click();
+  await planning
+    .locator('summary')
+    .filter({ hasText: /Train to Paris/ })
+    .click();
   assert.equal(await planning.getByRole('checkbox', { name: /Train to Paris/ }).isChecked(), true);
   await planning.getByRole('button', { name: 'Edit Train to Paris', exact: true }).click();
   await planning.getByLabel('Name', { exact: true }).fill('Eurostar');
@@ -55,6 +88,10 @@ try {
   const bounds = await planning.boundingBox();
   assert.ok(bounds && bounds.x >= 0 && bounds.x + bounds.width <= 390);
   await page.screenshot({ path: join(tmpdir(), 'semesta-planning-mobile.png') });
+  await planning
+    .locator('summary')
+    .filter({ hasText: /Paris hotel/ })
+    .click();
   await planning.getByRole('button', { name: 'Remove Paris hotel', exact: true }).click();
   assert.match(await planning.textContent(), /1 of 2.*50%/);
   await page.keyboard.press('Escape');

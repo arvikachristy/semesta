@@ -6,6 +6,49 @@ import { accountConfig } from './account-config';
 
 const trip = { ...emptyTripDetails, id: 'trip-1', name: 'Lisbon' };
 describe('account workspace migration', () => {
+  it('normalizes legacy planning and validates enriched cloud backups with inactive items preserved', () => {
+    const legacyItem = {
+      id: 'train',
+      category: 'transportation',
+      name: 'Train',
+      details: 'Night train',
+      completed: true,
+    };
+    const record = {
+      version: accountConfig.version,
+      revision: 2,
+      dirty: false,
+      workspace: {
+        countries: [],
+        trips: [{ ...trip, planning: [legacyItem], activePlanningCategories: [] }],
+      },
+    };
+    const decoded = decodeWorkspaceRecord(record);
+    expect(decoded.workspace.trips[0].planning).toEqual([{ ...legacyItem, status: 'booked' }]);
+    expect(decoded.workspace.trips[0].activePlanningCategories).toEqual([]);
+    expect(decodeWorkspaceRecord(JSON.parse(JSON.stringify(decoded)))).toEqual(decoded);
+    for (const invalid of [
+      { status: 'bad' },
+      { link: 'data:text/html,unsafe' },
+      { dateTime: 'bad' },
+    ]) {
+      expect(() =>
+        decodeWorkspaceRecord({
+          ...record,
+          workspace: {
+            countries: [],
+            trips: [{ ...trip, planning: [{ ...legacyItem, ...invalid }] }],
+          },
+        }),
+      ).toThrow();
+    }
+    expect(() =>
+      decodeWorkspaceRecord({
+        ...record,
+        workspace: { countries: [], trips: [{ ...trip, activePlanningCategories: ['flights'] }] },
+      }),
+    ).toThrow();
+  });
   it('imports guest data idempotently and preserves account edits on matching trip IDs', () => {
     const account = { countries: [CountryList.France], trips: [trip] };
     const guest = {

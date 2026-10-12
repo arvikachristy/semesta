@@ -1,7 +1,7 @@
 import { defaultCountries } from '../data/countries';
 import type { CountryList } from '../types/country';
 import type { ITrip } from '../types/trip';
-import { isTripRecord } from '../storage/trips';
+import { isTripRecord, normalizeTripPlanning } from '../storage/trips';
 import { normalizeCountrySelection } from '../storage/country-selection';
 import { accountConfig } from './account-config';
 
@@ -53,7 +53,7 @@ export const decodeWorkspaceRecord = (value: unknown): IWorkspaceRecord => {
     version: value.version,
     revision: value.revision,
     dirty: value.dirty,
-    workspace: value.workspace,
+    workspace: { ...value.workspace, trips: value.workspace.trips.map(normalizeTripPlanning) },
   };
 };
 // Existing account trips win on an ID collision. Importing twice is idempotent.

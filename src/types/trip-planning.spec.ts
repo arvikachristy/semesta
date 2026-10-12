@@ -3,6 +3,37 @@ import { getPlanningProgress } from './trip-planning';
 import type { ITripPlanningItem } from './trip-planning';
 
 describe('trip readiness', () => {
+  it('excludes disabled items and counts booked statuses while preserving transportation', () => {
+    const items: ITripPlanningItem[] = [
+      {
+        id: 'train',
+        category: 'transportation',
+        name: 'Train',
+        details: '',
+        completed: true,
+        status: 'booked',
+      },
+      {
+        id: 'hotel',
+        category: 'accommodation',
+        name: 'Hotel',
+        details: '',
+        completed: false,
+        status: 'idea',
+      },
+    ];
+    expect(getPlanningProgress(items, ['transportation'])).toEqual({
+      completed: 1,
+      total: 1,
+      percent: 100,
+    });
+    expect(getPlanningProgress(items, [])).toEqual({ completed: 0, total: 0, percent: 0 });
+    expect(getPlanningProgress(items, ['transportation', 'essentials'])).toEqual({
+      completed: 1,
+      total: 1,
+      percent: 100,
+    });
+  });
   it('counts actual planned items, including essentials, without counting empty categories', () => {
     expect(getPlanningProgress([])).toEqual({ completed: 0, total: 0, percent: 0 });
     const items: ITripPlanningItem[] = [

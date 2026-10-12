@@ -41,7 +41,14 @@ describe('upcoming trips panel', () => {
     );
     await act(async () => root.render(<UpcomingTrips />));
     await click('Open Summer trip');
-    const form = host.querySelector('section[aria-label="Trip planning"] form');
+    const category = host.querySelector(
+      'section[aria-label="Trip Studio planning"] input[type="checkbox"]',
+    );
+    if (!(category instanceof HTMLInputElement)) {
+      throw new Error('Missing category activation');
+    }
+    await act(async () => category.click());
+    const form = host.querySelector('section[aria-label="Trip Studio planning"] form');
     if (!(form instanceof HTMLFormElement)) {
       throw new Error('Missing transportation form');
     }
@@ -54,7 +61,7 @@ describe('upcoming trips panel', () => {
     details.value = '12 May · Reference ABC';
     await act(async () => form.requestSubmit());
     const checkbox = host.querySelector(
-      'section[aria-label="Trip planning"] input[type="checkbox"]',
+      'section[aria-label="Trip Studio planning"] li input[type="checkbox"]',
     );
     if (!(checkbox instanceof HTMLInputElement)) {
       throw new Error('Missing booking status');

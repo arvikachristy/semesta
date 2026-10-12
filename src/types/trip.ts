@@ -1,5 +1,5 @@
 import type { CountryList } from './country';
-import type { ITripPlanningItem } from './trip-planning';
+import type { ITripPlanningItem, TPlanningCategory } from './trip-planning';
 
 export interface ITrip {
   id: string;
@@ -9,6 +9,7 @@ export interface ITrip {
   endDate: string;
   notes: string;
   planning?: ITripPlanningItem[];
+  activePlanningCategories?: TPlanningCategory[];
 }
 
 export type TTripDetails = Omit<ITrip, 'id'>;
