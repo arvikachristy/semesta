@@ -1,5 +1,22 @@
 import type { CountryList } from './country';
 import type { ITripPlanningItem, TPlanningCategory } from './trip-planning';
+import { isBookingLink } from './trip-planning';
+
+export interface ITripParticipant {
+  id: string;
+  name: string;
+  avatarUrl?: string;
+}
+export const isTripParticipant = (value: unknown): value is ITripParticipant =>
+  typeof value === 'object' &&
+  value !== null &&
+  'id' in value &&
+  typeof value.id === 'string' &&
+  value.id.length > 0 &&
+  'name' in value &&
+  typeof value.name === 'string' &&
+  value.name.trim().length > 0 &&
+  (!('avatarUrl' in value) || isBookingLink(value.avatarUrl));
 
 export interface ITrip {
   id: string;
@@ -10,6 +27,7 @@ export interface ITrip {
   notes: string;
   planning?: ITripPlanningItem[];
   activePlanningCategories?: TPlanningCategory[];
+  participants?: ITripParticipant[];
 }
 
 export type TTripDetails = Omit<ITrip, 'id'>;

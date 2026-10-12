@@ -14,6 +14,32 @@ const trip = {
 const encode = (trips: unknown[]) => JSON.stringify({ version: tripStorage.version, trips });
 
 describe('upcoming trip storage', () => {
+  it('round-trips real travellers while keeping legacy trips without participants readable', async () => {
+    const participants = [
+      { id: 'person', name: 'Taylor Reed' },
+      { id: 'avatar', name: 'Morgan', avatarUrl: 'https://example.com/avatar.png' },
+    ];
+    const withTravellers = { ...trip, participants };
+    expect(decodeTrips(encode([withTravellers]))).toEqual([withTravellers]);
+    expect(decodeTrips(encode([trip]))[0].participants).toBeUndefined();
+    for (const invalid of [
+      [{ id: '', name: 'Bad' }],
+      [{ id: 'person', name: ' ' }],
+      [{ id: 'person', name: 'Bad', avatarUrl: 'javascript:alert(1)' }],
+      [participants[0], participants[0]],
+    ]) {
+      expect(decodeTrips(encode([{ ...trip, participants: invalid }]))).toEqual([]);
+    }
+    const storage = new Map<string, string>();
+    const repository = createLocalTripRepository(() => ({
+      getItem: (key) => storage.get(key) ?? null,
+      setItem: (key, value) => {
+        storage.set(key, value);
+      },
+    }));
+    await repository.save([withTravellers]);
+    expect(await repository.load()).toEqual([withTravellers]);
+  });
   it('migrates both legacy booleans and round-trips inactive items and enriched fields without losing IDs', async () => {
     const planning = [
       {

@@ -1,47 +1,76 @@
-import { getStudioProgress } from './studio-preview';
-import type { IStudioCategory } from './studio-preview';
+import { getPlanningProgress, planningCategories } from '../../types/trip-planning';
+import type { ITripPlanningItem, TPlanningCategory } from '../../types/trip-planning';
+import { TripPlanningItem } from './trip-planning-item';
+import { Button, ButtonVariant } from '../ui/button';
 import ui from '../ui/ui.module.css';
 import styles from './trip-studio.module.css';
 
+export const studioCategoryLabels = {
+  ...planningCategories,
+  transportation: 'Flights & Transport',
+};
+const categorySymbols = {
+  transportation: '↗',
+  accommodation: '⌂',
+  activities: '✧',
+  restaurants: '◦',
+  essentials: '✓',
+};
 interface IStudioCategoryProps {
-  category: IStudioCategory;
+  category: TPlanningCategory;
+  items: readonly ITripPlanningItem[];
+  onChange: (item: ITripPlanningItem) => void;
+  onRemove: (id: string) => void;
+  onAdd: () => void;
 }
-export const StudioCategorySection = ({ category }: IStudioCategoryProps) => {
-  const progress = getStudioProgress(category.items);
+export const StudioCategorySection = ({
+  category,
+  items,
+  onChange,
+  onRemove,
+  onAdd,
+}: IStudioCategoryProps) => {
+  const progress = getPlanningProgress(items);
+  const label = studioCategoryLabels[category];
   return (
     <details className={`${ui.surface} ${styles.category}`}>
       <summary className={styles.categoryHeading}>
         <span className={styles.symbol} aria-hidden="true">
-          {category.symbol}
+          {categorySymbols[category]}
         </span>
         <span className={styles.categoryTitle}>
-          {category.label}
+          {label}
           <small>
-            {progress.booked} of {progress.total} collected
+            {progress.completed} of {progress.total} collected
           </small>
         </span>
-        <span>{progress.percent}%</span>
+        <span className={styles.categoryCount}>{progress.percent}%</span>
         <span aria-hidden="true" className={styles.expand}>
           ⌄
         </span>
         <progress
           className={styles.progress}
-          aria-label={`${category.label} booking progress`}
-          value={progress.booked}
+          aria-label={`${planningCategories[category]} planning progress`}
+          value={progress.completed}
           max={progress.total || 1}
         />
       </summary>
-      <ol className={styles.tickets} aria-label={`${category.label} bookings`}>
-        {category.items.map((item) => (
-          <li className={styles.ticket} key={item.id}>
-            <span>
-              <strong>{item.name}</strong>
-              <small>{item.detail}</small>
-            </span>
-            <span className={styles.status}>{item.status}</span>
-          </li>
-        ))}
-      </ol>
+      <div className={styles.categoryBody}>
+        {!items.length && <p className={styles.eyebrow}>Room for your first reservation.</p>}
+        <ul className={styles.tickets} aria-label={`${label} bookings`}>
+          {items.map((item) => (
+            <TripPlanningItem
+              key={item.id}
+              item={item}
+              onChange={onChange}
+              onRemove={() => onRemove(item.id)}
+            />
+          ))}
+        </ul>
+        <Button variant={ButtonVariant.Quiet} onClick={onAdd}>
+          Add {planningCategories[category].toLowerCase()}
+        </Button>
+      </div>
     </details>
   );
 };

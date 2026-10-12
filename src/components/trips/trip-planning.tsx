@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import {
   getPlanningProgress,
   planningCategories,
@@ -6,25 +7,26 @@ import {
   PlanningStatus,
 } from '../../types/trip-planning';
 import type { ITripPlanningItem, TPlanningCategory } from '../../types/trip-planning';
-import { TripPlanningFields } from './trip-planning-fields';
-import { readBookingForm } from './booking-form';
 import { Button, ButtonVariant } from '../ui/button';
-import { TripPlanningItem } from './trip-planning-item';
+import { Overlay } from '../ui/overlay';
+import { BookingEditor } from './booking-editor';
+import { StudioCategorySection, studioCategoryLabels } from './studio-category';
 import ui from '../ui/ui.module.css';
-import styles from './trips.module.css';
+import styles from './trip-studio.module.css';
 
 interface ITripPlanningProps {
   items: readonly ITripPlanningItem[];
   onChange: (items: ITripPlanningItem[]) => void;
   activeCategories?: readonly TPlanningCategory[];
   onCategoriesChange?: (categories: TPlanningCategory[]) => void;
+  journey?: ReactNode;
 }
-
 export const TripPlanning = ({
   items,
   onChange,
   activeCategories,
   onCategoriesChange,
+  journey,
 }: ITripPlanningProps) => {
   const [localCategories, setLocalCategories] = useState<TPlanningCategory[]>(() => [
     ...new Set(items.map((item) => item.category)),
@@ -32,131 +34,139 @@ export const TripPlanning = ({
   const active = activeCategories ?? localCategories;
   const progress = getPlanningProgress(items, active);
   const [message, setMessage] = useState('');
+  const [choosing, setChoosing] = useState(false);
+  const [adding, setAdding] = useState<TPlanningCategory | null>(null);
   return (
-    <section className={styles.planning} aria-label="Trip Studio planning">
-      <h4>Trip Studio</h4>
-      <p id="trip-planning-progress" role="status">
-        {progress.completed} of {progress.total} items booked or ready · {progress.percent}%
-      </p>
-      <progress
-        className={styles.planningProgress}
-        aria-labelledby="trip-planning-progress"
-        value={progress.completed}
-        max={progress.total || 1}
-      />
-      {!progress.total && (
-        <p>
-          Choose a category and add what this trip needs. Only active planned items count towards
-          readiness.
+    <section className={styles.planningWorkspace} aria-label="Trip Studio planning">
+      <div className={journey ? styles.hero : undefined}>
+        {journey}
+        <section className={`${ui.surface} ${styles.readiness}`} aria-label="Trip readiness">
+          <span className={styles.eyebrow}>Coming together</span>
+          <div className={styles.readinessTitle}>
+            <h2>Ready when you are.</h2>
+            <span>
+              {progress.percent}
+              <small>%</small>
+            </span>
+          </div>
+          <p role="status">
+            {progress.completed} of {progress.total} items booked or ready · {progress.percent}%
+          </p>
+          <progress
+            className={styles.progress}
+            aria-label="Overall trip planning progress"
+            value={progress.completed}
+            max={progress.total || 1}
+          />
+          <div className={styles.compactProgress}>
+            {active.map((category) => {
+              const result = getPlanningProgress(
+                items.filter((item) => item.category === category),
+              );
+              return (
+                <div key={category}>
+                  <span>{studioCategoryLabels[category]}</span>
+                  <small>{result.percent}%</small>
+                  <progress
+                    className={styles.progress}
+                    aria-label={`${planningCategories[category]} readiness`}
+                    value={result.completed}
+                    max={result.total || 1}
+                  />
+                </div>
+              );
+            })}
+            {!active.length && (
+              <p className={styles.eyebrow}>Choose only what this journey needs.</p>
+            )}
+          </div>
+        </section>
+      </div>
+      <div className={styles.sectionHeading}>
+        <div>
+          <span className={styles.eyebrow}>Your reservation collection</span>
+          <h2>A few things to look forward to.</h2>
+        </div>
+        <Button variant={ButtonVariant.Quiet} onClick={() => setChoosing(true)}>
+          Choose optional categories
+        </Button>
+      </div>
+      <div className={styles.categories}>
+        {active.map((category) => (
+          <StudioCategorySection
+            key={category}
+            category={category}
+            items={items.filter((item) => item.category === category)}
+            onAdd={() => setAdding(category)}
+            onChange={(updated) =>
+              onChange(items.map((item) => (item.id === updated.id ? updated : item)))
+            }
+            onRemove={(id) => {
+              const removed = items.find((item) => item.id === id);
+              onChange(items.filter((item) => item.id !== id));
+              setMessage(`${removed?.name ?? 'Booking'} removed.`);
+            }}
+          />
+        ))}
+      </div>
+      {!active.length && (
+        <p className={styles.empty}>
+          A little space for possibilities. Add a category when you’re ready.
         </p>
       )}
-      <details className={styles.planningCategory}>
-        <summary>Choose optional categories</summary>
-        <p>Turning a category off keeps its items saved. Turn it back on any time.</p>
-        {Object.entries(planningCategories).map(
-          ([category, label]) =>
-            isPlanningCategory(category) && (
-              <label className={styles.bookingStatus} key={category}>
-                <input
-                  className={ui.checkbox}
-                  type="checkbox"
-                  checked={active.includes(category)}
-                  onChange={(event) => {
-                    const next = event.currentTarget.checked
-                      ? [...active, category]
-                      : active.filter((id) => id !== category);
-                    setLocalCategories(next);
-                    onCategoriesChange?.(next);
-                  }}
-                />
-                {label}
-              </label>
-            ),
-        )}
-      </details>
-      {Object.entries(planningCategories)
-        .filter(([category]) => isPlanningCategory(category) && active.includes(category))
-        .map(([category, label]) => (
-          <details
-            className={`${ui.surface} ${styles.planningCategory} ${styles.bookingCategory}`}
-            key={category}
-            open
-          >
-            <summary>{label}</summary>
-            <p>
-              {getPlanningProgress(items.filter((item) => item.category === category)).percent}%
-              ready
-            </p>
-            <progress
-              className={styles.planningProgress}
-              aria-label={`${label} planning progress`}
-              value={
-                getPlanningProgress(items.filter((item) => item.category === category)).completed
-              }
-              max={
-                getPlanningProgress(items.filter((item) => item.category === category)).total || 1
-              }
-            />
-            {category === 'essentials' && (
-              <p>
-                Remember visas, passport validity, insurance, medication and an offline copy of your
-                documents.
-              </p>
+      {choosing && (
+        <Overlay title="Choose optional categories" onDismiss={() => setChoosing(false)}>
+          <p>Turning a category off keeps its items saved. Turn it back on any time.</p>
+          <div className={styles.choices}>
+            {Object.entries(planningCategories).map(
+              ([category, label]) =>
+                isPlanningCategory(category) && (
+                  <label key={category}>
+                    <input
+                      className={ui.checkbox}
+                      type="checkbox"
+                      checked={active.includes(category)}
+                      onChange={(event) => {
+                        const next = event.currentTarget.checked
+                          ? [...active, category]
+                          : active.filter((id) => id !== category);
+                        setLocalCategories(next);
+                        onCategoriesChange?.(next);
+                      }}
+                    />
+                    {label}
+                  </label>
+                ),
             )}
-            <ul className={styles.planningItems}>
-              {items
-                .filter((item) => item.category === category)
-                .map((item) => (
-                  <TripPlanningItem
-                    key={item.id}
-                    item={item}
-                    onChange={(updated) =>
-                      onChange(
-                        items.map((current) => (current.id === updated.id ? updated : current)),
-                      )
-                    }
-                    onRemove={() => {
-                      onChange(items.filter((current) => current.id !== item.id));
-                      setMessage(`${item.name} removed.`);
-                    }}
-                  />
-                ))}
-            </ul>
-            <details>
-              <summary>Add {label.toLowerCase()}</summary>
-              <form
-                className={styles.planningForm}
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  const form = event.currentTarget;
-                  const fields = readBookingForm(form);
-                  if (fields && isPlanningCategory(category)) {
-                    onChange([
-                      ...items,
-                      {
-                        id: crypto.randomUUID(),
-                        category,
-                        ...fields,
-                        completed: false,
-                        status: PlanningStatus.Idea,
-                      },
-                    ]);
-                    form.reset();
-                    setMessage(`${fields.name} added.`);
-                  } else {
-                    setMessage('Check the date/time and use an http or https booking link.');
-                  }
-                }}
-              >
-                <TripPlanningFields titleLabel={`${label} name`} />
-                <Button type="submit" variant={ButtonVariant.Secondary}>
-                  Add {label.toLowerCase()}
-                </Button>
-              </form>
-            </details>
-          </details>
-        ))}
-      <p role="status">{message}</p>
+          </div>
+          <Button variant={ButtonVariant.Primary} onClick={() => setChoosing(false)}>
+            Done
+          </Button>
+        </Overlay>
+      )}
+      {adding && (
+        <BookingEditor
+          title={`Add ${planningCategories[adding].toLowerCase()}`}
+          onCancel={() => setAdding(null)}
+          onSave={(fields) => {
+            onChange([
+              ...items,
+              {
+                id: crypto.randomUUID(),
+                category: adding,
+                ...fields,
+                completed: false,
+                status: PlanningStatus.Idea,
+              },
+            ]);
+            setAdding(null);
+            setMessage(`${fields.name} added.`);
+          }}
+        />
+      )}
+      <p className={styles.eyebrow} role="status">
+        {message}
+      </p>
     </section>
   );
 };

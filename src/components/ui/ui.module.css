@@ -9,6 +9,27 @@
 .raised {
   background: var(--color-glass-raised);
 }
+.dialog {
+  width: min(32rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: var(--space-5);
+  background: var(--color-sheet);
+}
+.dialog::backdrop {
+  background: var(--color-backdrop);
+}
+.dialogHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+.dialogHeader h2 {
+  margin: 0;
+  font: 400 var(--text-title) / 1.2 var(--font-display);
+}
 .button {
   display: inline-flex;
   align-items: center;
