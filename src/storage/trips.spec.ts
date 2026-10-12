@@ -14,6 +14,27 @@ const trip = {
 const encode = (trips: unknown[]) => JSON.stringify({ version: tripStorage.version, trips });
 
 describe('upcoming trip storage', () => {
+  it('keeps old trips readable and validates saved planning items', () => {
+    const planning = [
+      {
+        id: 'flight',
+        category: 'transportation',
+        name: 'Flight',
+        details: 'Ref ABC · 12 May',
+        completed: true,
+      },
+    ];
+    const plannedTrip = { ...trip, planning };
+    expect(decodeTrips(encode([trip]))).toEqual([trip]);
+    expect(decodeTrips(encode([plannedTrip]))).toEqual([plannedTrip]);
+    expect(
+      decodeTrips(encode([{ ...trip, planning: [{ ...planning[0], category: 'invalid' }] }])),
+    ).toEqual([]);
+    expect(
+      decodeTrips(encode([{ ...trip, planning: [{ ...planning[0], completed: 'yes' }] }])),
+    ).toEqual([]);
+    expect(decodeTrips(encode([{ ...trip, planning: [planning[0], planning[0]] }]))).toEqual([]);
+  });
   it('preserves saved UK trips without guessing a constituent nation', () => {
     const legacyTrip = { ...trip, countryIds: [CountryList.UnitedKingdom] };
     expect(decodeTrips(encode([legacyTrip]))).toEqual([legacyTrip]);

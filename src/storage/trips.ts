@@ -1,6 +1,7 @@
 import { normalizeCountrySelection } from './country-selection';
 import type { ITrip } from '../types/trip';
 import { isTripDate } from '../types/trip';
+import { isTripPlanningItem } from '../types/trip-planning';
 
 export const tripStorage = { key: 'semesta.upcoming-trips', version: 1 };
 
@@ -29,7 +30,11 @@ export const isTripRecord = (value: unknown): value is ITrip => {
     typeof value.notes === 'string' &&
     'countryIds' in value &&
     Array.isArray(value.countryIds) &&
-    value.countryIds.every((id: unknown) => normalizeCountrySelection([id]).length === 1)
+    value.countryIds.every((id: unknown) => normalizeCountrySelection([id]).length === 1) &&
+    (!('planning' in value) ||
+      (Array.isArray(value.planning) &&
+        value.planning.every(isTripPlanningItem) &&
+        new Set(value.planning.map((item) => item.id)).size === value.planning.length))
   );
 };
 

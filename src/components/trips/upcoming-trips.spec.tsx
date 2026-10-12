@@ -33,6 +33,50 @@ afterEach(async () => {
 });
 
 describe('upcoming trips panel', () => {
+  it('adds bookings, updates progress and persists planning when trip details are edited', async () => {
+    const trip = { ...emptyTripDetails, id: 'planning', name: 'Summer trip' };
+    localStorage.setItem(
+      tripStorage.key,
+      JSON.stringify({ version: tripStorage.version, trips: [trip] }),
+    );
+    await act(async () => root.render(<UpcomingTrips />));
+    await click('Open Summer trip');
+    const form = host.querySelector('section[aria-label="Trip planning"] form');
+    if (!(form instanceof HTMLFormElement)) {
+      throw new Error('Missing transportation form');
+    }
+    const input = form.querySelector('input');
+    const details = form.querySelector('textarea');
+    if (!input || !details) {
+      throw new Error('Missing booking fields');
+    }
+    input.value = 'Train to Paris';
+    details.value = '12 May · Reference ABC';
+    await act(async () => form.requestSubmit());
+    const checkbox = host.querySelector(
+      'section[aria-label="Trip planning"] input[type="checkbox"]',
+    );
+    if (!(checkbox instanceof HTMLInputElement)) {
+      throw new Error('Missing booking status');
+    }
+    await act(async () => checkbox.click());
+    expect(host.querySelector('progress')?.value).toBe(1);
+    expect(host.querySelector('progress')?.max).toBe(1);
+    expect(host.textContent).toContain('100%');
+    await click('Edit trip');
+    await click('Save trip');
+    expect(host.textContent).toContain('Train to Paris');
+    expect(host.textContent).toContain('12 May · Reference ABC');
+    const saved = JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}');
+    expect(saved.trips[0].planning[0]).toMatchObject({
+      name: 'Train to Paris',
+      completed: true,
+      category: 'transportation',
+    });
+    await click('Remove Train to Paris');
+    expect(host.querySelector('progress')?.value).toBe(0);
+    expect(host.textContent).toContain('0 of 0');
+  });
   it('shows at most six country flags in equal radial slices', async () => {
     const countryIds = [
       CountryList.Indonesia,

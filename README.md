@@ -1,5 +1,11 @@
 # Semesta
 
+Open a trip to plan transportation, accommodation, activities, restaurants and travel
+essentials. Add multiple items with dates, addresses, prices or booking references in
+their details; mark them booked (or ready for essentials) to update the progress bar.
+Only added items count towards progress. Planning is saved with the trip and included
+in account backups; existing trips start with an empty plan.
+
 The destination picker has 198 entries: the UK is represented by England, Scotland,
 Wales and Northern Ireland instead of a separate United Kingdom option. Previously
 saved UK trips remain readable. Country counts in older performance measurements
