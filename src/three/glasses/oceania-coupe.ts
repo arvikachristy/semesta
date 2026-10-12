@@ -1,8 +1,11 @@
 import * as THREE from 'three';
-import { countryGroups } from '../../data/countries';
 import { ContinentId } from '../../types/continent';
-import { jellyParameters } from '../jelly-flags/jelly-parameters';
 import { glassParameters } from './glass-parameters';
+import {
+  cocktailPackingFraction,
+  getCocktailBowlVolume,
+  getCountryCapacity,
+} from './glass-capacity';
 
 interface IProfilePoint {
   height: number;
@@ -21,13 +24,9 @@ export const profileVolume = (profile: readonly IProfilePoint[]) =>
     );
   }, 0);
 
-const capacity = countryGroups.find(({ id }) => id === ContinentId.Oceania)!.countries.length;
-const { width, height, depth } = jellyParameters.surface;
-const jellyVolume = width * height * depth * glassParameters.jellyScale ** 3;
-// Shallow bowls pack less efficiently than tall cylinders with the bounds-contact solver.
-const packingFraction = 0.25;
-const targetVolume =
-  (capacity * jellyVolume) / (packingFraction * (1 - glassParameters.topBufferFraction));
+const capacity = getCountryCapacity(ContinentId.Oceania);
+const packingFraction = cocktailPackingFraction;
+const targetVolume = getCocktailBowlVolume(capacity);
 const normalized = Array.from({ length: 33 }, (_, index) => {
   const t = index / 32;
   return { height: t * 1.05, radius: Math.sqrt(0.09 + 0.91 * (2 * t - t * t)) };

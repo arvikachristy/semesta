@@ -1,6 +1,6 @@
 # Continent cocktail glasses plan
 
-Status: proposal only. No application changes implemented.
+Status: partially implemented. Oceania uses a coupe and Africa uses a highball. The remaining continent styles are proposals.
 
 Branch: `feat/continent-cocktail-glasses`
 
@@ -22,7 +22,7 @@ These names describe the visual profiles; dimensions are calculated from capacit
 
 | Continent     | Selectable entries | Volume relative to Africa | Proposed glass                                                               |
 | ------------- | -----------------: | ------------------------: | ---------------------------------------------------------------------------- |
-| Africa        |                 54 |                      100% | Hurricane: tall curved bowl, short stem, broad foot                          |
+| Africa        |                 54 |                      100% | Highball: tall straight-sided bowl, grounded base                            |
 | Asia          |                 48 |                    88.89% | Collins: tall, slender, straight-sided                                       |
 | Europe        |                 48 |                    88.89% | Balloon goblet: broad rounded bowl on a stem                                 |
 | North America |                 23 |                    42.59% | Sour glass: flared bowl on a short stem                                      |
@@ -80,4 +80,4 @@ Changing only the visible meshes would leave jellies colliding with invisible cy
 - Review the proposed silhouette mapping and Antarctica's decorative zero-capacity treatment.
 - Treat volume proportionality as the sizing rule. Differences in height and width follow the cocktail profiles; no independently chosen sizes that contradict the volume ratios.
 
-No production source, geometry, physics, dependency or test changes are part of this planning task.
+Implementation is incremental: Africa and Oceania are implemented with shared capacity rules; the remaining profiles are planned.

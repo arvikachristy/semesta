@@ -1,10 +1,9 @@
 import { countries, countryIds } from '../../data/countries';
 import type { CountryList } from '../../types/country';
-import { ContinentId } from '../../types/continent';
-import { oceaniaCoupe, coupeWallAt } from '../glasses/oceania-coupe';
+import { getGlassDefinition } from '../glasses/glass-definitions';
 import type { TContinentId } from '../../types/continent';
 import type { createGlassSet } from '../glasses/glass-set';
-import { glassDimensions, glassParameters } from '../glasses/glass-parameters';
+import { glassParameters } from '../glasses/glass-parameters';
 import { createFlagBlock } from './flag-block';
 import { createJellyPile, pileParameters } from './jelly-pile';
 import { jellyParameters } from './jelly-parameters';
@@ -83,17 +82,12 @@ export const createCountryCollection = ({
       const continent = countries[country].continent;
       const count = counts.get(continent) ?? 0;
       counts.set(continent, count + 1);
-      const isCoupe = continent === ContinentId.Oceania;
-      const floor = isCoupe ? oceaniaCoupe.floor : glassParameters.baseThickness;
-      const ceiling = isCoupe
-        ? oceaniaCoupe.ceiling
-        : glassParameters.baseThickness +
-          glassDimensions.interiorHeight -
-          glassDimensions.topBuffer;
-      const innerRadius = isCoupe
-        ? coupeWallAt(ceiling - jellyParameters.surface.height * glassParameters.jellyScale).radius
-        : glassDimensions.interiorDiameter / 2;
-      if (count >= (isCoupe ? oceaniaCoupe.capacity : glassParameters.capacity)) {
+      const definition = getGlassDefinition(continent);
+      const { floor, ceiling, wallAt } = definition;
+      const innerRadius = wallAt
+        ? wallAt(ceiling - jellyParameters.surface.height * glassParameters.jellyScale).radius
+        : definition.innerRadius;
+      if (count >= definition.capacity) {
         throw new Error('Continent country limit exceeded');
       }
       if (entries.has(country)) {
@@ -105,10 +99,10 @@ export const createCountryCollection = ({
           radius: innerRadius - pileParameters.wallClearance,
           floor,
           ceiling,
-          ...(isCoupe
+          ...(wallAt
             ? {
                 wallAt: (height: number) => {
-                  const wall = coupeWallAt(height);
+                  const wall = wallAt(height);
                   return {
                     radius: Math.max(0, wall.radius - pileParameters.wallClearance),
                     slope: wall.slope,

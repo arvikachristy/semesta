@@ -63,7 +63,7 @@ describe('glass circle', () => {
     const first = meshes[0];
     expect(meshes).toHaveLength(7);
     meshes
-      .filter((mesh) => mesh.name !== 'oceania')
+      .filter((mesh) => mesh.name !== 'oceania' && mesh.name !== 'africa')
       .forEach((mesh) => {
         expect(mesh.geometry).toBe(first.geometry);
         expect(mesh.material).toBe(first.material);
@@ -71,6 +71,9 @@ describe('glass circle', () => {
     const coupe = meshes.find((mesh) => mesh.name === 'oceania')!;
     expect(coupe.geometry).not.toBe(first.geometry);
     const coupeDispose = vi.spyOn(coupe.geometry, 'dispose');
+    const highball = meshes.find((mesh) => mesh.name === 'africa')!;
+    expect(highball.geometry).not.toBe(first.geometry);
+    const highballDispose = vi.spyOn(highball.geometry, 'dispose');
     const geometryDispose = vi.spyOn(first.geometry, 'dispose');
     const material = first.material;
     if (Array.isArray(material)) {
@@ -80,6 +83,7 @@ describe('glass circle', () => {
     dispose();
     expect(geometryDispose).toHaveBeenCalledTimes(1);
     expect(coupeDispose).toHaveBeenCalledTimes(1);
+    expect(highballDispose).toHaveBeenCalledTimes(1);
     expect(materialDispose).toHaveBeenCalledTimes(1);
     expect(object.children).toHaveLength(0);
     sets.pop();
