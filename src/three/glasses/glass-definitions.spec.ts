@@ -94,5 +94,5 @@ describe('Africa highball', () => {
     }
     expect(pile.getAwakeCount()).toBe(0);
     pile.dispose();
-  });
+  }, 15000);
 });

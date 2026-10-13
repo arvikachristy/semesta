@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { ContinentId } from '../../types/continent';
 import { glassParameters } from './glass-parameters';
+import { createStemmedGlassGeometry } from './stemmed-geometry';
+import { createProfileArtworkGeometry } from './profile-artwork';
 import {
   cocktailPackingFraction,
   getCocktailBowlVolume,
@@ -85,93 +87,32 @@ export const oceaniaCoupe = {
   usableVolume: targetVolume * (1 - glassParameters.topBufferFraction),
 };
 
-export const createCoupeGeometry = () => {
-  const wall = glassParameters.wallThickness;
-  const footRadius = oceaniaCoupe.footRadius;
-  const points = [
-    new THREE.Vector2(0, 0),
-    new THREE.Vector2(footRadius - 0.025, 0),
-    new THREE.Vector2(footRadius, 0.025),
-    new THREE.Vector2(footRadius, 0.05),
-    new THREE.Vector2(footRadius - 0.025, 0.075),
-    new THREE.Vector2(0.14, 0.11),
-    new THREE.Vector2(0.095, 0.18),
-    new THREE.Vector2(0.085, floor - 0.2),
-    new THREE.Vector2(0.12, floor - 0.1),
-    ...profile.map(
-      ({ radius, height }, index) =>
-        new THREE.Vector2(radius + wall, index === 0 ? height - wall : height),
-    ),
-  ];
-  // Rounded lip connects the outside and inside without capping the opening.
-  for (let step = 0; step <= 12; step++) {
-    const angle = (step * Math.PI) / 12;
-    points.push(
-      new THREE.Vector2(
-        top.radius + wall / 2 + (Math.cos(angle) * wall) / 2,
-        top.height + (Math.sin(angle) * wall) / 2,
-      ),
-    );
-  }
-  points.push(
-    ...[...profile].reverse().map(({ radius, height }) => new THREE.Vector2(radius, height)),
-  );
-  points.push(new THREE.Vector2(0, floor));
-  return new THREE.LatheGeometry(points, 96);
-};
+export const createCoupeGeometry = () => createStemmedGlassGeometry(oceaniaCoupe);
 
 export const createCoupeArtworkGeometry = () => {
   const centre = floor + (top.height - floor) * 0.65;
   const artworkHeight = (top.height - floor) * 0.58;
-  const artworkWidth = artworkHeight * (665 / 505);
-  const geometry = new THREE.PlaneGeometry(artworkWidth, artworkHeight, 32, 12);
-  // Crop this SVG's black margins and embedded text; the separate label owns its name.
-  const uv = geometry.getAttribute('uv');
-  for (let index = 0; index < uv.count; index++) {
-    uv.setXY(index, (180 + uv.getX(index) * 665) / 1024, (389 + uv.getY(index) * 505) / 1024);
-  }
-  const positions = geometry.getAttribute('position');
-  for (let index = 0; index < positions.count; index++) {
-    const y = centre + positions.getY(index);
-    const radius =
-      coupeWallAt(y).radius + glassParameters.wallThickness + oceaniaCoupe.artworkOffset;
-    const angle = positions.getX(index) / radius;
-    positions.setXYZ(index, Math.sin(angle) * radius, y, Math.cos(angle) * radius);
-  }
-  geometry.computeVertexNormals();
-  return geometry;
+  return createProfileArtworkGeometry(
+    artworkHeight * (665 / 505),
+    artworkHeight,
+    centre,
+    coupeWallAt,
+    oceaniaCoupe.artworkOffset,
+    { left: 180, top: 130, right: 845, bottom: 635 },
+  );
 };
 
 export const createCoupeWordGeometry = () => {
-  const sourceWidth = 600;
-  const sourceHeight = 132;
   const centre = floor + (top.height - floor) * 0.2;
   const radius =
     coupeWallAt(centre).radius + glassParameters.wallThickness + oceaniaCoupe.artworkOffset;
   const width = radius * 1.7;
-  const height = width * (sourceHeight / sourceWidth);
-  const geometry = new THREE.PlaneGeometry(width, height, 32, 2);
-  const uv = geometry.getAttribute('uv');
-  for (let index = 0; index < uv.count; index++) {
-    uv.setXY(
-      index,
-      (212 + uv.getX(index) * sourceWidth) / 1024,
-      (132 + uv.getY(index) * sourceHeight) / 1024,
-    );
-  }
-  const positions = geometry.getAttribute('position');
-  for (let index = 0; index < positions.count; index++) {
-    const y = centre + positions.getY(index);
-    const radius =
-      coupeWallAt(y).radius + glassParameters.wallThickness + oceaniaCoupe.artworkOffset;
-    const angle = positions.getX(index) / radius;
-    positions.setXYZ(
-      index,
-      Math.sin(angle) * radius,
-      positions.getY(index),
-      Math.cos(angle) * radius,
-    );
-  }
-  geometry.computeVertexNormals();
-  return geometry;
+  return createProfileArtworkGeometry(
+    width,
+    width * (132 / 600),
+    centre,
+    coupeWallAt,
+    oceaniaCoupe.artworkOffset,
+    { left: 212, top: 760, right: 812, bottom: 892 },
+  );
 };
