@@ -7,9 +7,11 @@ export const createGoldMaterial = () =>
     ...glassParameters.gold,
   });
 
-export const createArtworkGeometry = () => {
-  const { width, height, surfaceOffset } = glassParameters.artwork;
-  const radius = glassDimensions.outerRadius + surfaceOffset;
+export const createArtworkGeometry = (
+  width = glassParameters.artwork.width,
+  height = glassParameters.artwork.height,
+  radius = glassDimensions.outerRadius + glassParameters.artwork.surfaceOffset,
+) => {
   const geometry = new THREE.PlaneGeometry(width, height, 32, 1);
   const positions = geometry.getAttribute('position');
   for (let index = 0; index < positions.count; index++) {

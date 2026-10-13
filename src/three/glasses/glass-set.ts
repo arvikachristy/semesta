@@ -1,60 +1,77 @@
 import * as THREE from 'three';
-import { createGlassGeometry } from './glass-geometry';
-import { createGlassMaterial } from './glass-material';
-import { glassDimensions, glassParameters } from './glass-parameters';
+import { glassParameters } from './glass-parameters';
 import { continents } from './continents';
 import type { TContinentId } from '../../types/continent';
-import { createArtworkGeometry, createContinentArtwork, createGoldMaterial } from './glass-artwork';
+import { createContinentArtwork, createGoldMaterial } from './glass-artwork';
+import { getGlassDefinition } from './glass-definitions';
+import type { IGlassDefinition } from './glass-definitions';
+import { createGlassResources } from './glass-resources';
 
 export const createGlassSet = () => {
   const object = new THREE.Group();
   const containers = new Map<TContinentId, THREE.Group>();
-  const geometry = createGlassGeometry();
-  const material = createGlassMaterial();
-  const artworkGeometry = createArtworkGeometry();
-  const rimGeometry = new THREE.TorusGeometry(
-    glassDimensions.outerRadius - glassParameters.wallThickness / 2,
-    0.012,
-    8,
-    96,
-  );
+  const resources = new Map<IGlassDefinition, ReturnType<typeof createGlassResources>>();
   const goldMaterial = createGoldMaterial();
   const artworkResources: ReturnType<typeof createContinentArtwork>[] = [];
   const worldPosition = new THREE.Vector3();
   const cameraPosition = new THREE.Vector3();
 
-  for (let index = 0; index < glassParameters.count; index++) {
-    const angle = Math.PI - (index * Math.PI * 2) / glassParameters.count;
-    const glass = new THREE.Mesh(geometry, material);
-    const continent = continents[index];
+  continents.forEach((continent, index) => {
+    const definition = getGlassDefinition(continent.id);
+    let shared = resources.get(definition);
+    if (!shared) {
+      shared = createGlassResources(definition);
+      resources.set(definition, shared);
+    }
+    const glass = new THREE.Mesh(shared.geometry, shared.material);
     glass.name = continent.id;
-    const artwork = createContinentArtwork(continent, artworkGeometry);
-    artworkResources.push(artwork);
-    const rim = new THREE.Mesh(rimGeometry, goldMaterial);
+    const markings = shared.markings.map(({ geometry, y }, index) => {
+      const artwork = createContinentArtwork(continent, geometry);
+      artwork.object.position.y = y;
+      artwork.object.renderOrder = 2 + index;
+      artworkResources.push(artwork);
+      return artwork.object;
+    });
+    const rim = new THREE.Mesh(shared.rim, goldMaterial);
     rim.rotation.x = Math.PI / 2;
-    rim.position.y = glassDimensions.outerHeight - glassParameters.wallThickness / 2;
+    rim.position.y = definition.rimHeight;
     const contents = new THREE.Group();
     containers.set(continent.id, contents);
-    glass.add(artwork.object, rim, contents);
+    glass.add(markings[0], rim, contents);
+    if (shared.accents.length) {
+      const accents = new THREE.Group();
+      shared.accents.forEach(({ geometry, y, rotationX = 0 }) => {
+        const accent = new THREE.Mesh(geometry, goldMaterial);
+        accent.position.y = y;
+        accent.rotation.x = rotationX;
+        accents.add(accent);
+      });
+      glass.add(accents);
+    }
+    markings.slice(1).forEach((marking) => glass.add(marking));
+    const angle = Math.PI - (index * Math.PI * 2) / continents.length;
     glass.position.set(
       glassParameters.circleRadius * Math.sin(angle),
       0,
       glassParameters.circleRadius * Math.cos(angle),
     );
     object.add(glass);
-  }
+  });
 
-  // The complete rotation envelope keeps every orientation inside the camera fit.
+  // Include complete geometry, rims and markings in the carousel's rotation envelope.
+  const definitions = [...resources.keys()];
   const extent =
     glassParameters.circleRadius +
-    glassDimensions.outerRadius +
-    glassParameters.artwork.surfaceOffset;
+    Math.max(...definitions.map(({ outerRadius, artworkOffset }) => outerRadius + artworkOffset));
+  const height = Math.max(
+    ...definitions.map((definition) => Math.max(definition.height, definition.rimHeight + 0.012)),
+  );
   return {
     object,
     containers,
     bounds: new THREE.Box3(
       new THREE.Vector3(-extent, 0, -extent),
-      new THREE.Vector3(extent, glassDimensions.outerHeight, extent),
+      new THREE.Vector3(extent, height, extent),
     ),
     rotateBy: (viewportDelta: number) => {
       object.rotation.y += viewportDelta * glassParameters.dragRadiansPerViewport;
@@ -71,11 +88,8 @@ export const createGlassSet = () => {
     },
     dispose: () => {
       artworkResources.forEach((artwork) => artwork.dispose());
-      artworkGeometry.dispose();
-      rimGeometry.dispose();
+      resources.forEach((resource) => resource.dispose());
       goldMaterial.dispose();
-      geometry.dispose();
-      material.dispose();
       object.clear();
     },
   };

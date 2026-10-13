@@ -3,7 +3,6 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { createCamera } from './camera';
 import { createGlassSet } from './glasses/glass-set';
-
 describe('camera framing', () => {
   it('fits the complete rotation envelope on desktop and portrait resize', () => {
     const glasses = createGlassSet();

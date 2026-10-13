@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import { glassDimensions, glassParameters } from './glass-parameters';
 
 // Revolve the underside, outer wall, rounded rim, inner wall, and base.
-export const createGlassGeometry = () => {
-  const { outerRadius, outerHeight, interiorDiameter } = glassDimensions;
+export const createGlassGeometry = (dimensions = glassDimensions) => {
+  const { outerRadius, outerHeight, interiorDiameter } = dimensions;
   const { wallThickness, baseThickness } = glassParameters;
   const innerRadius = interiorDiameter / 2;
   const rimRadius = wallThickness / 2;

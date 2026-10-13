@@ -20,7 +20,7 @@ export const getGlassTint = (height: number) => {
 };
 
 // Transmission keeps the object optically clear while thickness adds refraction.
-export const createGlassMaterial = () => {
+export const createGlassMaterial = (height = glassDimensions.outerHeight) => {
   const material = new THREE.MeshPhysicalMaterial({
     color: glassParameters.gradient.clearColor,
     metalness: 0,
@@ -43,7 +43,7 @@ export const createGlassMaterial = () => {
       value: new THREE.Color(glassParameters.gradient.bottomColor),
     };
     shader.uniforms.glassFadeHeight = { value: glassParameters.gradient.fadeHeight };
-    shader.uniforms.glassHeight = { value: glassDimensions.outerHeight };
+    shader.uniforms.glassHeight = { value: height };
     shader.vertexShader = shader.vertexShader
       .replace(
         shaderIncludes.common,
