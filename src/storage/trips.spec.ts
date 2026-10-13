@@ -14,6 +14,38 @@ const trip = {
 const encode = (trips: unknown[]) => JSON.stringify({ version: tripStorage.version, trips });
 
 describe('upcoming trip storage', () => {
+  it('round-trips a confirmed suggestion identifier without changing the storage version', async () => {
+    const suggested = {
+      ...trip,
+      planning: [
+        {
+          id: 'outbound',
+          category: 'transportation' as const,
+          name: 'Outbound flight',
+          details: '',
+          completed: true,
+          status: 'booked' as const,
+          templateId: 'outbound-flight' as const,
+        },
+      ],
+      activePlanningCategories: ['transportation' as const],
+    };
+    const storage = new Map<string, string>();
+    const repository = createLocalTripRepository(() => ({
+      getItem: (key) => storage.get(key) ?? null,
+      setItem: (key, value) => {
+        storage.set(key, value);
+      },
+    }));
+    await repository.save([suggested]);
+    expect(await repository.load()).toEqual([suggested]);
+    expect(JSON.parse(storage.get(tripStorage.key) ?? '{}').version).toBe(1);
+    expect(
+      decodeTrips(
+        encode([{ ...suggested, planning: [{ ...suggested.planning[0], templateId: 'wrong' }] }]),
+      ),
+    ).toEqual([]);
+  });
   it('round-trips real travellers while keeping legacy trips without participants readable', async () => {
     const participants = [
       { id: 'person', name: 'Taylor Reed' },
