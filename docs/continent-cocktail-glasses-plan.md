@@ -1,6 +1,6 @@
 # Continent cocktail glasses plan
 
-Status: partially implemented. Oceania uses a coupe and Africa uses a highball. The remaining continent styles are proposals.
+Status: partially implemented. Oceania uses a coupe, Africa a highball, and North America a martini glass. The remaining continent styles are proposals.
 
 Branch: `feat/continent-cocktail-glasses`
 
@@ -25,7 +25,7 @@ These names describe the visual profiles; dimensions are calculated from capacit
 | Africa        |                 54 |                      100% | Highball: tall straight-sided bowl, grounded base                            |
 | Asia          |                 48 |                    88.89% | Collins: tall, slender, straight-sided                                       |
 | Europe        |                 48 |                    88.89% | Balloon goblet: broad rounded bowl on a stem                                 |
-| North America |                 23 |                    42.59% | Sour glass: flared bowl on a short stem                                      |
+| North America |                 23 |                    42.59% | Martini: sloped bowl on a stem                                               |
 | Oceania       |                 14 |                    25.93% | Coupe: shallow, broad bowl on a stem                                         |
 | South America |                 12 |                    22.22% | Nick & Nora: compact rounded bowl on a stem                                  |
 | Antarctica    |                  0 |                        0% | Miniature martini display glass, empty and non-interactive for country drops |
@@ -80,4 +80,4 @@ Changing only the visible meshes would leave jellies colliding with invisible cy
 - Review the proposed silhouette mapping and Antarctica's decorative zero-capacity treatment.
 - Treat volume proportionality as the sizing rule. Differences in height and width follow the cocktail profiles; no independently chosen sizes that contradict the volume ratios.
 
-Implementation is incremental: Africa and Oceania are implemented with shared capacity rules; the remaining profiles are planned.
+Implementation is incremental: Africa, Oceania and North America are implemented with shared capacity rules; the remaining profiles are planned.

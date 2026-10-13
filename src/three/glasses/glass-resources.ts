@@ -9,8 +9,13 @@ import {
   createCoupeGeometry,
   createCoupeArtworkGeometry,
   createCoupeWordGeometry,
-  oceaniaCoupe,
 } from './oceania-coupe';
+import {
+  createMartiniMapGeometry,
+  createMartiniWordGeometry,
+  northAmericaMartini,
+} from './martini-glass';
+import { createStemmedGlassGeometry } from './stemmed-geometry';
 
 interface IMeshPlacement {
   geometry: THREE.BufferGeometry;
@@ -30,25 +35,18 @@ export const createGlassResources = (definition: IGlassDefinition) => {
         { geometry: createCoupeArtworkGeometry(), y: 0 },
         {
           geometry: createCoupeWordGeometry(),
-          y: oceaniaCoupe.floor + (oceaniaCoupe.height - oceaniaCoupe.floor) * 0.2,
+          y: 0,
         },
       ];
-      accents.push(
-        {
-          geometry: new THREE.TorusGeometry(oceaniaCoupe.footRadius - 0.012, 0.022, 10, 96),
-          y: 0.05,
-          rotationX: Math.PI / 2,
-        },
-        {
-          geometry: new THREE.TorusGeometry(0.12, 0.026, 10, 48),
-          y: definition.floor - 0.1,
-          rotationX: Math.PI / 2,
-        },
-        {
-          geometry: new THREE.CylinderGeometry(0.033, 0.045, definition.floor - 0.26, 24),
-          y: (definition.floor - 0.26) / 2 + 0.13,
-        },
-      );
+      addStemAccents(accents, definition);
+      break;
+    case GlassShape.Martini:
+      geometry = createStemmedGlassGeometry(northAmericaMartini);
+      markings = [
+        { geometry: createMartiniMapGeometry(), y: 0 },
+        { geometry: createMartiniWordGeometry(), y: 0 },
+      ];
+      addStemAccents(accents, definition);
       break;
     case GlassShape.Highball: {
       geometry = createGlassGeometry({
@@ -102,4 +100,27 @@ export const createGlassResources = (definition: IGlassDefinition) => {
       accents.forEach(({ geometry }) => geometry.dispose());
     },
   };
+};
+
+const addStemAccents = (accents: IMeshPlacement[], definition: IGlassDefinition) => {
+  const footRadius = definition.footRadius;
+  if (footRadius === undefined) {
+    throw new Error('Stemmed glass requires a foot radius');
+  }
+  accents.push(
+    {
+      geometry: new THREE.TorusGeometry(footRadius - 0.012, 0.022, 10, 96),
+      y: 0.05,
+      rotationX: Math.PI / 2,
+    },
+    {
+      geometry: new THREE.TorusGeometry(0.12, 0.026, 10, 48),
+      y: definition.floor - 0.1,
+      rotationX: Math.PI / 2,
+    },
+    {
+      geometry: new THREE.CylinderGeometry(0.033, 0.045, definition.floor - 0.26, 24),
+      y: (definition.floor - 0.26) / 2 + 0.13,
+    },
+  );
 };

@@ -3,11 +3,13 @@ import type { TContinentId } from '../../types/continent';
 import { glassDimensions, glassParameters } from './glass-parameters';
 import { getCocktailBowlVolume, getCountryCapacity } from './glass-capacity';
 import { coupeWallAt, oceaniaCoupe } from './oceania-coupe';
+import { martiniWallAt, northAmericaMartini } from './martini-glass';
 
 export enum GlassShape {
   Cylinder = 'cylinder',
   Highball = 'highball',
   Coupe = 'coupe',
+  Martini = 'martini',
 }
 
 export interface IGlassDefinition {
@@ -16,6 +18,7 @@ export interface IGlassDefinition {
   floor: number;
   ceiling: number;
   innerRadius: number;
+  footRadius?: number;
   outerRadius: number;
   height: number;
   rimHeight: number;
@@ -72,6 +75,13 @@ const coupe: IGlassDefinition = {
   rimHeight: oceaniaCoupe.height + glassParameters.wallThickness / 2,
   wallAt: coupeWallAt,
 };
+const martini: IGlassDefinition = {
+  ...northAmericaMartini,
+  shape: GlassShape.Martini,
+  height: northAmericaMartini.height + glassParameters.wallThickness / 2,
+  rimHeight: northAmericaMartini.height + glassParameters.wallThickness / 2,
+  wallAt: martiniWallAt,
+};
 const africaHighball = createHighballDefinition(getCountryCapacity(ContinentId.Africa));
 
 // Continent assignment lives here; rendering and physics switch on shape or use these dimensions.
@@ -81,6 +91,8 @@ export const getGlassDefinition = (continent: TContinentId): IGlassDefinition =>
       return africaHighball;
     case ContinentId.Oceania:
       return coupe;
+    case ContinentId.NorthAmerica:
+      return martini;
     default:
       return cylinder;
   }
