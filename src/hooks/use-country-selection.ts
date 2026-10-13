@@ -13,6 +13,7 @@ export const useCountrySelection = (repository: ICountrySelectionRepository = lo
   const saveQueue = useRef(Promise.resolve());
   const loadedValue = useRef<typeof showedCountries | null>(null);
   const hydratedRepository = useRef<ICountrySelectionRepository | null>(null);
+  const usableReady = ready && hydratedRepository.current === repository;
   useEffect(() => {
     let active = true;
     hydratedRepository.current = null;
@@ -48,18 +49,18 @@ export const useCountrySelection = (repository: ICountrySelectionRepository = lo
 
   const onToggle = useCallback(
     (country: CountryList, checked: boolean) => {
-      if (ready) {
+      if (usableReady) {
         setShowedCountries((current) =>
           toggleCountry(current, country, checked, glassParameters.capacity),
         );
       }
     },
-    [ready],
+    [usableReady],
   );
   const onClear = useCallback(() => {
-    if (ready) {
+    if (usableReady) {
       setShowedCountries([]);
     }
-  }, [ready]);
-  return { showedCountries, ready, onToggle, onClear };
+  }, [usableReady]);
+  return { showedCountries, ready: usableReady, onToggle, onClear };
 };

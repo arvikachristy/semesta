@@ -9,6 +9,12 @@ export const resize = (
 ) => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setPixelRatio(getRenderPixelRatio(window.devicePixelRatio, resolutionScale));
+  renderer.setPixelRatio(
+    getRenderPixelRatio(
+      window.devicePixelRatio,
+      window.innerWidth * window.innerHeight,
+      resolutionScale,
+    ),
+  );
   renderer.setSize(window.innerWidth, window.innerHeight);
 };

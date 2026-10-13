@@ -1,6 +1,7 @@
 // Keep the fullscreen transmission pass affordable on high-density displays.
 export const renderParameters = {
-  maxPixelRatio: 1,
+  maxPixelRatio: 2,
+  maxCanvasPixels: 1_000_000,
   transmissionResolutionScale: 0.5,
   minResolutionScale: 0.75,
   resolutionStep: 0.125,
@@ -9,8 +10,16 @@ export const renderParameters = {
   slowSamples: 3,
   fastSamples: 15,
 };
-export const getRenderPixelRatio = (devicePixelRatio: number, resolutionScale = 1) =>
-  Math.min(devicePixelRatio, renderParameters.maxPixelRatio) * resolutionScale;
+export const getRenderPixelRatio = (
+  devicePixelRatio: number,
+  viewportPixels: number,
+  resolutionScale = 1,
+) =>
+  Math.min(
+    devicePixelRatio,
+    renderParameters.maxPixelRatio,
+    Math.max(1, Math.sqrt(renderParameters.maxCanvasPixels / viewportPixels)),
+  ) * resolutionScale;
 
 // Sustained slow frames reduce canvas pixels. Long headroom restores resolution;
 // separate thresholds and windows prevent quality from oscillating every second.

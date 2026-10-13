@@ -3,14 +3,15 @@ import * as THREE from 'three';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createJellyBatches } from './jelly-batches';
 import { JellyAttribute, createJellyGeometry } from './jelly-geometry';
+import { createFlagAtlas } from './flag-atlas';
 
 vi.mock('./flag-atlas', () => ({
-  createFlagAtlas: () => ({
+  createFlagAtlas: vi.fn(() => ({
     texture: new THREE.Texture(),
     resize: vi.fn(),
     draw: vi.fn(() => ({ x: 0, y: 0, width: 1, height: 1 })),
     dispose: vi.fn(),
-  }),
+  })),
 }));
 
 const createSource = (parent: THREE.Group, x: number) => {
@@ -50,6 +51,22 @@ const findBatch = (parent: THREE.Group) => {
 afterEach(() => vi.restoreAllMocks());
 
 describe('jelly render batches', () => {
+  it('only uploads a newly appended flag when the atlas dimensions stay the same', () => {
+    const parent = new THREE.Group();
+    const sources = Array.from({ length: 4 }, (_, index) => createSource(parent, index));
+    const batches = createJellyBatches();
+    batches.update(sources.slice(0, 3));
+    const atlas = vi.mocked(createFlagAtlas).mock.results.at(-1)?.value;
+    expect(atlas?.draw).toHaveBeenCalledTimes(3);
+    const positions = findBatch(parent).geometry.getAttribute(JellyAttribute.Position);
+    const copy = vi.spyOn(positions, 'setXYZ');
+    batches.update(sources);
+    expect(atlas?.draw).toHaveBeenCalledTimes(4);
+    expect(copy).toHaveBeenCalledTimes(
+      sources[3].mesh.geometry.getAttribute(JellyAttribute.Position).count,
+    );
+    batches.dispose();
+  });
   it('copies changed local surfaces into glass coordinates without losing individual raycasts', () => {
     const parent = new THREE.Group();
     const source = createSource(parent, 2);

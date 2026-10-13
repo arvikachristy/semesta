@@ -63,7 +63,11 @@ export const startPlayground = (
 
   // The render loop keeps the camera, hover, and composition rotation in sync.
   const frameMonitor = createFrameMonitor((reading) => {
-    const ratio = getRenderPixelRatio(window.devicePixelRatio, quality.sample(reading.fps));
+    const ratio = getRenderPixelRatio(
+      window.devicePixelRatio,
+      window.innerWidth * window.innerHeight,
+      quality.sample(reading.fps),
+    );
     if (renderer.getPixelRatio() !== ratio) {
       renderer.setPixelRatio(ratio);
     }

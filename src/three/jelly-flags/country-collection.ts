@@ -11,12 +11,14 @@ import { CountryStatus } from '../../types/country-status';
 import { createLoadQueue } from './load-queue';
 import { jellyPerformance } from './jelly-performance';
 import { createJellyBatches } from './jelly-batches';
+import { getInitialJellyPosition } from './initial-jelly-position';
 
 interface IEntry {
   block: ReturnType<typeof createFlagBlock>;
   continent: TContinentId;
   readyAt: number;
   inserted: boolean;
+  initial: boolean;
   ready: Promise<void>;
 }
 interface ICollectionOptions {
@@ -44,6 +46,7 @@ export const createCountryCollection = ({
   let lastDropTime = 0;
   let disposed = false;
   let membershipChanged = false;
+  let initialSelectionPending = true;
   const remove = (country: CountryList) => {
     const entry = entries.get(country);
     if (!entry) {
@@ -67,9 +70,20 @@ export const createCountryCollection = ({
       lastInsertion.delete(entry.continent);
     }
   };
-  const setCountries = async (selected: readonly CountryList[]) => {
+  const setCountries = async (selected: readonly CountryList[], hydrate = false) => {
     if (disposed) {
       return;
+    }
+    const initialSelection = initialSelectionPending || hydrate;
+    initialSelectionPending = false;
+    if (hydrate && entries.size > 0) {
+      // A new account workspace replaces the old pile. Do not wake every old
+      // neighbour while clearing it, or let old positions overlap the new stack.
+      piles.forEach((pile) => pile.dispose());
+      piles.clear();
+      for (const country of [...entries.keys()]) {
+        remove(country);
+      }
     }
     const wanted = new Set(selected);
     for (const country of entries.keys()) {
@@ -113,25 +127,31 @@ export const createCountryCollection = ({
         },
       });
       block.object.name = country;
-      const angle = count * pileParameters.dropAngle;
-      const radius =
-        Math.max(
-          0,
-          innerRadius -
-            (Math.hypot(jellyParameters.surface.width, jellyParameters.surface.depth) *
-              glassParameters.jellyScale) /
-              2 -
-            pileParameters.wallClearance,
-        ) * Math.sqrt((count * pileParameters.dropRadiusStep) % 1);
-      block.object.position.set(
-        Math.sin(angle) * radius,
-        ceiling - (jellyParameters.surface.height * glassParameters.jellyScale) / 2 - 0.02,
-        Math.cos(angle) * radius,
-      );
+      if (initialSelection) {
+        const position = getInitialJellyPosition(count, definition);
+        block.object.position.set(position.x, position.y, position.z);
+      } else {
+        const angle = count * pileParameters.dropAngle;
+        const radius =
+          Math.max(
+            0,
+            innerRadius -
+              (Math.hypot(jellyParameters.surface.width, jellyParameters.surface.depth) *
+                glassParameters.jellyScale) /
+                2 -
+              pileParameters.wallClearance,
+          ) * Math.sqrt((count * pileParameters.dropRadiusStep) % 1);
+        block.object.position.set(
+          Math.sin(angle) * radius,
+          ceiling - (jellyParameters.surface.height * glassParameters.jellyScale) / 2 - 0.02,
+          Math.cos(angle) * radius,
+        );
+      }
       const entry: IEntry = {
         block,
         continent,
         inserted: false,
+        initial: initialSelection,
         readyAt: Infinity,
         ready: Promise.resolve(),
       };
@@ -147,8 +167,12 @@ export const createCountryCollection = ({
           if (disposed || entries.get(country) !== entry) {
             return;
           }
-          entry.readyAt = Math.max(elapsed, nextDrop.get(continent) ?? elapsed);
-          nextDrop.set(continent, entry.readyAt + pileParameters.dropInterval);
+          if (entry.initial) {
+            entry.readyAt = elapsed;
+          } else {
+            entry.readyAt = Math.max(elapsed, nextDrop.get(continent) ?? elapsed);
+            nextDrop.set(continent, entry.readyAt + pileParameters.dropInterval);
+          }
         })
         .catch(() => {
           if (disposed || entries.get(country) !== entry) {
@@ -173,12 +197,14 @@ export const createCountryCollection = ({
         return;
       }
       if (
+        !entry.initial &&
         awake >= jellyPerformance.maxAwakeAcrossGlasses &&
         elapsed - lastDropTime < jellyPerformance.maxDropPause
       ) {
         return;
       }
       if (
+        !entry.initial &&
         (piles.get(entry.continent)?.getAwakeCount() ?? 0) >= jellyPerformance.maxAwakeBeforeDrop &&
         elapsed - (lastInsertion.get(entry.continent) ?? 0) < jellyPerformance.maxDropPause
       ) {
@@ -189,18 +215,23 @@ export const createCountryCollection = ({
       if (!body || !parent) {
         return;
       }
+      if (entry.initial) {
+        body.sleep();
+      }
       let pile = piles.get(entry.continent);
       if (!pile) {
         pile = createJellyPile();
         piles.set(entry.continent, pile);
       }
       pile.add(body);
-      awake++;
-      lastDropTime = elapsed;
+      if (!entry.initial) {
+        awake++;
+        lastDropTime = elapsed;
+        lastInsertion.set(entry.continent, elapsed);
+      }
       parent.add(entry.block.object);
       blocks.push(entry.block);
       entry.inserted = true;
-      lastInsertion.set(entry.continent, elapsed);
       changed = true;
       onStatus?.(country, CountryStatus.Ready);
     });

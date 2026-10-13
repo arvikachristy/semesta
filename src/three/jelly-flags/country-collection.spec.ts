@@ -10,6 +10,9 @@ import { CountryStatus } from '../../types/country-status';
 import { ContinentId } from '../../types/continent';
 import { countryIds } from '../../data/countries';
 import { jellyPerformance } from './jelly-performance';
+import { getInitialJellyPosition } from './initial-jelly-position';
+import { glassDimensions, glassParameters } from '../glasses/glass-parameters';
+import { jellyParameters } from './jelly-parameters';
 
 const setup = () => {
   const glasses = createGlassSet();
@@ -59,8 +62,39 @@ const setup = () => {
 };
 
 describe('country collection reconciliation', () => {
+  it('places saved countries inside the glasses asleep, without queueing sky drops', async () => {
+    const s = setup();
+    const ready = s.collection.setCountries(countryIds.slice(0, 40));
+    s.pending.forEach((entry) => entry.resolve());
+    await ready;
+    s.collection.update(0);
+    expect(s.collection.blocks).toHaveLength(40);
+    expect(s.collection.blocks.every((block) => block.getBody()?.isSleeping())).toBe(true);
+    const revision = s.pending[0].block.getBody().getRevision();
+    s.collection.update(1);
+    expect(s.pending[0].block.getBody().getRevision()).toBe(revision);
+    s.pending[0].block.getBody().beginGrab(new THREE.Vector3());
+    expect(s.pending[0].block.getBody().isSleeping()).toBe(false);
+    s.dispose();
+  });
+  it('replaces an already loaded guest pile with a resting account selection', async () => {
+    const s = setup();
+    const guest = s.collection.setCountries([CountryList.Indonesia]);
+    s.pending[0].resolve();
+    await guest;
+    s.collection.update(0);
+    const account = s.collection.setCountries([CountryList.Indonesia, CountryList.France], true);
+    s.pending.slice(1).forEach((entry) => entry.resolve());
+    await account;
+    s.collection.update(0);
+    expect(s.pending[0].block.dispose).toHaveBeenCalledOnce();
+    expect(s.collection.blocks).toEqual([s.pending[1].block, s.pending[2].block]);
+    expect(s.collection.blocks.every((block) => block.getBody()?.isSleeping())).toBe(true);
+    s.dispose();
+  });
   it('bounds a mass insertion and eventually admits queued flags even while the pile stays awake', async () => {
     const s = setup();
+    await s.collection.setCountries([]);
     const ready = s.collection.setCountries(countryIds.slice(0, 40));
     s.pending.forEach((entry) => entry.resolve());
     await ready;
@@ -141,6 +175,7 @@ describe('country collection reconciliation', () => {
   });
   it('staggers drops into one glass and cancels an unticked queued country', async () => {
     const s = setup();
+    await s.collection.setCountries([]);
     const ready = s.collection.setCountries([CountryList.Indonesia, CountryList.Nepal]);
     s.pending.forEach((entry) => entry.resolve());
     await ready;
@@ -151,5 +186,33 @@ describe('country collection reconciliation', () => {
     expect(s.collection.blocks).toEqual([s.pending[0].block]);
     expect(s.pending[1].block.dispose).toHaveBeenCalledOnce();
     s.dispose();
+  });
+});
+
+describe('saved jelly placement', () => {
+  it('fits a full glass without overlapping bodies or crossing its walls', () => {
+    const width = jellyParameters.surface.width * glassParameters.jellyScale;
+    const height = jellyParameters.surface.height * glassParameters.jellyScale;
+    const depth = jellyParameters.surface.depth * glassParameters.jellyScale;
+    const radius = glassDimensions.interiorDiameter / 2;
+    const ceiling =
+      glassParameters.baseThickness + glassDimensions.interiorHeight - glassDimensions.topBuffer;
+    const positions = Array.from({ length: glassParameters.capacity }, (_, index) =>
+      getInitialJellyPosition(index),
+    );
+    for (const [index, position] of positions.entries()) {
+      expect(position.y - height / 2).toBeGreaterThanOrEqual(glassParameters.baseThickness);
+      expect(position.y + height / 2).toBeLessThan(ceiling);
+      expect(
+        Math.hypot(Math.abs(position.x) + width / 2, Math.abs(position.z) + depth / 2),
+      ).toBeLessThan(radius);
+      for (const other of positions.slice(index + 1)) {
+        expect(
+          Math.abs(position.x - other.x) >= width - 1e-6 ||
+            Math.abs(position.y - other.y) >= height - 1e-6 ||
+            Math.abs(position.z - other.z) >= depth - 1e-6,
+        ).toBe(true);
+      }
+    }
   });
 });
