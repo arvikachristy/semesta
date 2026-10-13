@@ -7,7 +7,7 @@ import { jellyParameters } from '../jelly-flags/jelly-parameters';
 import { getGlassDefinition, GlassShape } from './glass-definitions';
 import { glassParameters } from './glass-parameters';
 import { northAmericaMartini, martiniWallAt } from './martini-glass';
-import { profileVolume } from './oceania-coupe';
+import { profileVolume } from './glass-profile';
 import { createStemmedGlassGeometry } from './stemmed-geometry';
 
 const martini = getGlassDefinition(ContinentId.NorthAmerica);

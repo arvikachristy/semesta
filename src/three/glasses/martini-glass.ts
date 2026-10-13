@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { ContinentId } from '../../types/continent';
 import { glassParameters } from './glass-parameters';
 import { getCocktailBowlVolume, getCountryCapacity } from './glass-capacity';
-import { profileVolume } from './oceania-coupe';
+import { profileVolume, findProfileFillHeight } from './glass-profile';
 import { createProfileArtworkGeometry } from './profile-artwork';
 
 const capacity = getCountryCapacity(ContinentId.NorthAmerica);
@@ -29,26 +29,16 @@ export const martiniWallAt = (height: number) => ({
   slope,
 });
 
-let low = floor;
-let high = top.height;
-for (let iteration = 0; iteration < 48; iteration++) {
-  const height = (low + high) / 2;
-  const partial = [
-    ...profile.filter((point) => point.height < height),
-    { height, radius: martiniWallAt(height).radius },
-  ];
-  if (profileVolume(partial) < bowlVolume * (1 - glassParameters.topBufferFraction)) {
-    low = height;
-  } else {
-    high = height;
-  }
-}
+const ceiling = findProfileFillHeight(
+  profile,
+  bowlVolume * (1 - glassParameters.topBufferFraction),
+);
 
 export const northAmericaMartini = {
   capacity,
   profile,
   floor,
-  ceiling: (low + high) / 2,
+  ceiling,
   height: top.height,
   innerRadius: topRadius,
   outerRadius: topRadius + glassParameters.wallThickness,

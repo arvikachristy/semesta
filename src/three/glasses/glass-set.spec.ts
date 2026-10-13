@@ -65,7 +65,10 @@ describe('glass circle', () => {
     meshes
       .filter(
         (mesh) =>
-          mesh.name !== 'oceania' && mesh.name !== 'africa' && mesh.name !== 'north-america',
+          mesh.name !== 'oceania' &&
+          mesh.name !== 'africa' &&
+          mesh.name !== 'north-america' &&
+          mesh.name !== 'south-america',
       )
       .forEach((mesh) => {
         expect(mesh.geometry).toBe(first.geometry);
@@ -78,6 +81,8 @@ describe('glass circle', () => {
     expect(highball.geometry).not.toBe(first.geometry);
     const martini = meshes.find((mesh) => mesh.name === 'north-america')!;
     expect(martini.geometry).not.toBe(first.geometry);
+    const flute = meshes.find((mesh) => mesh.name === 'south-america')!;
+    expect(flute.geometry).not.toBe(first.geometry);
     const highballDispose = vi.spyOn(highball.geometry, 'dispose');
     const geometryDispose = vi.spyOn(first.geometry, 'dispose');
     const material = first.material;
@@ -110,7 +115,7 @@ describe('glass circle', () => {
         const towardCamera = camera.position.clone().sub(position).setY(0).normalize();
         expect(glass.getWorldDirection(new THREE.Vector3()).dot(towardCamera)).toBeCloseTo(1);
         expect(glass.children).toHaveLength(
-          glass.name === 'oceania' || glass.name === 'north-america' ? 5 : 3,
+          ['oceania', 'north-america', 'south-america'].includes(glass.name) ? 5 : 3,
         );
       });
     }

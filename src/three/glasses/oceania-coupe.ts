@@ -1,30 +1,13 @@
-import * as THREE from 'three';
 import { ContinentId } from '../../types/continent';
 import { glassParameters } from './glass-parameters';
 import { createStemmedGlassGeometry } from './stemmed-geometry';
 import { createProfileArtworkGeometry } from './profile-artwork';
+import { profileVolume, profileWallAt, findProfileFillHeight } from './glass-profile';
 import {
   cocktailPackingFraction,
   getCocktailBowlVolume,
   getCountryCapacity,
 } from './glass-capacity';
-
-interface IProfilePoint {
-  height: number;
-  radius: number;
-}
-
-export const profileVolume = (profile: readonly IProfilePoint[]) =>
-  profile.slice(1).reduce((volume, point, index) => {
-    const previous = profile[index];
-    return (
-      volume +
-      (Math.PI *
-        (point.height - previous.height) *
-        (previous.radius ** 2 + previous.radius * point.radius + point.radius ** 2)) /
-        3
-    );
-  }, 0);
 
 const capacity = getCountryCapacity(ContinentId.Oceania);
 const packingFraction = cocktailPackingFraction;
@@ -41,36 +24,11 @@ const profile = normalized.map((point) => ({
 }));
 const top = profile[profile.length - 1];
 
-export const coupeWallAt = (height: number) => {
-  const index = Math.max(
-    1,
-    profile.findIndex((point) => point.height >= height),
-  );
-  const end = height >= top.height ? top : profile[index];
-  const start = height >= top.height ? profile[profile.length - 2] : profile[index - 1];
-  const slope = (end.radius - start.radius) / (end.height - start.height);
-  return {
-    radius:
-      start.radius + slope * (THREE.MathUtils.clamp(height, floor, top.height) - start.height),
-    slope,
-  };
-};
-
-// Headroom is a fraction of bowl volume, not its height; stems never count as capacity.
-let low = floor;
-let high = top.height;
-for (let iteration = 0; iteration < 48; iteration++) {
-  const height = (low + high) / 2;
-  const partial = [
-    ...profile.filter((point) => point.height < height),
-    { height, radius: coupeWallAt(height).radius },
-  ];
-  if (profileVolume(partial) < targetVolume * (1 - glassParameters.topBufferFraction)) {
-    low = height;
-  } else {
-    high = height;
-  }
-}
+export const coupeWallAt = (height: number) => profileWallAt(profile, height);
+const ceiling = findProfileFillHeight(
+  profile,
+  targetVolume * (1 - glassParameters.topBufferFraction),
+);
 
 export const oceaniaCoupe = {
   capacity,
@@ -79,7 +37,7 @@ export const oceaniaCoupe = {
   footRadius: top.radius * 0.56,
   profile,
   floor,
-  ceiling: (low + high) / 2,
+  ceiling,
   height: top.height,
   innerRadius: top.radius,
   outerRadius: top.radius + glassParameters.wallThickness,
