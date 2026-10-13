@@ -1,6 +1,6 @@
 # Continent cocktail glasses plan
 
-Status: partially implemented. Oceania uses a coupe, Africa a highball, and North America a martini glass. The remaining continent styles are proposals.
+Status: partially implemented. Oceania uses a coupe, Africa a highball, North America a martini glass, and South America a flute. The remaining continent styles are proposals.
 
 Branch: `feat/continent-cocktail-glasses`
 
@@ -27,7 +27,7 @@ These names describe the visual profiles; dimensions are calculated from capacit
 | Europe        |                 48 |                    88.89% | Balloon goblet: broad rounded bowl on a stem                                 |
 | North America |                 23 |                    42.59% | Martini: sloped bowl on a stem                                               |
 | Oceania       |                 14 |                    25.93% | Coupe: shallow, broad bowl on a stem                                         |
-| South America |                 12 |                    22.22% | Nick & Nora: compact rounded bowl on a stem                                  |
+| South America |                 12 |                    22.22% | Flute: tall, narrow bowl on a stem                                           |
 | Antarctica    |                  0 |                        0% | Miniature martini display glass, empty and non-interactive for country drops |
 
 Asia and Europe must have equal usable volume despite their different shapes. Glass height alone does not encode country count. The proposed Antarctica glass is an explicit visual exception: a visible vessel cannot have physical volume proportional to zero. Its logical country capacity is zero; it remains a small decorative seventh glass rather than being assigned a fictitious country count.
@@ -51,7 +51,7 @@ Changing only the visible meshes would leave jellies colliding with invisible cy
 
 3. **Build the hollow cocktail geometry.** Generate each bowl with `LatheGeometry`, with a real inner wall, closed bowl bottom and open rounded rim. Add stems and feet as solid geometry below the bowl floor. Keep all glasses grounded at the same base level. Calculate rim position and radius from each profile. Retain the current glass and gold visual treatment, adjusting tint normalization to each vessel. Share resources where safe; dispose per-glass geometry and any material variants explicitly.
 
-4. **Fit continent artwork to the bowl.** Replace the constant-radius artwork wrap with the resolved outer radius at each artwork vertex's height. Place artwork within the bowl, above the stem, scale it to available surface area and offset along the surface normal to avoid intersection. Keep labels legible on the small coupe and Nick & Nora profiles; use a smaller emblem instead of stretching the continent silhouette.
+4. **Fit continent artwork to the bowl.** Replace the constant-radius artwork wrap with the resolved outer radius at each artwork vertex's height. Place artwork within the bowl, above the stem, scale it to available surface area and offset along the surface normal to avoid intersection. Keep labels legible on the small coupe and flute profiles; use a smaller emblem instead of stretching the continent silhouette.
 
 5. **Make contents follow the interior.** Pass each continent's interior profile, bowl floor and usable fill height through `country-collection.ts` into the jelly container. Replace fixed-radius wall projection with a profile-aware boundary query and inward collision normal, including the wall slope in velocity response. Handle the bowl floor and profile-segment joins consistently; do not allow particles into stems or feet. Derive drop positions from available radius at the spawn height, accounting for jelly half-extents and wall clearance. Preserve existing grabbing, settling, batching and loading behavior.
 
@@ -80,4 +80,4 @@ Changing only the visible meshes would leave jellies colliding with invisible cy
 - Review the proposed silhouette mapping and Antarctica's decorative zero-capacity treatment.
 - Treat volume proportionality as the sizing rule. Differences in height and width follow the cocktail profiles; no independently chosen sizes that contradict the volume ratios.
 
-Implementation is incremental: Africa, Oceania and North America are implemented with shared capacity rules; the remaining profiles are planned.
+Implementation is incremental: Africa, Oceania, North America and South America are implemented with shared capacity rules; the remaining profiles are planned.

@@ -16,6 +16,7 @@ import {
   northAmericaMartini,
 } from './martini-glass';
 import { createStemmedGlassGeometry } from './stemmed-geometry';
+import { createFluteMapGeometry, createFluteWordGeometry, southAmericaFlute } from './flute-glass';
 
 interface IMeshPlacement {
   geometry: THREE.BufferGeometry;
@@ -45,6 +46,14 @@ export const createGlassResources = (definition: IGlassDefinition) => {
       markings = [
         { geometry: createMartiniMapGeometry(), y: 0 },
         { geometry: createMartiniWordGeometry(), y: 0 },
+      ];
+      addStemAccents(accents, definition);
+      break;
+    case GlassShape.Flute:
+      geometry = createStemmedGlassGeometry(southAmericaFlute);
+      markings = [
+        { geometry: createFluteMapGeometry(), y: 0 },
+        { geometry: createFluteWordGeometry(), y: 0 },
       ];
       addStemAccents(accents, definition);
       break;

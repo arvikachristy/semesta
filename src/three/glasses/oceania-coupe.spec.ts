@@ -5,7 +5,8 @@ import { createSoftBody } from '../jelly-flags/jelly-soft-body';
 import { createJellyPile, pileParameters } from '../jelly-flags/jelly-pile';
 import { jellyParameters } from '../jelly-flags/jelly-parameters';
 import { glassParameters } from './glass-parameters';
-import { oceaniaCoupe, coupeWallAt, createCoupeGeometry, profileVolume } from './oceania-coupe';
+import { oceaniaCoupe, coupeWallAt, createCoupeGeometry } from './oceania-coupe';
+import { profileVolume } from './glass-profile';
 
 describe('Oceania coupe', () => {
   it('sizes the usable bowl for the catalogue, excluding stem and ten percent headroom', () => {
