@@ -3,8 +3,10 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UpcomingTrips } from './upcoming-trips';
+import { TripList } from './trip-list';
 import { tripStorage } from '../../storage/trips';
 import { emptyTripDetails } from '../../types/trip';
+import type { ITrip } from '../../types/trip';
 import { CountryList } from '../../types/country';
 const host = document.createElement('div');
 let root: ReturnType<typeof createRoot>;
@@ -48,6 +50,87 @@ describe('compact upcoming trip launcher', () => {
     expect(host.querySelector('section[aria-label="Trip details"]')).toBeNull();
     expect(host.querySelector('section[aria-label="Trip Studio planning"]')).toBeNull();
     expect(host.textContent).not.toContain('Open Trip Studio');
+  });
+  it('shows planning guidance without a readiness score when no bookings are tracked', async () => {
+    const trip = { ...emptyTripDetails, id: 'empty', name: 'Lisbon' };
+    await act(async () => root.render(<TripList trips={[trip]} onSelect={vi.fn()} />));
+    expect(host.textContent).toContain('Start planning');
+    expect(host.textContent).not.toContain('0%');
+    expect(host.querySelector('progress')?.getAttribute('aria-label')).toBe(
+      'Lisbon has no tracked bookings',
+    );
+    expect(host.querySelector('progress')).not.toBeNull();
+  });
+  it('counts only enabled categories and uses saved categories for legacy trips', async () => {
+    const trip: ITrip = {
+      ...emptyTripDetails,
+      id: 'partial',
+      name: 'Lisbon',
+      planning: [
+        {
+          id: 'activity-booked',
+          category: 'activities',
+          name: 'Museum',
+          details: '',
+          completed: true,
+        },
+        {
+          id: 'activity-open',
+          category: 'activities',
+          name: 'Walking tour',
+          details: '',
+          completed: false,
+        },
+        {
+          id: 'hotel-open',
+          category: 'accommodation',
+          name: 'Hotel',
+          details: '',
+          completed: false,
+        },
+      ],
+      activePlanningCategories: ['activities'],
+    };
+    await act(async () => root.render(<TripList trips={[trip]} onSelect={vi.fn()} />));
+    expect(host.textContent).toContain('1 thing left to book');
+    expect(host.textContent).toContain('50%');
+
+    const legacyTrip = { ...trip, id: 'legacy', activePlanningCategories: undefined };
+    await act(async () => root.render(<TripList trips={[legacyTrip]} onSelect={vi.fn()} />));
+    expect(host.textContent).toContain('2 things left to book');
+    expect(host.textContent).toContain('33%');
+  });
+  it('shows all tracked bookings confirmed and reflects updated booking props immediately', async () => {
+    const trip = {
+      ...emptyTripDetails,
+      id: 'complete',
+      name: 'Lisbon',
+      planning: [
+        {
+          id: 'hotel',
+          category: 'accommodation' as const,
+          name: 'Hotel',
+          details: '',
+          completed: false,
+        },
+        {
+          id: 'train',
+          category: 'transportation' as const,
+          name: 'Train',
+          details: '',
+          completed: true,
+        },
+      ],
+    };
+    await act(async () => root.render(<TripList trips={[trip]} onSelect={vi.fn()} />));
+    expect(host.textContent).toContain('1 thing left to book');
+    const updatedTrip = {
+      ...trip,
+      planning: trip.planning.map((item) => ({ ...item, completed: true })),
+    };
+    await act(async () => root.render(<TripList trips={[updatedTrip]} onSelect={vi.fn()} />));
+    expect(host.textContent).toContain('All tracked bookings confirmed');
+    expect(host.textContent).toContain('100%');
   });
   it('creates a trip and immediately opens its Studio after saving', async () => {
     const onOpenStudio = vi.fn();
