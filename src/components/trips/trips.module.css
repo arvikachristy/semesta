@@ -294,6 +294,49 @@
   gap: var(--space-1);
   min-width: 0;
 }
+.tripPlanning {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  margin-top: var(--space-1);
+}
+.tripProgress {
+  display: block;
+  flex: 1;
+  width: 100%;
+  height: 3px;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-round);
+  appearance: none;
+  background: var(--color-border);
+  color: var(--color-accent);
+}
+.tripProgress::-webkit-progress-bar {
+  border-radius: var(--radius-round);
+  background: var(--color-border);
+}
+.tripProgress::-webkit-progress-value {
+  border-radius: var(--radius-round);
+  background: var(--color-accent);
+}
+.tripProgress::-moz-progress-bar {
+  border-radius: var(--radius-round);
+  background: var(--color-accent);
+}
+.tripPercent,
+.tripPlanningSubtitle {
+  font-size: var(--text-small);
+  line-height: 1.3;
+  color: var(--color-muted);
+}
+.tripPercent {
+  flex: 0 0 auto;
+}
+.tripPlanningSubtitle {
+  overflow-wrap: anywhere;
+}
 .tripName {
   font-family: var(--font-display);
   font-size: var(--text-item);
