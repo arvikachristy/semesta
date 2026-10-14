@@ -28,7 +28,14 @@ export const TripPlanningItem = ({ item, onChange, onRemove }: ITripPlanningItem
             {item.name}
             {item.dateTime && <small>{item.dateTime.replace('T', ' · ')}</small>}
           </span>
-          <small>{planningStatusLabel(status, item.category)}</small>
+          <small className={styles.bookingState}>
+            {status === PlanningStatus.Booked && (
+              <span className={styles.bookingStamp} aria-hidden="true">
+                ✓
+              </span>
+            )}
+            {planningStatusLabel(status, item.category)}
+          </small>
         </summary>
         <div className={styles.planningForm}>
           {item.details && <p className={styles.notes}>{item.details}</p>}

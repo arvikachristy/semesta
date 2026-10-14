@@ -9,6 +9,12 @@ export const planningCategories = {
 export type TPlanningCategory = keyof typeof planningCategories;
 export const PlanningStatus = { Idea: 'idea', ToBook: 'to-book', Booked: 'booked' } as const;
 export type TPlanningStatus = (typeof PlanningStatus)[keyof typeof PlanningStatus];
+export const BookingTemplateId = {
+  OutboundFlight: 'outbound-flight',
+  ReturnFlight: 'return-flight',
+  Stay: 'stay',
+} as const;
+export type TBookingTemplateId = (typeof BookingTemplateId)[keyof typeof BookingTemplateId];
 
 export interface ITripPlanningItem {
   id: string;
@@ -17,6 +23,7 @@ export interface ITripPlanningItem {
   details: string;
   completed: boolean;
   status?: TPlanningStatus;
+  templateId?: TBookingTemplateId;
   dateTime?: string;
   bookingReference?: string;
   link?: string;
@@ -24,6 +31,8 @@ export interface ITripPlanningItem {
 
 export const isPlanningStatus = (value: unknown): value is TPlanningStatus =>
   Object.values(PlanningStatus).some((status) => status === value);
+export const isBookingTemplateId = (value: unknown): value is TBookingTemplateId =>
+  Object.values(BookingTemplateId).some((id) => id === value);
 export const isBookingLink = (value: unknown): value is string => {
   if (typeof value !== 'string') {
     return false;
@@ -87,6 +96,7 @@ export const isTripPlanningItem = (value: unknown): value is ITripPlanningItem =
   'completed' in value &&
   typeof value.completed === 'boolean' &&
   (!('status' in value) || isPlanningStatus(value.status)) &&
+  (!('templateId' in value) || isBookingTemplateId(value.templateId)) &&
   (!('dateTime' in value) || isBookingDateTime(value.dateTime)) &&
   (!('bookingReference' in value) || typeof value.bookingReference === 'string') &&
   (!('link' in value) || isBookingLink(value.link));

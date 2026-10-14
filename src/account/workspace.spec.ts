@@ -50,6 +50,23 @@ describe('account workspace migration', () => {
     expect(decoded.workspace.trips[0].planning).toEqual([{ ...legacyItem, status: 'booked' }]);
     expect(decoded.workspace.trips[0].activePlanningCategories).toEqual([]);
     expect(decodeWorkspaceRecord(JSON.parse(JSON.stringify(decoded)))).toEqual(decoded);
+    const withSuggestion = {
+      ...record,
+      workspace: {
+        countries: [],
+        trips: [
+          {
+            ...trip,
+            planning: [{ ...legacyItem, name: 'Outbound flight', templateId: 'outbound-flight' }],
+          },
+        ],
+      },
+    };
+    expect(decodeWorkspaceRecord(withSuggestion).workspace.trips[0].planning?.[0]).toMatchObject({
+      id: 'train',
+      templateId: 'outbound-flight',
+      status: 'booked',
+    });
     for (const invalid of [
       { status: 'bad' },
       { link: 'data:text/html,unsafe' },

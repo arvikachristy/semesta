@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import type { ITrip } from '../../types/trip';
 import {
   getPlanningProgress,
+  getPlanningStatus,
   planningCategories,
   isPlanningCategory,
   PlanningStatus,
@@ -11,17 +13,20 @@ import { Button, ButtonVariant } from '../ui/button';
 import { Overlay } from '../ui/overlay';
 import { BookingEditor } from './booking-editor';
 import { StudioCategorySection, studioCategoryLabels } from './studio-category';
+import { findSuggestedBooking, getBookingSuggestions } from './booking-suggestions';
 import ui from '../ui/ui.module.css';
 import styles from './trip-studio.module.css';
 
 interface ITripPlanningProps {
+  trip: ITrip;
   items: readonly ITripPlanningItem[];
-  onChange: (items: ITripPlanningItem[]) => void;
+  onChange: (items: ITripPlanningItem[], activeCategories?: TPlanningCategory[]) => void;
   activeCategories?: readonly TPlanningCategory[];
   onCategoriesChange?: (categories: TPlanningCategory[]) => void;
   journey?: ReactNode;
 }
 export const TripPlanning = ({
+  trip,
   items,
   onChange,
   activeCategories,
@@ -33,6 +38,7 @@ export const TripPlanning = ({
   ]);
   const active = activeCategories ?? localCategories;
   const progress = getPlanningProgress(items, active);
+  const suggestions = getBookingSuggestions(trip);
   const [message, setMessage] = useState('');
   const [choosing, setChoosing] = useState(false);
   const [adding, setAdding] = useState<TPlanningCategory | null>(null);
@@ -40,10 +46,22 @@ export const TripPlanning = ({
     <section className={styles.planningWorkspace} aria-label="Trip Studio planning">
       <div className={journey ? styles.hero : undefined}>
         {journey}
-        <section className={`${ui.surface} ${styles.readiness}`} aria-label="Trip readiness">
-          <span className={styles.eyebrow}>Coming together</span>
+        <section
+          className={`${ui.surface} ${styles.readiness}`}
+          aria-label="Trip readiness"
+          data-complete={progress.total > 0 && progress.completed === progress.total}
+        >
+          <span className={styles.eyebrow}>
+            {progress.total > 0 && progress.completed === progress.total
+              ? 'All tracked plans confirmed'
+              : 'Coming together'}
+          </span>
           <div className={styles.readinessTitle}>
-            <h2>Ready when you are.</h2>
+            <h2>
+              {progress.total > 0 && progress.completed === progress.total
+                ? 'All set.'
+                : 'Ready when you are.'}
+            </h2>
             <span>
               {progress.percent}
               <small>%</small>
@@ -82,6 +100,119 @@ export const TripPlanning = ({
           </div>
         </section>
       </div>
+      <section className={styles.suggestions} aria-label="Your plans">
+        <div className={styles.suggestionsHeading}>
+          <div>
+            <span className={styles.eyebrow}>A simple place to begin</span>
+            <h2>Your plans</h2>
+          </div>
+          <p>Booked something? Mark it here. Details can come later.</p>
+        </div>
+        <div className={styles.suggestionGroups}>
+          {(['transportation', 'accommodation'] as const).map((category) => (
+            <div key={category} className={styles.suggestionGroup}>
+              <h3>{studioCategoryLabels[category]}</h3>
+              <ul>
+                {suggestions
+                  .filter((suggestion) => suggestion.category === category)
+                  .map((suggestion) => {
+                    const item = findSuggestedBooking(items, suggestion, trip);
+                    const confirmed = Boolean(
+                      item &&
+                      getPlanningStatus(item) === PlanningStatus.Booked &&
+                      active.includes(category),
+                    );
+                    const supportingText =
+                      item && item.name !== suggestion.title
+                        ? `${item.name} · ${suggestion.dateLabel}`
+                        : suggestion.dateLabel;
+                    return (
+                      <li
+                        key={suggestion.id}
+                        className={styles.suggestion}
+                        data-confirmed={confirmed}
+                      >
+                        <span className={styles.suggestionLabel}>
+                          <span>{suggestion.title}</span>
+                          <small>{supportingText}</small>
+                        </span>
+                        <span className={styles.suggestionAction}>
+                          {confirmed && (
+                            <small className={styles.suggestionConfirmed}>
+                              <span className={styles.confirmationStamp} aria-hidden="true">
+                                ✓
+                              </span>{' '}
+                              Booked
+                            </small>
+                          )}
+                          <Button
+                            variant={confirmed ? ButtonVariant.Quiet : ButtonVariant.Primary}
+                            aria-label={
+                              confirmed
+                                ? `Undo ${suggestion.title} booking`
+                                : `Mark ${suggestion.title.toLowerCase()} booked`
+                            }
+                            onClick={() => {
+                              if (confirmed && item) {
+                                onChange(
+                                  items.map((entry) =>
+                                    entry.id === item.id
+                                      ? {
+                                          ...entry,
+                                          status: PlanningStatus.ToBook,
+                                          completed: false,
+                                        }
+                                      : entry,
+                                  ),
+                                );
+                                setMessage(`${suggestion.title} is no longer marked booked.`);
+                                return;
+                              }
+                              const nextItems = item
+                                ? items.map((entry) =>
+                                    entry.id === item.id
+                                      ? {
+                                          ...entry,
+                                          templateId: suggestion.id,
+                                          status: PlanningStatus.Booked,
+                                          completed: true,
+                                        }
+                                      : entry,
+                                  )
+                                : [
+                                    ...items,
+                                    {
+                                      id: crypto.randomUUID(),
+                                      templateId: suggestion.id,
+                                      category: suggestion.category,
+                                      name: suggestion.title,
+                                      details: '',
+                                      status: PlanningStatus.Booked,
+                                      completed: true,
+                                    },
+                                  ];
+                              onChange(
+                                nextItems,
+                                active.includes(category) ? [...active] : [...active, category],
+                              );
+                              setMessage(`${suggestion.title} marked booked.`);
+                            }}
+                          >
+                            {confirmed ? 'Undo' : 'Mark booked'}
+                          </Button>
+                        </span>
+                      </li>
+                    );
+                  })}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <p className={styles.eyebrow}>
+          Flights and hotels are suggestions. You can plan trains, transfers or another kind of stay
+          below.
+        </p>
+      </section>
       <div className={styles.sectionHeading}>
         <div>
           <span className={styles.eyebrow}>Your reservation collection</span>

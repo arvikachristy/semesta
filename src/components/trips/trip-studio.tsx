@@ -81,12 +81,8 @@ export const TripStudio = ({ trip, onBack, onTrips, tripSession }: ITripStudioPr
           <div>
             <p className={styles.eyebrow}>Your next chapter</p>
             <h1 ref={heading} tabIndex={-1}>
-              {currentTrip.countryIds.map((id) => countries[id].name).join(' & ') ||
-                currentTrip.name}
+              {currentTrip.name}
             </h1>
-            {currentTrip.countryIds.length > 0 && (
-              <p className={styles.tripName}>{currentTrip.name}</p>
-            )}
             <div className={styles.destinations}>
               {currentTrip.countryIds.map((id) => (
                 <span key={id}>
@@ -117,6 +113,7 @@ export const TripStudio = ({ trip, onBack, onTrips, tripSession }: ITripStudioPr
         {ready ? (
           <TripPlanning
             key={currentTrip.id}
+            trip={currentTrip}
             journey={<TripJourney trip={currentTrip} />}
             items={currentTrip.planning ?? []}
             activeCategories={
@@ -124,7 +121,13 @@ export const TripStudio = ({ trip, onBack, onTrips, tripSession }: ITripStudioPr
                 ...new Set((currentTrip.planning ?? []).map((item) => item.category)),
               ]
             }
-            onChange={(planning) => saveTrip(currentTrip.id, { ...currentTrip, planning })}
+            onChange={(planning, activePlanningCategories) =>
+              saveTrip(currentTrip.id, {
+                ...currentTrip,
+                planning,
+                ...(activePlanningCategories ? { activePlanningCategories } : {}),
+              })
+            }
             onCategoriesChange={(activePlanningCategories) =>
               saveTrip(currentTrip.id, { ...currentTrip, activePlanningCategories })
             }
