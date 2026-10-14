@@ -10,6 +10,7 @@ import { Button, ButtonVariant } from '../ui/button';
 import ui from '../ui/ui.module.css';
 import styles from './mobile-panels.module.css';
 import type { ITrip } from '../../types/trip';
+import type { CountryList } from '../../types/country';
 import type { useTrips } from '../../hooks/use-trips';
 
 interface IMobilePanelsProps extends ICountrySelectorProps {
@@ -17,6 +18,9 @@ interface IMobilePanelsProps extends ICountrySelectorProps {
   onCollection?: () => void;
   onTrips?: () => void;
   listRequest?: number;
+  collectionRequest?: number;
+  planCountry?: CountryList;
+  planRequest?: number;
   tripSession?: ReturnType<typeof useTrips>;
   onOpenStudio: (trip: ITrip) => void;
 }
@@ -43,10 +47,16 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
   const previous = useRef<TMobilePanel | null>(null);
   const dismiss = () => setActive(null);
   useEffect(() => {
-    if (props.listRequest) {
+    if (props.listRequest || props.planRequest) {
       setActive(MobilePanel.Trips);
     }
-  }, [props.listRequest]);
+  }, [props.listRequest, props.planRequest]);
+
+  useEffect(() => {
+    if (props.collectionRequest) {
+      setActive(null);
+    }
+  }, [props.collectionRequest]);
 
   useEffect(() => {
     const resize = () => setNarrow(window.innerWidth <= panelConfig.breakpoint);
@@ -151,6 +161,8 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
         <div className={styles.feature} hidden={mobile && active !== MobilePanel.Trips}>
           <UpcomingTrips
             tripSession={props.tripSession}
+            planCountry={props.planCountry}
+            planRequest={props.planRequest}
             key={account.userId}
             onOpenStudio={(trip) => {
               dismiss();
