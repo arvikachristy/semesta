@@ -186,7 +186,9 @@ export const bindPointerEvents = ({
       return;
     }
     if (grabbed) {
-      if (previous.distanceTo(grabStart) > tapThreshold || Math.hypot(event.clientX - grabStart.x, event.clientY - grabStart.y) > tapThreshold) {
+      if (
+        Math.hypot(event.clientX - grabStart.x, event.clientY - grabStart.y) > tapThreshold
+      ) {
         draggedBlock = true;
       }
       if (raycaster.ray.intersectPlane(plane, point)) {
