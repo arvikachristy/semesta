@@ -1,6 +1,6 @@
 .intro {
   position: absolute;
-  top: max(var(--space-4), env(safe-area-inset-top));
+  top: calc(max(var(--space-4), env(safe-area-inset-top)) + 4rem);
   left: max(var(--space-4), env(safe-area-inset-left));
   z-index: 1;
   display: grid;
