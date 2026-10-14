@@ -20,6 +20,7 @@ interface IPointerOptions {
   glasses: ReturnType<typeof createGlassSet>;
   zoomBy?: (factor: number) => void;
   panBetween: (from: THREE.Vector2, to: THREE.Vector2) => void;
+  onSelectBlock?: (block: ReturnType<typeof createFlagBlock>) => void;
 }
 
 // A hit creates a camera-facing grab plane. Ray points are converted to the body's local space.
@@ -30,6 +31,7 @@ export const bindPointerEvents = ({
   glasses,
   zoomBy,
   panBetween,
+  onSelectBlock,
 }: IPointerOptions) => {
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
@@ -43,6 +45,9 @@ export const bindPointerEvents = ({
   let activePointer: number | null = null;
   let grabbed: ReturnType<typeof createFlagBlock> | null = null;
   let rotatingGlasses = false;
+  let draggedBlock = false;
+  const grabStart = new THREE.Vector2();
+  const tapThreshold = 8;
   const touches = new Map<number, THREE.Vector2>();
   let pinching = false;
   let previousPinchDistance = 0;
@@ -97,8 +102,10 @@ export const bindPointerEvents = ({
       true,
     )[0];
   const release = (jump = false) => {
-    grabbed?.endGrab(jump);
+    const selected = jump && !draggedBlock ? grabbed : null;
+    grabbed?.endGrab(jump && !selected);
     grabbed = null;
+    draggedBlock = false;
     rotatingGlasses = false;
     const id = activePointer;
     activePointer = null;
@@ -106,6 +113,9 @@ export const bindPointerEvents = ({
       canvas.releasePointerCapture(id);
     }
     canvas.style.cursor = Cursor.Grab;
+    if (selected) {
+      onSelectBlock?.(selected);
+    }
   };
   const down = (event: PointerEvent) => {
     if (event.pointerType === PointerType.Touch && event.button === 0) {
@@ -116,6 +126,7 @@ export const bindPointerEvents = ({
         // Keep both captures, but cancel the one-finger action without launching a jelly.
         grabbed?.endGrab(false);
         grabbed = null;
+        draggedBlock = false;
         rotatingGlasses = false;
         activePointer = null;
         pinching = true;
@@ -135,6 +146,8 @@ export const bindPointerEvents = ({
     const intersection = hit();
     activePointer = event.pointerId;
     previous.set(event.clientX, event.clientY);
+    grabStart.copy(previous);
+    draggedBlock = false;
     previousPanPointer.copy(pointer);
     if (intersection) {
       grabbed = blocks.find((block) => intersection.object.parent === block.object) ?? null;
@@ -173,6 +186,9 @@ export const bindPointerEvents = ({
       return;
     }
     if (grabbed) {
+      if (previous.distanceTo(grabStart) > tapThreshold || Math.hypot(event.clientX - grabStart.x, event.clientY - grabStart.y) > tapThreshold) {
+        draggedBlock = true;
+      }
       if (raycaster.ray.intersectPlane(plane, point)) {
         grabbed.moveGrab(grabbed.object.worldToLocal(point));
       }
