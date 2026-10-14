@@ -43,6 +43,9 @@ export const App = () => {
     focusedCountry && showedCountries.includes(focusedCountry)
       ? focusedCountry
       : (showedCountries[0] ?? null);
+  const selectedTrip = selectedCountry
+    ? tripSession.trips.find((trip) => trip.countryIds.includes(selectedCountry))
+    : null;
   const toggleCountry = (country: CountryList, checked: boolean) => {
     onToggle(country, checked);
     if (checked) {
@@ -118,7 +121,13 @@ export const App = () => {
         <CountryOpportunity
           country={selectedCountry}
           disabled={!tripSession.ready}
+          tripName={selectedTrip?.name}
           onPlan={(country) => {
+            const existing = tripSession.trips.find((trip) => trip.countryIds.includes(country));
+            if (existing) {
+              setStudioTripId(existing.id);
+              return;
+            }
             setPlanDraft((current) => ({
               country,
               request: (current?.request ?? 0) + 1,
