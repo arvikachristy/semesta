@@ -18,10 +18,11 @@ import { getWheelZoomFactor } from './zoom';
 interface IPlaygroundOptions {
   onFrameReading?: (reading: IFrameReading) => void;
   onCountryStatus?: (country: CountryList, status: CountryStatus) => void;
+  onCountrySelect?: (country: CountryList) => void;
 }
 export const startPlayground = (
   canvas: HTMLCanvasElement,
-  { onCountryStatus, onFrameReading }: IPlaygroundOptions = {},
+  { onCountryStatus, onCountrySelect, onFrameReading }: IPlaygroundOptions = {},
 ) => {
   // React supplies the canvas. These are the raw Three.js pieces inside it.
   const renderer = createRenderer(canvas);
@@ -49,6 +50,12 @@ export const startPlayground = (
     glasses,
     zoomBy,
     panBetween,
+    onSelectBlock: (block) => {
+      const country = collection.countryForBlock(block);
+      if (country) {
+        onCountrySelect?.(country);
+      }
+    },
   });
   const onResize = () => {
     resize(renderer, camera, quality.getScale());
