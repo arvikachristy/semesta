@@ -1,17 +1,17 @@
-import * as THREE from "three";
-import type { createFlagBlock } from "./jelly-flags/flag-block";
-import type { createGlassSet } from "./glasses/glass-set";
+import * as THREE from 'three';
+import type { createFlagBlock } from './jelly-flags/flag-block';
+import type { createGlassSet } from './glasses/glass-set';
 
 enum PointerEventName {
-  Down = "pointerdown",
-  Move = "pointermove",
-  Up = "pointerup",
-  Cancel = "pointercancel",
-  LostCapture = "lostpointercapture",
-  Blur = "blur",
+  Down = 'pointerdown',
+  Move = 'pointermove',
+  Up = 'pointerup',
+  Cancel = 'pointercancel',
+  LostCapture = 'lostpointercapture',
+  Blur = 'blur',
 }
-const Cursor = { Grab: "grab", Grabbing: "grabbing", Pointer: "pointer" };
-const PointerType = { Touch: "touch" };
+const Cursor = { Grab: 'grab', Grabbing: 'grabbing', Pointer: 'pointer' };
+const PointerType = { Touch: 'touch' };
 
 interface IPointerOptions {
   canvas: HTMLCanvasElement;
@@ -84,11 +84,7 @@ export const bindPointerEvents = ({
     panBetween(previousPinchCentre, pinchCentre);
     previousPinchCentre.copy(pinchCentre);
     const distance = pinchDistance();
-    if (
-      distance > 0 &&
-      previousPinchDistance > 0 &&
-      distance !== previousPinchDistance
-    ) {
+    if (distance > 0 && previousPinchDistance > 0 && distance !== previousPinchDistance) {
       zoomBy?.(distance / previousPinchDistance);
     }
     previousPinchDistance = distance;
@@ -123,10 +119,7 @@ export const bindPointerEvents = ({
   };
   const down = (event: PointerEvent) => {
     if (event.pointerType === PointerType.Touch && event.button === 0) {
-      touches.set(
-        event.pointerId,
-        new THREE.Vector2(event.clientX, event.clientY),
-      );
+      touches.set(event.pointerId, new THREE.Vector2(event.clientX, event.clientY));
       canvas.setPointerCapture(event.pointerId);
       if (touches.size >= 2) {
         cancelPinchFrame();
@@ -157,19 +150,14 @@ export const bindPointerEvents = ({
     draggedBlock = false;
     previousPanPointer.copy(pointer);
     if (intersection) {
-      grabbed =
-        blocks.find((block) => intersection.object.parent === block.object) ??
-        null;
+      grabbed = blocks.find((block) => intersection.object.parent === block.object) ?? null;
       if (grabbed) {
         camera.getWorldDirection(normal);
         plane.setFromNormalAndCoplanarPoint(normal, intersection.point);
-        grabbed.beginGrab(
-          grabbed.object.worldToLocal(point.copy(intersection.point)),
-        );
+        grabbed.beginGrab(grabbed.object.worldToLocal(point.copy(intersection.point)));
       }
     }
-    rotatingGlasses =
-      !grabbed && raycaster.intersectObject(glasses.object, true).length > 0;
+    rotatingGlasses = !grabbed && raycaster.intersectObject(glasses.object, true).length > 0;
     canvas.setPointerCapture(event.pointerId);
     canvas.style.cursor = Cursor.Grabbing;
   };
@@ -189,10 +177,7 @@ export const bindPointerEvents = ({
         return;
       }
     }
-    if (
-      !event.isPrimary ||
-      (activePointer !== null && activePointer !== event.pointerId)
-    ) {
+    if (!event.isPrimary || (activePointer !== null && activePointer !== event.pointerId)) {
       return;
     }
     updateRay(event);
@@ -201,10 +186,7 @@ export const bindPointerEvents = ({
       return;
     }
     if (grabbed) {
-      if (
-        Math.hypot(event.clientX - grabStart.x, event.clientY - grabStart.y) >
-        tapThreshold
-      ) {
+      if (Math.hypot(event.clientX - grabStart.x, event.clientY - grabStart.y) > tapThreshold) {
         draggedBlock = true;
       }
       if (raycaster.ray.intersectPlane(plane, point)) {
