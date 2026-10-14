@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { countries } from './data/countries';
 import { useCountrySelection } from './hooks/use-country-selection';
 import { MobilePanels } from './components/mobile/mobile-panels';
+import { CountryOpportunity } from './components/country-opportunity';
 import type { CountryList } from './types/country';
 import type { CountryStatus } from './types/country-status';
 import { continentDefinitions } from './types/continent';
@@ -15,6 +16,13 @@ import { useTrips } from './hooks/use-trips';
 export const App = () => {
   const [studioTripId, setStudioTripId] = useState<string | null>(null);
   const [listRequest, setListRequest] = useState(0);
+  const [collectionRequest, setCollectionRequest] = useState(0);
+  const [focusedCountry, setFocusedCountry] = useState<CountryList | null>(null);
+  const [planDraft, setPlanDraft] = useState<{ country: CountryList; request: number } | null>(null);
+  const closeStudio = () => {
+    setStudioTripId(null);
+    setCollectionRequest((value) => value + 1);
+  };
   const openTrips = () => {
     setStudioTripId(null);
     setListRequest((value) => value + 1);
@@ -28,6 +36,16 @@ export const App = () => {
   const studioTrip = tripSession.trips.find((trip) => trip.id === studioTripId) ?? null;
   const { showedCountries, ready, onToggle, onClear } = useCountrySelection(account.countries);
   const [statuses, setStatuses] = useState<Partial<Record<CountryList, CountryStatus>>>({});
+  const selectedCountry =
+    focusedCountry && showedCountries.includes(focusedCountry)
+      ? focusedCountry
+      : (showedCountries[0] ?? null);
+  const toggleCountry = (country: CountryList, checked: boolean) => {
+    onToggle(country, checked);
+    if (checked) {
+      setFocusedCountry(country);
+    }
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -39,6 +57,11 @@ export const App = () => {
       onFrameReading: (reading) => {
         if (active) {
           setFrameReading(reading);
+        }
+      },
+      onCountrySelect: (country) => {
+        if (active) {
+          setFocusedCountry(country);
         }
       },
       onCountryStatus: (country, status) => {
@@ -89,18 +112,28 @@ export const App = () => {
           aria-describedby="continent-descriptions"
           aria-label="Three playground: select countries below, grab their jellies inside the glasses, drag a glass to turn the circle, or drag the background to pan."
         />
+        <CountryOpportunity
+          country={selectedCountry}
+          disabled={!tripSession.ready}
+          onPlan={(country) => {
+            setPlanDraft((current) => ({ country, request: (current?.request ?? 0) + 1 }));
+          }}
+        />
       </div>
       <MobilePanels
         tripSession={tripSession}
         onOpenStudio={(trip) => setStudioTripId(trip.id)}
         studioOpen={Boolean(studioTrip)}
-        onCollection={openTrips}
+        onCollection={closeStudio}
         onTrips={openTrips}
         listRequest={listRequest}
+        collectionRequest={collectionRequest}
+        planCountry={planDraft?.country}
+        planRequest={planDraft?.request}
         showedCountries={showedCountries}
         statuses={statuses}
         disabled={!ready}
-        onToggle={onToggle}
+        onToggle={toggleCountry}
         onClear={onClear}
       />
       {studioTrip && (
@@ -108,7 +141,7 @@ export const App = () => {
           key={studioTrip.id}
           trip={studioTrip}
           tripSession={tripSession}
-          onBack={openTrips}
+          onBack={closeStudio}
           onTrips={openTrips}
         />
       )}
