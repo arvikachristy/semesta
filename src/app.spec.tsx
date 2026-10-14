@@ -136,8 +136,10 @@ describe('application selection state', () => {
     await click('aside[aria-label="Selected country"] button');
     expect(host.querySelector('dialog')?.getAttribute('data-active')).toBe('trips');
     const draft = host.querySelector('form input');
-    expect(draft).toBeInstanceOf(HTMLInputElement);
-    expect((draft as HTMLInputElement).value).toBe('Trip to Indonesia');
+    if (!(draft instanceof HTMLInputElement)) {
+      throw new Error('Missing destination-filled trip draft');
+    }
+    expect(draft.value).toBe('Trip to Indonesia');
     expect(host.querySelector('form')?.textContent).toContain('Indonesia');
     await click('form button[type="submit"]');
     expect(host.querySelector('section[aria-label="Trip Studio"]')).not.toBeNull();
