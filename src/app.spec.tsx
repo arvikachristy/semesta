@@ -127,6 +127,28 @@ describe('application selection state', () => {
     expect(startPlayground).toHaveBeenCalledOnce();
   });
 
+  it('starts a destination-filled trip from the bucket list and returns to the glasses', async () => {
+    vi.stubGlobal('innerWidth', 390);
+    await act(async () => root.render(<App />));
+    expect(host.querySelector('aside[aria-label="Selected country"]')?.textContent).toContain(
+      'Indonesia',
+    );
+    await click('aside[aria-label="Selected country"] button');
+    expect(host.querySelector('dialog')?.getAttribute('data-active')).toBe('trips');
+    const draft = host.querySelector('form input');
+    expect(draft).toBeInstanceOf(HTMLInputElement);
+    expect((draft as HTMLInputElement).value).toBe('Trip to Indonesia');
+    expect(host.querySelector('form')?.textContent).toContain('Indonesia');
+    await click('form button[type="submit"]');
+    expect(host.querySelector('section[aria-label="Trip Studio"]')).not.toBeNull();
+    const saved = JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips[0];
+    expect(saved.countryIds).toEqual([CountryList.Indonesia]);
+    await click('section[aria-label="Trip Studio"] button');
+    expect(host.querySelector('section[aria-label="Trip Studio"]')).toBeNull();
+    expect(host.querySelector('dialog')?.getAttribute('data-active')).toBe('');
+    expect(host.querySelector('canvas')?.closest('[hidden]')).toBeNull();
+  });
+
   it('keeps trip planning independent of the renderer and selected jellies', async () => {
     await act(async () => root.render(<App />));
     const initialCalls = setCountries.mock.calls.length;
@@ -166,7 +188,7 @@ describe('application selection state', () => {
     );
     await act(async () => root.render(<App />));
     expect(setCountries).toHaveBeenLastCalledWith([CountryList.France]);
-    await click('button');
+    await click('.country-trigger');
     await click(`input[value="${CountryList.France}"]`);
     expect(
       JSON.parse(localStorage.getItem(selectionStorage.key) ?? '{}').selectedCountryIds,
@@ -188,7 +210,7 @@ describe('application selection state', () => {
   it('reconciles the enum array without reinitializing the scene and retains failed selections for retry', async () => {
     await act(async () => root.render(<App />));
     expect(setCountries).toHaveBeenLastCalledWith([CountryList.Indonesia]);
-    await click('button');
+    await click('.country-trigger');
     await click(`input[value="${CountryList.France}"]`);
     expect(setCountries).toHaveBeenLastCalledWith([CountryList.Indonesia, CountryList.France]);
     expect(startPlayground).toHaveBeenCalledOnce();
