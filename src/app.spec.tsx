@@ -95,6 +95,31 @@ describe('application selection state', () => {
     expect(startPlayground).toHaveBeenCalledOnce();
     expect(localStorage.getItem(tripStorage.key)).toBe(tripsBefore);
   });
+  it('reopens an existing trip for a bucket list country without creating another', async () => {
+    localStorage.setItem(
+      tripStorage.key,
+      JSON.stringify({
+        version: tripStorage.version,
+        trips: [
+          {
+            ...emptyTripDetails,
+            id: 'indonesia-plan',
+            name: 'Java trip',
+            countryIds: [CountryList.Indonesia],
+          },
+        ],
+      }),
+    );
+    await act(async () => root.render(<App />));
+    expect(host.querySelector('aside[aria-label="Selected country"]')?.textContent).toContain(
+      'Java trip',
+    );
+    await click('aside[aria-label="Selected country"] button');
+    expect(host.querySelector('section[aria-label="Trip Studio"]')).not.toBeNull();
+    expect(host.querySelector('section[aria-label="Trip Studio"] h1')?.textContent).toBe('Java trip');
+    expect(JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips).toHaveLength(1);
+  });
+
   it('opens one mobile sheet at a time and preserves a trip draft after switching and closing', async () => {
     vi.stubGlobal('innerWidth', 390);
     await act(async () => root.render(<App />));
