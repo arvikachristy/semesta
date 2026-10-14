@@ -245,6 +245,14 @@ export const createCountryCollection = ({
   return {
     blocks,
     setCountries,
+    countryForBlock: (block: ReturnType<typeof createFlagBlock>) => {
+      for (const [country, entry] of entries) {
+        if (entry.block === block) {
+          return country;
+        }
+      }
+      return null;
+    },
     update,
     dispose: () => {
       disposed = true;
