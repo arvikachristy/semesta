@@ -1,22 +1,22 @@
 // @vitest-environment jsdom
-import * as THREE from "three";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { createFlagBlock } from "./jelly-flags/flag-block";
-import { createGlassSet } from "./glasses/glass-set";
-import { bindPointerEvents } from "./pointer";
-import { createCameraPan } from "./pan";
+import * as THREE from 'three';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { createFlagBlock } from './jelly-flags/flag-block';
+import { createGlassSet } from './glasses/glass-set';
+import { bindPointerEvents } from './pointer';
+import { createCameraPan } from './pan';
 
 const Events = {
-  down: "pointerdown",
-  move: "pointermove",
-  up: "pointerup",
-  cancel: "pointercancel",
-  lost: "lostpointercapture",
-  blur: "blur",
+  down: 'pointerdown',
+  move: 'pointermove',
+  up: 'pointerup',
+  cancel: 'pointercancel',
+  lost: 'lostpointercapture',
+  blur: 'blur',
 };
-const PointerTypes = { mouse: "mouse", touch: "touch" };
+const PointerTypes = { mouse: 'mouse', touch: 'touch' };
 
-describe("pointer gestures", () => {
+describe('pointer gestures', () => {
   let canvas: HTMLCanvasElement;
   let glasses: ReturnType<typeof createGlassSet>;
   let camera: THREE.PerspectiveCamera;
@@ -32,12 +32,7 @@ describe("pointer gestures", () => {
     callbacks.forEach((callback) => callback(performance.now()));
   };
   const captures = new Set<number>();
-  const send = (
-    type: string,
-    x: number,
-    y: number,
-    options: PointerEventInit = {},
-  ) =>
+  const send = (type: string, x: number, y: number, options: PointerEventInit = {}) =>
     canvas.dispatchEvent(
       new PointerEvent(type, {
         clientX: x,
@@ -63,18 +58,16 @@ describe("pointer gestures", () => {
   beforeEach(() => {
     frames.clear();
     nextFrame = 0;
-    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
       const id = ++nextFrame;
       frames.set(id, callback);
       return id;
     });
-    vi.stubGlobal("cancelAnimationFrame", (id: number) => frames.delete(id));
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id));
     zoomBy.mockClear();
-    canvas = document.createElement("canvas");
+    canvas = document.createElement('canvas');
     document.body.append(canvas);
-    vi.spyOn(canvas, "getBoundingClientRect").mockReturnValue(
-      new DOMRect(0, 0, 1000, 800),
-    );
+    vi.spyOn(canvas, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 1000, 800));
     Object.defineProperties(canvas, {
       clientWidth: { value: 1000 },
       clientHeight: { value: 800 },
@@ -95,10 +88,7 @@ describe("pointer gestures", () => {
     const projected = glasses.object.children[0].position.clone();
     projected.y = 1.5;
     projected.project(camera);
-    glassPoint = new THREE.Vector2(
-      (projected.x + 1) * 500,
-      (1 - projected.y) * 400,
-    );
+    glassPoint = new THREE.Vector2((projected.x + 1) * 500, (1 - projected.y) * 400);
     bind();
   });
   afterEach(() => {
@@ -111,7 +101,7 @@ describe("pointer gestures", () => {
   });
 
   it.each(Object.values(PointerTypes))(
-    "rotates both ways with %s, stays grounded, and stops on release",
+    'rotates both ways with %s, stays grounded, and stops on release',
     (pointerType) => {
       const { x, y } = glassPoint;
       const target = cameraTarget.clone();
@@ -131,25 +121,22 @@ describe("pointer gestures", () => {
     },
   );
 
-  it.each([Events.cancel, Events.lost, Events.blur])(
-    "ends rotation on %s",
-    (eventName) => {
-      const { x, y } = glassPoint;
-      send(Events.down, x, y);
-      send(Events.move, x + 50, y);
-      const angle = glasses.object.rotation.y;
-      if (eventName === Events.blur) {
-        window.dispatchEvent(new Event(eventName));
-      } else {
-        send(eventName, x + 50, y);
-      }
-      send(Events.move, x + 150, y);
-      expect(glasses.object.rotation.y).toBe(angle);
-      expect(captures.size).toBe(0);
-    },
-  );
+  it.each([Events.cancel, Events.lost, Events.blur])('ends rotation on %s', (eventName) => {
+    const { x, y } = glassPoint;
+    send(Events.down, x, y);
+    send(Events.move, x + 50, y);
+    const angle = glasses.object.rotation.y;
+    if (eventName === Events.blur) {
+      window.dispatchEvent(new Event(eventName));
+    } else {
+      send(eventName, x + 50, y);
+    }
+    send(Events.move, x + 150, y);
+    expect(glasses.object.rotation.y).toBe(angle);
+    expect(captures.size).toBe(0);
+  });
 
-  it("ignores secondary buttons and competing pointers", () => {
+  it('ignores secondary buttons and competing pointers', () => {
     const { x, y } = glassPoint;
     send(Events.down, x, y, { button: 2 });
     send(Events.move, x + 50, y);
@@ -163,7 +150,7 @@ describe("pointer gestures", () => {
     expect(glasses.object.rotation.y).toBeGreaterThan(0);
   });
 
-  it("keeps background panning separate from glass rotation", () => {
+  it('keeps background panning separate from glass rotation', () => {
     const before = cameraTarget.clone();
     send(Events.down, 10, 10);
     send(Events.move, 100, 60);
@@ -172,15 +159,12 @@ describe("pointer gestures", () => {
     expect(glasses.object.rotation.y).toBe(0);
   });
 
-  it("prioritises flag grabbing when a flag overlaps a glass", () => {
+  it('prioritises flag grabbing when a flag overlaps a glass', () => {
     unbind();
     const object = new THREE.Group();
     object.position.copy(glasses.object.children[0].position);
     object.position.y = 1.5;
-    const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(1, 1, 1),
-      new THREE.MeshBasicMaterial(),
-    );
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial());
     object.add(mesh);
     const block: ReturnType<typeof createFlagBlock> = {
       object,
@@ -235,16 +219,13 @@ describe("pointer gestures", () => {
   });
 
   it.each(Object.values(PointerTypes))(
-    "selects a tapped jelly with %s while preserving drag release",
+    'selects a tapped jelly with %s while preserving drag release',
     (pointerType) => {
       unbind();
       const object = new THREE.Group();
       object.position.copy(glasses.object.children[0].position);
       object.position.y = 1.5;
-      const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(1, 1, 1),
-        new THREE.MeshBasicMaterial(),
-      );
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial());
       object.add(mesh);
       const endGrab = vi.fn();
       const block: ReturnType<typeof createFlagBlock> = {
@@ -283,7 +264,7 @@ describe("pointer gestures", () => {
     },
   );
 
-  it("releases capture and removes listeners on cleanup", () => {
+  it('releases capture and removes listeners on cleanup', () => {
     const { x, y } = glassPoint;
     send(Events.down, x, y);
     unbind();
@@ -293,7 +274,7 @@ describe("pointer gestures", () => {
     expect(glasses.object.rotation.y).toBe(0);
   });
 
-  it("zooms and pans with both touch pointers, then waits for all fingers to lift", () => {
+  it('zooms and pans with both touch pointers, then waits for all fingers to lift', () => {
     const before = cameraTarget.clone();
     const first = { pointerType: PointerTypes.touch, pointerId: 1 };
     const second = {
@@ -323,7 +304,7 @@ describe("pointer gestures", () => {
   });
 
   it.each(Object.values(PointerTypes))(
-    "pans beyond the old clamp with %s without moving the glasses",
+    'pans beyond the old clamp with %s without moving the glasses',
     (pointerType) => {
       const before = glasses.object.position.clone();
       send(Events.down, 10, 300, { pointerType });
@@ -334,7 +315,7 @@ describe("pointer gestures", () => {
     },
   );
 
-  it("pans with a two-finger drag beginning over a glass", () => {
+  it('pans with a two-finger drag beginning over a glass', () => {
     const before = cameraTarget.clone();
     const { x, y } = glassPoint;
     const first = { pointerType: PointerTypes.touch, pointerId: 1 };
@@ -355,7 +336,7 @@ describe("pointer gestures", () => {
     expect(captures.size).toBe(0);
   });
 
-  it("does not temporarily zoom when both fingers move together in a frame", () => {
+  it('does not temporarily zoom when both fingers move together in a frame', () => {
     const first = { pointerType: PointerTypes.touch, pointerId: 1 };
     const second = {
       pointerType: PointerTypes.touch,
@@ -372,7 +353,7 @@ describe("pointer gestures", () => {
   });
 
   it.each([Events.cancel, Events.lost, Events.blur])(
-    "cleans up a pinch on %s without stale gestures",
+    'cleans up a pinch on %s without stale gestures',
     (eventName) => {
       const first = { pointerType: PointerTypes.touch, pointerId: 1 };
       const second = {
