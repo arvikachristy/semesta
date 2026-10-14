@@ -9,10 +9,11 @@ import styles from './country-opportunity.module.css';
 interface ICountryOpportunityProps {
   country: CountryList | null;
   disabled: boolean;
+  tripName?: string;
   onPlan: (country: CountryList) => void;
 }
 
-export const CountryOpportunity = ({ country, disabled, onPlan }: ICountryOpportunityProps) => {
+export const CountryOpportunity = ({ country, disabled, tripName, onPlan }: ICountryOpportunityProps) => {
   const definition = country ? countries[country] : null;
   const continent = definition
     ? continentDefinitions.find((item) => item.id === definition.continent)
@@ -33,13 +34,14 @@ export const CountryOpportunity = ({ country, disabled, onPlan }: ICountryOpport
           <div className={styles.copy}>
             <strong>{definition.name}</strong>
             <span>In your {continent?.name ?? 'continent'} glass</span>
+            {tripName && <span>Trip: {tripName}</span>}
           </div>
           <Button
             variant={ButtonVariant.Primary}
             disabled={disabled}
             onClick={() => onPlan(country)}
           >
-            Plan a trip
+            {tripName ? 'Open trip' : 'Plan a trip'}
           </Button>
         </aside>
       )}
