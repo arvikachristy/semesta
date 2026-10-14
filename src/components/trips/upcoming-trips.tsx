@@ -3,26 +3,39 @@ import { mobilePanelText } from '../../types/mobile-panel';
 import type { IMobilePanelState } from '../../types/mobile-panel';
 import { Button, ButtonVariant } from '../ui/button';
 import ui from '../ui/ui.module.css';
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { useTrips } from '../../hooks/use-trips';
 import { TripEditor } from './trip-editor';
 import { TripList } from './trip-list';
 import styles from './trips.module.css';
 import type { ITrip } from '../../types/trip';
+import { emptyTripDetails } from '../../types/trip';
+import { countries } from '../../data/countries';
+import type { CountryList } from '../../types/country';
 
 const tripUi = { panelId: 'upcoming-trips-panel', newTrip: 'New trip' };
 interface IUpcomingTripsProps {
   tripSession?: ReturnType<typeof useTrips>;
   mobilePanel?: IMobilePanelState;
   onOpenStudio: (trip: ITrip) => void;
+  planCountry?: CountryList;
+  planRequest?: number;
 }
 export const UpcomingTrips = memo(
-  ({ mobilePanel, onOpenStudio, tripSession }: IUpcomingTripsProps) => {
+  ({ mobilePanel, onOpenStudio, tripSession, planCountry, planRequest }: IUpcomingTripsProps) => {
     const localSession = useTrips(useAccount().trips, !tripSession);
     const { trips, ready, warning, saveTrip } = tripSession ?? localSession;
     const [desktopOpen, setOpen] = useState(true);
     const open = mobilePanel?.open ?? desktopOpen;
     const [creating, setCreating] = useState(false);
+    const [draftCountry, setDraftCountry] = useState<CountryList | null>(null);
+    useEffect(() => {
+      if (planCountry && planRequest) {
+        setDraftCountry(planCountry);
+        setCreating(true);
+        setOpen(true);
+      }
+    }, [planCountry, planRequest]);
     return (
       <aside
         className={`${ui.surface} ${styles.panel}`}
@@ -52,6 +65,7 @@ export const UpcomingTrips = memo(
             title={tripUi.newTrip}
             disabled={!ready || creating}
             onClick={() => {
+              setDraftCountry(null);
               setCreating(true);
               setOpen(true);
             }}
@@ -79,11 +93,25 @@ export const UpcomingTrips = memo(
             <p>Loading trips…</p>
           ) : creating ? (
             <TripEditor
-              onCancel={() => setCreating(false)}
+              key={planRequest}
+              initial={
+                draftCountry
+                  ? {
+                      ...emptyTripDetails,
+                      name: `Trip to ${countries[draftCountry].name}`,
+                      countryIds: [draftCountry],
+                    }
+                  : undefined
+              }
+              onCancel={() => {
+                setCreating(false);
+                setDraftCountry(null);
+              }}
               onSave={(details) => {
                 const id = saveTrip(null, details);
                 if (id) {
                   setCreating(false);
+                  setDraftCountry(null);
                   onOpenStudio({ ...details, id, name: details.name.trim() });
                 }
               }}
