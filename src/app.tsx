@@ -1,25 +1,23 @@
-import { useAccount } from "./account/account-context";
-import { FpsToken } from "./components/fps-token";
-import type { IFrameReading } from "./performance/frame-monitor";
-import { useEffect, useRef, useState } from "react";
-import { countries } from "./data/countries";
-import { useCountrySelection } from "./hooks/use-country-selection";
-import { MobilePanels } from "./components/mobile/mobile-panels";
-import { CountryOpportunity } from "./components/country-opportunity";
-import type { CountryList } from "./types/country";
-import type { CountryStatus } from "./types/country-status";
-import { continentDefinitions } from "./types/continent";
-import { startPlayground } from "./three/playground";
-import { TripStudio } from "./components/trips/trip-studio";
-import { useTrips } from "./hooks/use-trips";
+import { useAccount } from './account/account-context';
+import { FpsToken } from './components/fps-token';
+import type { IFrameReading } from './performance/frame-monitor';
+import { useEffect, useRef, useState } from 'react';
+import { countries } from './data/countries';
+import { useCountrySelection } from './hooks/use-country-selection';
+import { MobilePanels } from './components/mobile/mobile-panels';
+import { CountryOpportunity } from './components/country-opportunity';
+import type { CountryList } from './types/country';
+import type { CountryStatus } from './types/country-status';
+import { continentDefinitions } from './types/continent';
+import { startPlayground } from './three/playground';
+import { TripStudio } from './components/trips/trip-studio';
+import { useTrips } from './hooks/use-trips';
 
 export const App = () => {
   const [studioTripId, setStudioTripId] = useState<string | null>(null);
   const [listRequest, setListRequest] = useState(0);
   const [collectionRequest, setCollectionRequest] = useState(0);
-  const [focusedCountry, setFocusedCountry] = useState<CountryList | null>(
-    null,
-  );
+  const [focusedCountry, setFocusedCountry] = useState<CountryList | null>(null);
   const [planDraft, setPlanDraft] = useState<{
     country: CountryList;
     request: number;
@@ -38,14 +36,9 @@ export const App = () => {
   const account = useAccount();
   const selectionRepositoryRef = useRef(account.countries);
   const tripSession = useTrips(account.trips);
-  const studioTrip =
-    tripSession.trips.find((trip) => trip.id === studioTripId) ?? null;
-  const { showedCountries, ready, onToggle, onClear } = useCountrySelection(
-    account.countries,
-  );
-  const [statuses, setStatuses] = useState<
-    Partial<Record<CountryList, CountryStatus>>
-  >({});
+  const studioTrip = tripSession.trips.find((trip) => trip.id === studioTripId) ?? null;
+  const { showedCountries, ready, onToggle, onClear } = useCountrySelection(account.countries);
+  const [statuses, setStatuses] = useState<Partial<Record<CountryList, CountryStatus>>>({});
   const selectedCountry =
     focusedCountry && showedCountries.includes(focusedCountry)
       ? focusedCountry
@@ -108,11 +101,11 @@ export const App = () => {
         <ul className="visually-hidden" id="continent-descriptions">
           {continentDefinitions.map((continent) => (
             <li key={continent.id}>
-              {continent.name}: gold-marked amber glass. Selected countries:{" "}
+              {continent.name}: gold-marked amber glass. Selected countries:{' '}
               {showedCountries
                 .filter((id) => countries[id].continent === continent.id)
                 .map((id) => countries[id].name)
-                .join(", ") || "none"}
+                .join(', ') || 'none'}
               .
             </li>
           ))}
