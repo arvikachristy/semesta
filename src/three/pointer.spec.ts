@@ -215,6 +215,52 @@ describe('pointer gestures', () => {
     mesh.material.dispose();
   });
 
+  it.each(Object.values(PointerTypes))(
+    'selects a tapped jelly with %s while preserving drag release',
+    (pointerType) => {
+      unbind();
+      const object = new THREE.Group();
+      object.position.copy(glasses.object.children[0].position);
+      object.position.y = 1.5;
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial());
+      object.add(mesh);
+      const endGrab = vi.fn();
+      const block: ReturnType<typeof createFlagBlock> = {
+        object,
+        beginGrab: vi.fn(),
+        moveGrab: vi.fn(),
+        endGrab,
+        setBounds: vi.fn(),
+        setCountry: vi.fn(async () => {}),
+        update: vi.fn(),
+        dispose: vi.fn(),
+        syncSurface: vi.fn(),
+        getBody: () => null,
+      };
+      const onSelectBlock = vi.fn();
+      unbind = bindPointerEvents({
+        canvas,
+        camera,
+        blocks: [block],
+        glasses,
+        panBetween: createCameraPan(camera, cameraTarget, glasses.bounds),
+        onSelectBlock,
+      }).unbind;
+      const { x, y } = glassPoint;
+      send(Events.down, x, y, { pointerType });
+      send(Events.up, x, y, { pointerType });
+      expect(onSelectBlock).toHaveBeenCalledExactlyOnceWith(block);
+      expect(endGrab).toHaveBeenLastCalledWith(false);
+      send(Events.down, x, y, { pointerType });
+      send(Events.move, x + 50, y, { pointerType });
+      send(Events.up, x + 50, y, { pointerType });
+      expect(onSelectBlock).toHaveBeenCalledOnce();
+      expect(endGrab).toHaveBeenLastCalledWith(true);
+      mesh.geometry.dispose();
+      mesh.material.dispose();
+    },
+  );
+
   it('releases capture and removes listeners on cleanup', () => {
     const { x, y } = glassPoint;
     send(Events.down, x, y);
