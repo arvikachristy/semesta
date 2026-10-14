@@ -83,6 +83,10 @@ export const createJellyBatches = () => {
       const membershipChanged =
         slots.size !== sources.length || sources.some((source) => !slots.has(source));
       if (membershipChanged) {
+        const previousSlots = new Map(slots);
+        const previousSources = new Map(
+          [...batches].map(([parent, batch]) => [parent, [...batch.sources]]),
+        );
         slots.clear();
         batches.forEach((batch) => {
           batch.sources.length = 0;
@@ -98,11 +102,14 @@ export const createJellyBatches = () => {
             batch = createBatch(surface, parent);
             batches.set(parent, batch);
           }
+          const offset =
+            batch.sources.length * surface.geometry.getAttribute(JellyAttribute.Position).count;
+          const previous = previousSlots.get(source);
           slots.set(source, {
             batch,
-            offset:
-              batch.sources.length * surface.geometry.getAttribute(JellyAttribute.Position).count,
-            revision: -1,
+            offset,
+            revision:
+              previous?.batch === batch && previous.offset === offset ? previous.revision : -1,
           });
           batch.sources.push(source);
           surface.visible = false;
@@ -114,8 +121,15 @@ export const createJellyBatches = () => {
             return;
           }
           batch.mesh.geometry.setDrawRange(0, batch.sources.length * batch.indexCount);
-          batch.atlas.resize(batch.sources.length);
-          batch.sources.forEach((source, slotIndex) => {
+          const resized = batch.atlas.resize(batch.sources.length);
+          const prior = previousSources.get(parent) ?? [];
+          const unchangedPrefix = batch.sources.every(
+            (source, index) => index >= prior.length || source === prior[index],
+          );
+          const firstChanged =
+            !resized && unchangedPrefix ? Math.min(prior.length, batch.sources.length) : 0;
+          batch.sources.slice(firstChanged).forEach((source, index) => {
+            const slotIndex = firstChanged + index;
             const surface = surfaceOf(source);
             if (
               !surface ||
@@ -134,7 +148,9 @@ export const createJellyBatches = () => {
               );
             }
           });
-          batch.uv.needsUpdate = true;
+          if (firstChanged < batch.sources.length) {
+            batch.uv.needsUpdate = true;
+          }
         });
       }
       for (const source of sources) {

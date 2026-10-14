@@ -12,8 +12,8 @@ The selector covers 195 states (193 UN members plus the Holy See and Palestine).
 - Each volume has 24 particles / 36 tetrahedra instead of 60 / 144. Local grabbing, volume constraints, release inertia and container boundaries remain active.
 - A vertical sweep narrows body collision candidates. Conservative bounds contacts stabilize dense piles; these approximate contacts do not model detailed interlocking surfaces. This is the main physics compromise.
 - Artwork is rasterized at 128 pixels high. Six atlas textures occupy under 32 MiB of base RGBA storage at full selection, versus roughly 390 MiB for 195 independent 768 × 512 textures with mipmaps. This is a calculated texture budget, not total GPU memory. Original canvases and physics also use CPU memory. Fine emblems lose detail when zoomed in.
-- Loading is serialized with short yields. New drops target at most 12 awake bodies globally, with a bounded pause to ensure progress. Collisions and grabs may wake more bodies; interactive bodies are never forcibly frozen.
-- Shadows refresh at most 15 times per second while changing. Canvas pixel ratio adapts between 1 and 0.75 with hysteresis; HTML stays sharp. The internal refraction buffer uses half resolution.
+- Loading is serialized with short yields. Saved selections appear already stacked and sleeping inside their glasses on first load, avoiding a long physics-heavy shower of drops. Countries added afterward still drop, targeting at most 12 awake bodies globally with a bounded pause to ensure progress. Collisions and grabs may wake more bodies; interactive bodies are never forcibly frozen.
+- Shadows refresh at most 15 times per second while changing. Smaller high-density viewports now render above 1× pixel ratio, up to 2×, with the extra detail limited to roughly one million drawing pixels. Viewports already larger than that keep the previous 1× baseline. Sustained slow frames can reduce the chosen ratio to 75%. HTML stays sharp. The internal refraction buffer uses half resolution.
 
 ## Measurement
 
@@ -38,6 +38,8 @@ With all 195 present, the held grab measured **50.6 FPS** (p95 35.6 ms) and rele
 Removing all countries returned Three.js resource counts to **13 textures / 5 geometries**, from **19 / 11** with 195 rendered jellies. These counters report uploaded resources, not CPU objects or byte usage.
 
 An earlier pre-tuning run is retained in [performance-before-tuning.json](./performance-before-tuning.json). It used different render quality and physics settings, so treat it as diagnostic history, not a controlled hardware-independent FPS comparison.
+
+After changing saved selections to start at rest, a 60-country desktop run on 2026-10-13 recorded **46.6 FPS** during the first four seconds with all 60 visible and **zero awake bodies**; physics/surface work averaged **0.86 ms per frame**. The resting sample was **60.2 FPS**. See [the raw initial-placement run](./performance-initial-placement.json). The earlier 60-country loading sample was 47.2 FPS with only 26 visible and 12 awake bodies, so the new placement substantially reduces simulation work but does not establish a higher startup frame rate. Browser versions and machine load also differ. Physical phone performance remains unmeasured.
 
 ## Verification and limits
 

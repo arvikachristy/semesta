@@ -9,7 +9,9 @@ export const createRenderer = (canvas: HTMLCanvasElement) => {
   renderer.shadowMap.autoUpdate = false;
   renderer.shadowMap.needsUpdate = true;
   renderer.shadowMap.type = THREE.VSMShadowMap;
-  renderer.setPixelRatio(getRenderPixelRatio(window.devicePixelRatio));
+  renderer.setPixelRatio(
+    getRenderPixelRatio(window.devicePixelRatio, window.innerWidth * window.innerHeight),
+  );
   renderer.setSize(window.innerWidth, window.innerHeight);
   return renderer;
 };

@@ -131,6 +131,15 @@ export const createSoftBody = (
     sleeping = false;
     quietTime = 0;
   };
+  const sleep = () => {
+    sleeping = true;
+    quietTime = p.sleepAfter;
+    positions.forEach((position, i) => {
+      previous[i].copy(position);
+      velocities[i].set(0, 0, 0);
+      incomingVelocity[i].set(0, 0, 0);
+    });
+  };
   let accumulator = 0;
   const beginGrab = (point: THREE.Vector3) => {
     wake();
@@ -475,6 +484,7 @@ export const createSoftBody = (
     finishStep,
     container,
     wake,
+    sleep,
     isSleeping: () => sleeping,
     isGrabbed: () => grabbed,
     hasContactMotion: () => grabbed || (!sleeping && motionSpeed > p.bounceThreshold * scale),

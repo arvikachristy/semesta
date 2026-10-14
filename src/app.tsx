@@ -23,6 +23,7 @@ export const App = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playgroundRef = useRef<ReturnType<typeof startPlayground> | null>(null);
   const account = useAccount();
+  const selectionRepositoryRef = useRef(account.countries);
   const tripSession = useTrips(account.trips);
   const studioTrip = tripSession.trips.find((trip) => trip.id === studioTripId) ?? null;
   const { showedCountries, ready, onToggle, onClear } = useCountrySelection(account.countries);
@@ -57,9 +58,15 @@ export const App = () => {
 
   useEffect(() => {
     if (ready) {
-      void playgroundRef.current?.setCountries(showedCountries);
+      const hydrate = selectionRepositoryRef.current !== account.countries;
+      selectionRepositoryRef.current = account.countries;
+      if (hydrate) {
+        void playgroundRef.current?.setCountries(showedCountries, true);
+      } else {
+        void playgroundRef.current?.setCountries(showedCountries);
+      }
     }
-  }, [ready, showedCountries]);
+  }, [ready, showedCountries, account.countries]);
 
   return (
     <main>

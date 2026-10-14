@@ -54,12 +54,15 @@ export const createFlagAtlas = () => {
       const nextLayout = getFlagAtlasLayout(count);
       // Three.js allocates immutable GPU texture storage. Reallocate when a
       // growing selection changes atlas dimensions rather than uploading out of bounds.
-      if (canvas.width !== nextLayout.atlasWidth || canvas.height !== nextLayout.atlasHeight) {
+      const resized =
+        canvas.width !== nextLayout.atlasWidth || canvas.height !== nextLayout.atlasHeight;
+      if (resized) {
         texture.dispose();
+        canvas.width = nextLayout.atlasWidth;
+        canvas.height = nextLayout.atlasHeight;
       }
       layout = nextLayout;
-      canvas.width = layout.atlasWidth;
-      canvas.height = layout.atlasHeight;
+      return resized;
     },
     draw: (image: HTMLCanvasElement, slot: number) => {
       context.drawImage(

@@ -1,0 +1,95 @@
+{
+  "recordedAt": "2026-10-13T21:06:14.537Z",
+  "browser": "155.0.8059.40",
+  "cpu": "Intel(R) Core(TM) i5-7267U CPU @ 3.10GHz",
+  "platform": "darwin",
+  "settings": {
+    "url": "http://127.0.0.1:5199/",
+    "output": "/var/folders/ng/6yzwkhy57knf71nzb0m7192c0000gn/T/semesta-country-benchmark.json",
+    "counts": [60],
+    "duration": 4000,
+    "settle": 10000,
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    }
+  },
+  "results": [
+    {
+      "label": "60: loading",
+      "fps": 46.64665161457566,
+      "p95FrameMs": 55.299999952316284,
+      "physicsMs": 0.8563829768211284,
+      "renderSubmitMs": 3.838297873101336,
+      "slowFrames": 10,
+      "jellies": 60,
+      "awake": 0,
+      "pixelRatio": 1,
+      "drawCalls": 42,
+      "triangles": 82770,
+      "textures": 19,
+      "geometries": 11
+    },
+    {
+      "label": "60: resting",
+      "fps": 60.186803855234515,
+      "p95FrameMs": 18,
+      "physicsMs": 0.05850622564925198,
+      "renderSubmitMs": 1.6207468890550225,
+      "slowFrames": 0,
+      "jellies": 60,
+      "awake": 0,
+      "pixelRatio": 1,
+      "drawCalls": 42,
+      "triangles": 82770,
+      "textures": 19,
+      "geometries": 11
+    },
+    {
+      "label": "grab: held",
+      "fps": 60.138318132421475,
+      "p95FrameMs": 18,
+      "physicsMs": 0.9166666661699613,
+      "renderSubmitMs": 1.6695833335320154,
+      "slowFrames": 0,
+      "jellies": 60,
+      "awake": 1,
+      "pixelRatio": 1,
+      "drawCalls": 42,
+      "triangles": 82770,
+      "textures": 19,
+      "geometries": 11
+    },
+    {
+      "label": "grab: released",
+      "fps": 60.25451908821333,
+      "p95FrameMs": 17.800000071525574,
+      "physicsMs": 0.3589211623203705,
+      "renderSubmitMs": 1.3120331952186046,
+      "slowFrames": 0,
+      "jellies": 60,
+      "awake": 0,
+      "pixelRatio": 1,
+      "drawCalls": 42,
+      "triangles": 82770,
+      "textures": 19,
+      "geometries": 11
+    },
+    {
+      "label": "removed: resources",
+      "fps": 60.1353044349787,
+      "p95FrameMs": 17.600000023841858,
+      "physicsMs": 0.016666666666666666,
+      "renderSubmitMs": 1.4495833312471709,
+      "slowFrames": 0,
+      "jellies": 0,
+      "awake": 0,
+      "pixelRatio": 1,
+      "drawCalls": 36,
+      "triangles": 47490,
+      "textures": 13,
+      "geometries": 5
+    }
+  ],
+  "errors": []
+}

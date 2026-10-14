@@ -10,7 +10,18 @@ describe('adaptive canvas resolution', () => {
       quality.sample(20);
     }
     expect(quality.getScale()).toBe(renderParameters.minResolutionScale);
-    expect(getRenderPixelRatio(2, quality.getScale())).toBe(renderParameters.minResolutionScale);
+    expect(getRenderPixelRatio(2, 1_280 * 800, quality.getScale())).toBe(
+      renderParameters.minResolutionScale,
+    );
+  });
+  it('sharpens small high-density viewports without exceeding the canvas pixel budget', () => {
+    const viewportPixels = 390 * 844;
+    const ratio = getRenderPixelRatio(3, viewportPixels);
+    expect(ratio).toBeGreaterThan(1);
+    expect(ratio).toBeLessThan(2);
+    expect(viewportPixels * ratio ** 2).toBeCloseTo(renderParameters.maxCanvasPixels);
+    expect(getRenderPixelRatio(3, 1_280 * 800)).toBe(1);
+    expect(getRenderPixelRatio(1, viewportPixels)).toBe(1);
   });
   it('requires sustained headroom to restore sharpness and preserves quality in the middle band', () => {
     const quality = createRenderQuality();
