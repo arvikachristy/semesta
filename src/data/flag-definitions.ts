@@ -13,6 +13,7 @@ export const flagArtwork = {
 
 interface ICountryMetadata {
   name: string;
+  aliases?: readonly string[];
   continent: TContinentId;
   size: { width: number; height: number };
 }

@@ -25,10 +25,12 @@ their details; mark them booked (or ready for essentials) to update the progress
 Only added items count towards progress. Planning is saved with the trip and included
 in account backups; existing trips start with an empty plan.
 
-The destination picker has 198 entries: the UK is represented by England, Scotland,
+The destination picker has 199 entries: the UK is represented by England, Scotland,
 Wales and Northern Ireland instead of a separate United Kingdom option. Previously
 saved UK trips remain readable. Country counts in older performance measurements
-refer to the catalogue used when those measurements were recorded.
+refer to the catalogue used when those measurements were recorded. Hong Kong is a separate
+travel destination with ISO code HK. Vatican City retains the VA ID used in existing
+saved trips. See [catalogue sources and policy](docs/country-catalogue.md).
 
 semesta means universe in Bahasa Indonesia. My mother tongue.
 embarking my creative journey leveraging my background in Frontend engineering
@@ -47,7 +49,7 @@ npm run dev
 
 The same playground is available at `/` and `/countryjellies/`.
 
-Open **Countries** at the bottom to search and tick any of the 198 destinations (194 state entries plus the four UK constituent nations), grouped by continent. Indonesia is selected on a first visit. Selections, including an intentionally empty selection, survive reloads in this browser. Ticking a country queues one miniature jelly into its continent glass; unticking removes it, including during loading or grabbing. All 198 can be selected together; large selections fill gradually to keep input responsive. Antarctica has no state in this catalogue, so its glass stays empty. Grab a region to stretch a jelly, then release to let it settle. Drag a glass to rotate the circle; drag the background to pan and use the wheel to zoom. Panning follows ground-plane ray intersections at the current zoom and can reach every glass within the composition bounds plus a small margin. Two-finger dragging pans over glasses; changing the finger spacing zooms. Touch updates are combined once per frame to avoid accidental zoom during a parallel drag. Mouse and touch use Pointer Events. Wheel/trackpad zoom and two-finger touch pinch share proportional camera zoom and the same distance limits. Spreading fingers zooms in; bringing them together zooms out. Starting a pinch cancels a local grab without launching the jelly, and one-finger movement stays paused until all fingers lift. `zoom.ts` normalizes wheel units; `pointer.ts` tracks the touch pair; `pan.ts` maps screen movement to the ground and defines the travel margin.
+Open **Countries** at the bottom to search and tick any of the 199 destinations (194 state entries, Hong Kong and the four UK constituent nations), grouped by continent. Indonesia is selected on a first visit. Selections, including an intentionally empty selection, survive reloads in this browser. Ticking a country queues one miniature jelly into its continent glass; unticking removes it, including during loading or grabbing. All 199 can be selected together; large selections fill gradually to keep input responsive. Antarctica has no state in this catalogue, so its glass stays empty. Grab a region to stretch a jelly, then release to let it settle. Drag a glass to rotate the circle; drag the background to pan and use the wheel to zoom. Panning follows ground-plane ray intersections at the current zoom and can reach every glass within the composition bounds plus a small margin. Two-finger dragging pans over glasses; changing the finger spacing zooms. Touch updates are combined once per frame to avoid accidental zoom during a parallel drag. Mouse and touch use Pointer Events. Wheel/trackpad zoom and two-finger touch pinch share proportional camera zoom and the same distance limits. Spreading fingers zooms in; bringing them together zooms out. Starting a pinch cancels a local grab without launching the jelly, and one-finger movement stays paused until all fingers lift. `zoom.ts` normalizes wheel units; `pointer.ts` tracks the touch pair; `pan.ts` maps screen movement to the ground and defines the travel margin.
 
 The token at the top right shows FPS and average milliseconds per frame, sampled from the scene loop once per second. Green **Butter mode** means at least 50 FPS, amber **Jelly legs** means 30–49 FPS, and red **Potato mode** means below 30 FPS. Hidden-tab pauses reset sampling. This measures frame pacing; it does not isolate CPU or GPU cost. Thresholds and labels live in `src/performance/frame-monitor.ts`.
 

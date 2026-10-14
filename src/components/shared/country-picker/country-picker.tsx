@@ -46,7 +46,8 @@ export const CountryPicker = memo(
               selectedCount,
               totalCount: group.countries.length,
               countries: group.countries.filter((country) => {
-                const matches = `${country.name} ${country.code}`
+                const matches = [country.name, country.code, ...(country.aliases ?? [])]
+                  .join(' ')
                   .toLocaleLowerCase()
                   .includes(query);
                 return (
