@@ -13,7 +13,12 @@ interface ICountryOpportunityProps {
   onPlan: (country: CountryList) => void;
 }
 
-export const CountryOpportunity = ({ country, disabled, tripName, onPlan }: ICountryOpportunityProps) => {
+export const CountryOpportunity = ({
+  country,
+  disabled,
+  tripName,
+  onPlan,
+}: ICountryOpportunityProps) => {
   const definition = country ? countries[country] : null;
   const continent = definition
     ? continentDefinitions.find((item) => item.id === definition.continent)
