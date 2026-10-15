@@ -27,6 +27,11 @@ describe('local country selection repository', () => {
       ),
     ).toEqual([CountryList.Indonesia, CountryList.France]);
   });
+  it('keeps the existing Vatican ID and round-trips Hong Kong separately from China', () => {
+    expect(decodeCountrySelection(encode(['VA']))).toEqual([CountryList.VaticanCity]);
+    const selected = [CountryList.China, CountryList.HongKong, CountryList.VaticanCity];
+    expect(decodeCountrySelection(encode(selected))).toEqual(selected);
+  });
   it('round-trips every country through storage with a small payload', async () => {
     const records = new Map<string, string>();
     const repository = createLocalCountrySelectionRepository(() => ({

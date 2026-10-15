@@ -401,6 +401,11 @@ export const countryCatalogue: Record<CountryList, ICountryDefinition> = {
     continent: ContinentId.NorthAmerica,
     size: { width: 1260.0, height: 630.0 },
   }),
+  [CountryList.HongKong]: createCountryDefinition(CountryList.HongKong, {
+    name: 'Hong Kong',
+    continent: ContinentId.Asia,
+    size: { width: 900, height: 600 },
+  }),
   [CountryList.Hungary]: createCountryDefinition(CountryList.Hungary, {
     name: 'Hungary',
     continent: ContinentId.Europe,
@@ -974,8 +979,9 @@ export const countryCatalogue: Record<CountryList, ICountryDefinition> = {
     continent: ContinentId.Oceania,
     size: { width: 950.0, height: 570.0 },
   }),
-  [CountryList.HolySee]: createCountryDefinition(CountryList.HolySee, {
-    name: 'Holy See',
+  [CountryList.VaticanCity]: createCountryDefinition(CountryList.VaticanCity, {
+    name: 'Vatican City',
+    aliases: ['Holy See'],
     continent: ContinentId.Europe,
     size: { width: 2500.0, height: 2500.0 },
   }),

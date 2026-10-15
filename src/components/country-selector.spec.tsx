@@ -61,7 +61,7 @@ describe('continent country checklist', () => {
     await act(async () => button().click());
     expect([...host.querySelectorAll('legend')].map((element) => element.textContent)).toEqual([
       'Europe0/47',
-      'Asia1/48',
+      'Asia1/49',
       'Africa0/54',
       'Oceania0/14',
       'Antarctica0/0',
