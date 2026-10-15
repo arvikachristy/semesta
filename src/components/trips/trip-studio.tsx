@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ITrip } from '../../types/trip';
+import type { CountryList } from '../../types/country';
+import { TripVisitConfirmation } from './trip-visit-confirmation';
 import { countries } from '../../data/countries';
 import { flagAssetPath } from '../../data/flag-definitions';
 import { Button, ButtonVariant } from '../ui/button';
 import { getTripDates } from './trip-presentation';
 import { useAccount } from '../../account/account-context';
 import { useTrips } from '../../hooks/use-trips';
-import { TripPlanning } from './trip-planning';
+import { TripPlanning, initialPlanningCategories } from './trip-planning';
 import { TripJourney } from './trip-journey';
 import { TripParticipants } from './trip-participants';
 import { TripEditor } from './trip-editor';
@@ -20,11 +22,23 @@ interface ITripStudioProps {
   trip: ITrip;
   onBack: () => void;
   onTrips?: () => void;
+  backLabel?: string;
+  visitedCountryIds?: readonly CountryList[];
+  onConfirmVisits?: (countries: CountryList[]) => void;
 }
-export const TripStudio = ({ trip, onBack, onTrips, tripSession }: ITripStudioProps) => {
+export const TripStudio = ({
+  trip,
+  onBack,
+  onTrips,
+  tripSession,
+  backLabel = 'Back to collection',
+  visitedCountryIds = [],
+  onConfirmVisits,
+}: ITripStudioProps) => {
   const heading = useRef<HTMLHeadingElement>(null);
   const menu = useRef<HTMLDetailsElement>(null);
   const [editing, setEditing] = useState(false);
+  const [confirmingVisits, setConfirmingVisits] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const localSession = useTrips(useAccount().trips, !tripSession);
   const { trips, ready, warning, saveTrip, removeTrip } = tripSession ?? localSession;
@@ -37,7 +51,7 @@ export const TripStudio = ({ trip, onBack, onTrips, tripSession }: ITripStudioPr
       <div className={styles.workspace}>
         <header className={styles.topbar}>
           <Button variant={ButtonVariant.Quiet} onClick={onBack}>
-            ‹ Back to collection
+            ‹ {backLabel}
           </Button>
           <div>
             {onTrips && (
@@ -92,7 +106,12 @@ export const TripStudio = ({ trip, onBack, onTrips, tripSession }: ITripStudioPr
               ))}
               {!currentTrip.countryIds.length && <span>Destinations to decide</span>}
             </div>
-            <p className={styles.dates}>{getTripDates(currentTrip).range}</p>
+            <p className={styles.dates}>
+              {getTripDates(currentTrip).range}
+              <Button variant={ButtonVariant.Quiet} onClick={() => setEditing(true)}>
+                {currentTrip.startDate ? 'Edit dates' : 'Add dates'}
+              </Button>
+            </p>
             {currentTrip.notes && (
               <details>
                 <summary>Trip notes</summary>
@@ -117,9 +136,10 @@ export const TripStudio = ({ trip, onBack, onTrips, tripSession }: ITripStudioPr
             journey={<TripJourney trip={currentTrip} />}
             items={currentTrip.planning ?? []}
             activeCategories={
-              currentTrip.activePlanningCategories ?? [
-                ...new Set((currentTrip.planning ?? []).map((item) => item.category)),
-              ]
+              currentTrip.activePlanningCategories ??
+              (currentTrip.planning?.length
+                ? [...new Set(currentTrip.planning.map((item) => item.category))]
+                : initialPlanningCategories)
             }
             onChange={(planning, activePlanningCategories) =>
               saveTrip(currentTrip.id, {
@@ -135,6 +155,26 @@ export const TripStudio = ({ trip, onBack, onTrips, tripSession }: ITripStudioPr
         ) : (
           <p>Loading trip planning…</p>
         )}
+        {onConfirmVisits && currentTrip.countryIds.length > 0 && (
+          <section className={styles.returnJourney} aria-label="After travelling">
+            <div>
+              <span className={styles.eyebrow}>After travelling</span>
+              <h2>Bring your journey back to your world.</h2>
+              <p>Confirm the countries you visited to grow your collection.</p>
+            </div>
+            <Button disabled={!ready} onClick={() => setConfirmingVisits(true)}>
+              Mark countries visited
+            </Button>
+          </section>
+        )}
+        {confirmingVisits && onConfirmVisits && (
+          <TripVisitConfirmation
+            trip={currentTrip}
+            visitedCountryIds={visitedCountryIds}
+            onDismiss={() => setConfirmingVisits(false)}
+            onConfirm={onConfirmVisits}
+          />
+        )}
         {editing && (
           <Overlay title="Edit trip" onDismiss={() => setEditing(false)}>
             <TripEditor
@@ -146,6 +186,13 @@ export const TripStudio = ({ trip, onBack, onTrips, tripSession }: ITripStudioPr
                   ...currentTrip,
                   name,
                   countryIds,
+                  ...(currentTrip.visitedCountryIds
+                    ? {
+                        visitedCountryIds: currentTrip.visitedCountryIds.filter((country) =>
+                          countryIds.includes(country),
+                        ),
+                      }
+                    : {}),
                   startDate,
                   endDate,
                   notes,

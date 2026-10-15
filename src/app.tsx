@@ -1,4 +1,4 @@
-import { useAccount } from './account/account-context';
+import { useAccount, guestRepositories } from './account/account-context';
 import { FpsToken } from './components/fps-token';
 import type { IFrameReading } from './performance/frame-monitor';
 import { useEffect, useRef, useState } from 'react';
@@ -8,17 +8,25 @@ import { MobilePanels } from './components/mobile/mobile-panels';
 import type { CountryList } from './types/country';
 import type { CountryStatus } from './types/country-status';
 import { continentDefinitions } from './types/continent';
+import { MobilePanel } from './types/mobile-panel';
+import type { TMobilePanel } from './types/mobile-panel';
 import { startPlayground } from './three/playground';
 import { TripStudio } from './components/trips/trip-studio';
+import { initialPlanningCategories } from './components/trips/trip-planning';
 import { useTrips } from './hooks/use-trips';
+import type { ITrip } from './types/trip';
+import { emptyTripDetails } from './types/trip';
+import { emptyWishlist } from './storage/country-wishlist';
+import { initialCountryBrowser } from './components/shared/country-picker/country-browser-state';
+import type { ICountryBrowserState } from './components/shared/country-picker/country-browser-state';
+import styles from './app.module.css';
 
 export const App = () => {
   const [studioTripId, setStudioTripId] = useState<string | null>(null);
-  const [listRequest, setListRequest] = useState(0);
-  const openTrips = () => {
-    setStudioTripId(null);
-    setListRequest((value) => value + 1);
-  };
+  const [panel, setPanel] = useState<TMobilePanel | null>(null);
+  const [returnPanel, setReturnPanel] = useState<TMobilePanel | null>(null);
+  const [browser, setBrowser] = useState<ICountryBrowserState>(initialCountryBrowser);
+  const [sceneMessage, setSceneMessage] = useState('');
   const [frameReading, setFrameReading] = useState<IFrameReading | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playgroundRef = useRef<ReturnType<typeof startPlayground> | null>(null);
@@ -26,8 +34,32 @@ export const App = () => {
   const selectionRepositoryRef = useRef(account.countries);
   const tripSession = useTrips(account.trips);
   const studioTrip = tripSession.trips.find((trip) => trip.id === studioTripId) ?? null;
-  const { showedCountries, ready, onToggle, onClear } = useCountrySelection(account.countries);
+  const { showedCountries, ready, onToggle } = useCountrySelection(account.countries);
+  const wishlist = useCountrySelection(account.wishlist ?? guestRepositories.wishlist, {
+    initialCountries: emptyWishlist,
+    limit: Infinity,
+  });
   const [statuses, setStatuses] = useState<Partial<Record<CountryList, CountryStatus>>>({});
+  const openTrips = () => {
+    setStudioTripId(null);
+    setPanel(MobilePanel.Trips);
+  };
+  const browseAll = () => {
+    setStudioTripId(null);
+    setBrowser(initialCountryBrowser);
+    setPanel(MobilePanel.Countries);
+  };
+  const openStudio = (trip: ITrip, from: TMobilePanel) => {
+    setReturnPanel(from);
+    setPanel(null);
+    setStudioTripId(trip.id);
+  };
+  const markVisited = (country: CountryList, visited: boolean) => {
+    onToggle(country, visited);
+    if (visited) {
+      wishlist.onToggle(country, false);
+    }
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -42,10 +74,25 @@ export const App = () => {
         }
       },
       onCountryStatus: (country, status) => {
-        if (!active) {
-          return;
+        if (active) {
+          setStatuses((current) => ({ ...current, [country]: status }));
         }
-        setStatuses((current) => ({ ...current, [country]: status }));
+      },
+      onContinentSelect: (continent) => {
+        if (active) {
+          setBrowser({ ...initialCountryBrowser, continent });
+          setPanel(MobilePanel.Countries);
+        }
+      },
+      onCountrySelect: (country) => {
+        if (active) {
+          setBrowser({
+            ...initialCountryBrowser,
+            continent: countries[country].continent,
+            selected: country,
+          });
+          setPanel(MobilePanel.Countries);
+        }
       },
     });
     playgroundRef.current = playground;
@@ -60,22 +107,23 @@ export const App = () => {
     if (ready) {
       const hydrate = selectionRepositoryRef.current !== account.countries;
       selectionRepositoryRef.current = account.countries;
-      if (hydrate) {
-        void playgroundRef.current?.setCountries(showedCountries, true);
-      } else {
-        void playgroundRef.current?.setCountries(showedCountries);
-      }
+      void playgroundRef.current?.setCountries(showedCountries, hydrate);
     }
   }, [ready, showedCountries, account.countries]);
 
   return (
     <main>
       <div hidden={Boolean(studioTrip)}>
-        <FpsToken reading={frameReading} />
+        {import.meta.env.DEV && <FpsToken reading={frameReading} />}
+        <header className={styles.intro}>
+          <h1>Your world</h1>
+          <p>{showedCountries.length} countries I've been to</p>
+          <span>Tap a glass to explore</span>
+        </header>
         <ul className="visually-hidden" id="continent-descriptions">
           {continentDefinitions.map((continent) => (
             <li key={continent.id}>
-              {continent.name}: gold-marked amber glass. Selected countries:{' '}
+              {continent.name}: visited countries:{' '}
               {showedCountries
                 .filter((id) => countries[id].continent === continent.id)
                 .map((id) => countries[id].name)
@@ -87,28 +135,85 @@ export const App = () => {
         <canvas
           ref={canvasRef}
           aria-describedby="continent-descriptions"
-          aria-label="Three playground: select countries below, grab their jellies inside the glasses, drag a glass to turn the circle, or drag the background to pan."
+          aria-label="Your visited-country glasses. Tap a glass to explore its countries, drag a glass to rotate, or drag a jelly to play. Use All countries for keyboard access."
         />
+        {sceneMessage && (
+          <p className={styles.message} role="status">
+            {sceneMessage}
+          </p>
+        )}
       </div>
       <MobilePanels
         tripSession={tripSession}
-        onOpenStudio={(trip) => setStudioTripId(trip.id)}
+        panel={panel}
+        onPanelChange={setPanel}
+        onBrowseAll={browseAll}
+        onOpenStudio={(trip) => openStudio(trip, MobilePanel.Trips)}
         studioOpen={Boolean(studioTrip)}
-        onCollection={openTrips}
+        onCollection={browseAll}
         onTrips={openTrips}
-        listRequest={listRequest}
-        showedCountries={showedCountries}
-        statuses={statuses}
-        disabled={!ready}
-        onToggle={onToggle}
-        onClear={onClear}
+        countries={{
+          state: browser,
+          onStateChange: setBrowser,
+          visitedCountryIds: showedCountries,
+          wishlistCountryIds: wishlist.showedCountries,
+          statuses,
+          trips: tripSession.trips,
+          disabled: !ready || !wishlist.ready || !tripSession.ready,
+          onVisited: markVisited,
+          onWishlist: wishlist.onToggle,
+          onClose: () => setPanel(null),
+          onOpenTrip: (trip) => openStudio(trip, MobilePanel.Countries),
+          onPlan: (country) => {
+            const details = {
+              ...emptyTripDetails,
+              name: `${countries[country].name} trip`,
+              countryIds: [country],
+              activePlanningCategories: initialPlanningCategories,
+            };
+            const id = tripSession.saveTrip(null, {
+              ...details,
+              activePlanningCategories: [...details.activePlanningCategories],
+            });
+            if (id) {
+              openStudio(
+                { ...details, activePlanningCategories: [...details.activePlanningCategories], id },
+                MobilePanel.Countries,
+              );
+            }
+          },
+        }}
       />
       {studioTrip && (
         <TripStudio
           key={studioTrip.id}
           trip={studioTrip}
           tripSession={tripSession}
-          onBack={openTrips}
+          backLabel={
+            returnPanel === MobilePanel.Countries
+              ? `Back to ${continentDefinitions.find((item) => item.id === browser.continent)?.name ?? 'your countries'}`
+              : 'Back to trips'
+          }
+          visitedCountryIds={showedCountries}
+          onConfirmVisits={(ids) => {
+            ids.forEach((country) => markVisited(country, true));
+            tripSession.saveTrip(studioTrip.id, {
+              ...studioTrip,
+              visitedCountryIds: [...new Set([...(studioTrip.visitedCountryIds ?? []), ...ids])],
+            });
+            const added = ids.filter((country) => !showedCountries.includes(country));
+            setSceneMessage(
+              added.length
+                ? `${added.map((country) => countries[country].name).join(', ')} added to Been to. Your world has grown.`
+                : 'Visit confirmed. Your collection is up to date.',
+            );
+            setStudioTripId(null);
+            setPanel(null);
+          }}
+          onBack={() => {
+            setStudioTripId(null);
+            setPanel(returnPanel);
+          }}
           onTrips={openTrips}
         />
       )}

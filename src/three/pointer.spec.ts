@@ -24,6 +24,7 @@ describe('pointer gestures', () => {
   let unbind: () => void;
   let glassPoint: THREE.Vector2;
   const zoomBy = vi.fn();
+  const onSelectGlass = vi.fn();
   const frames = new Map<number, FrameRequestCallback>();
   let nextFrame = 0;
   const flushGesture = () => {
@@ -51,6 +52,7 @@ describe('pointer gestures', () => {
       blocks,
       glasses,
       zoomBy,
+      onSelectGlass,
       panBetween: createCameraPan(camera, cameraTarget, glasses.bounds),
     }).unbind;
   };
@@ -65,6 +67,7 @@ describe('pointer gestures', () => {
     });
     vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id));
     zoomBy.mockClear();
+    onSelectGlass.mockClear();
     canvas = document.createElement('canvas');
     document.body.append(canvas);
     vi.spyOn(canvas, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 1000, 800));
@@ -215,6 +218,22 @@ describe('pointer gestures', () => {
     mesh.material.dispose();
   });
 
+  it.each(Object.values(PointerTypes))(
+    'opens a continent on a %s tap but not after rotating or cancellation',
+    (pointerType) => {
+      const { x, y } = glassPoint;
+      send(Events.down, x, y, { pointerType });
+      send(Events.up, x, y, { pointerType });
+      expect(onSelectGlass).toHaveBeenCalledOnce();
+      send(Events.down, x, y, { pointerType });
+      send(Events.move, x + 50, y, { pointerType });
+      send(Events.up, x + 50, y, { pointerType });
+      expect(onSelectGlass).toHaveBeenCalledOnce();
+      send(Events.down, x, y, { pointerType });
+      send(Events.cancel, x, y, { pointerType });
+      expect(onSelectGlass).toHaveBeenCalledOnce();
+    },
+  );
   it('releases capture and removes listeners on cleanup', () => {
     const { x, y } = glassPoint;
     send(Events.down, x, y);

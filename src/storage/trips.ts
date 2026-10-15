@@ -18,6 +18,8 @@ export const isTripRecord = (value: unknown): value is ITrip => {
   if (typeof value !== 'object' || value === null) {
     return false;
   }
+  const destinationIds =
+    'countryIds' in value && Array.isArray(value.countryIds) ? value.countryIds : [];
   return (
     'id' in value &&
     typeof value.id === 'string' &&
@@ -35,6 +37,13 @@ export const isTripRecord = (value: unknown): value is ITrip => {
     'countryIds' in value &&
     Array.isArray(value.countryIds) &&
     value.countryIds.every((id: unknown) => normalizeCountrySelection([id]).length === 1) &&
+    (!('visitedCountryIds' in value) ||
+      (Array.isArray(value.visitedCountryIds) &&
+        value.visitedCountryIds.every(
+          (id: unknown) =>
+            normalizeCountrySelection([id]).length === 1 && destinationIds.includes(id),
+        ) &&
+        new Set(value.visitedCountryIds).size === value.visitedCountryIds.length)) &&
     (!('planning' in value) ||
       (Array.isArray(value.planning) &&
         value.planning.every(isTripPlanningItem) &&

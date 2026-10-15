@@ -5,6 +5,7 @@ import { countryGroups } from '../../../data/countries';
 import { Button, ButtonVariant } from '../../ui/button';
 import ui from '../../ui/ui.module.css';
 import styles from './country-picker.module.css';
+import { matchesCountryQuery, normalizeCountryQuery } from './country-search';
 
 export const CountryPickerMode = {
   Checklist: 'checklist',
@@ -32,7 +33,7 @@ export interface ICountryPickerProps {
 export const CountryPicker = memo(
   ({ mode, selectedCountries, statuses = {}, disabled = false, onToggle }: ICountryPickerProps) => {
     const [search, setSearch] = useState('');
-    const query = search.trim().toLocaleLowerCase();
+    const query = normalizeCountryQuery(search);
     const selected = useMemo(() => new Set(selectedCountries), [selectedCountries]);
     const groups = useMemo(
       () =>
@@ -46,10 +47,7 @@ export const CountryPicker = memo(
               selectedCount,
               totalCount: group.countries.length,
               countries: group.countries.filter((country) => {
-                const matches = [country.name, country.code, ...(country.aliases ?? [])]
-                  .join(' ')
-                  .toLocaleLowerCase()
-                  .includes(query);
+                const matches = matchesCountryQuery(country, query);
                 return (
                   matches && (mode === CountryPickerMode.Checklist || !selected.has(country.code))
                 );

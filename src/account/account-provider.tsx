@@ -13,6 +13,7 @@ import type { IWorkspaceRecord } from './workspace';
 
 const loadGuest = async () => ({
   countries: await guestRepositories.countries.load(),
+  wishlistCountryIds: await guestRepositories.wishlist.load(),
   trips: await guestRepositories.trips.load(),
 });
 
@@ -53,6 +54,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
         email: null,
         status: BackupStatus.Local,
         countries: guestRepositories.countries,
+        wishlist: guestRepositories.wishlist,
         trips,
         hasTrips: false,
       });
@@ -87,6 +89,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
         status: BackupStatus.Loading,
         signOut,
         countries: blocked,
+        wishlist: blocked,
         trips: blocked,
         hasTrips: false,
       });
@@ -152,6 +155,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
           email,
           status: BackupStatus.Loading,
           countries: session.countries,
+          wishlist: session.wishlist,
           trips: session.trips,
           hasTrips: record.workspace.trips.length > 0,
           retry: session.flush,
@@ -166,6 +170,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
             setState((current) => ({
               ...current,
               countries: { ...session.countries },
+              wishlist: { ...session.wishlist },
               trips: { ...session.trips },
             }));
           },

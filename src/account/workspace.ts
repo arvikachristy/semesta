@@ -8,6 +8,7 @@ import { accountConfig } from './account-config';
 export interface IWorkspace {
   countries: CountryList[];
   trips: ITrip[];
+  wishlistCountryIds?: CountryList[];
 }
 export interface IWorkspaceRecord {
   version: number;
@@ -15,7 +16,11 @@ export interface IWorkspaceRecord {
   dirty: boolean;
   workspace: IWorkspace;
 }
-export const emptyWorkspace = (): IWorkspace => ({ countries: [...defaultCountries], trips: [] });
+export const emptyWorkspace = (): IWorkspace => ({
+  countries: [...defaultCountries],
+  trips: [],
+  wishlistCountryIds: [],
+});
 export const isWorkspace = (value: unknown): value is IWorkspace => {
   if (
     typeof value !== 'object' ||
@@ -28,6 +33,11 @@ export const isWorkspace = (value: unknown): value is IWorkspace => {
   return (
     Array.isArray(value.countries) &&
     value.countries.every((id: unknown) => normalizeCountrySelection([id]).length === 1) &&
+    (!('wishlistCountryIds' in value) ||
+      (Array.isArray(value.wishlistCountryIds) &&
+        value.wishlistCountryIds.every(
+          (id: unknown) => normalizeCountrySelection([id]).length === 1,
+        ))) &&
     Array.isArray(value.trips) &&
     value.trips.every(isTripRecord)
   );
@@ -53,12 +63,20 @@ export const decodeWorkspaceRecord = (value: unknown): IWorkspaceRecord => {
     version: value.version,
     revision: value.revision,
     dirty: value.dirty,
-    workspace: { ...value.workspace, trips: value.workspace.trips.map(normalizeTripPlanning) },
+    workspace: {
+      ...value.workspace,
+      wishlistCountryIds: normalizeCountrySelection(value.workspace.wishlistCountryIds ?? []),
+      trips: value.workspace.trips.map(normalizeTripPlanning),
+    },
   };
 };
 // Existing account trips win on an ID collision. Importing twice is idempotent.
 export const mergeWorkspaces = (account: IWorkspace, guest: IWorkspace): IWorkspace => ({
   countries: normalizeCountrySelection([...account.countries, ...guest.countries]),
+  wishlistCountryIds: normalizeCountrySelection([
+    ...(account.wishlistCountryIds ?? []),
+    ...(guest.wishlistCountryIds ?? []),
+  ]),
   trips: [
     ...account.trips,
     ...guest.trips.filter((trip) => !account.trips.some(({ id }) => id === trip.id)),

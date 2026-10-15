@@ -73,6 +73,13 @@ export const createGlassSet = () => {
       new THREE.Vector3(-extent, 0, -extent),
       new THREE.Vector3(extent, height, extent),
     ),
+    continentForObject: (hit: THREE.Object3D) => {
+      let candidate: THREE.Object3D | null = hit;
+      while (candidate && candidate.parent !== object) {
+        candidate = candidate.parent;
+      }
+      return continents.find((continent) => continent.id === candidate?.name)?.id ?? null;
+    },
     rotateBy: (viewportDelta: number) => {
       object.rotation.y += viewportDelta * glassParameters.dragRadiansPerViewport;
     },

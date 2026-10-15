@@ -5,113 +5,153 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CountrySelector } from './country-selector';
 import { defaultCountries, toggleCountry } from '../data/countries';
 import { CountryList } from '../types/country';
-
+import { initialCountryBrowser } from './shared/country-picker/country-browser-state';
+const onPlan = vi.fn();
 const Harness = () => {
-  const [showedCountries, setShowedCountries] = useState([...defaultCountries]);
+  const [visited, setVisited] = useState([...defaultCountries]);
+  const [wishlist, setWishlist] = useState<CountryList[]>([]);
+  const [state, setState] = useState(initialCountryBrowser);
+  const [open, setOpen] = useState(false);
   return (
     <CountrySelector
-      showedCountries={showedCountries}
+      open={open}
+      onOpen={() => setOpen(true)}
+      onClose={() => setOpen(false)}
+      state={state}
+      onStateChange={setState}
+      visitedCountryIds={visited}
+      wishlistCountryIds={wishlist}
+      trips={[]}
       statuses={{}}
-      onClear={() => setShowedCountries([])}
-      onToggle={(country, checked) =>
-        setShowedCountries((current) => toggleCountry(current, country, checked, 60))
+      disabled={false}
+      onVisited={(id, checked) =>
+        setVisited((current) => toggleCountry(current, id, checked, Infinity))
       }
+      onWishlist={(id, checked) =>
+        setWishlist((current) => toggleCountry(current, id, checked, Infinity))
+      }
+      onPlan={onPlan}
+      onOpenTrip={vi.fn()}
     />
   );
 };
 const host = document.createElement('div');
 let root: ReturnType<typeof createRoot>;
-const button = () => {
-  const element = host.querySelector('button');
-  if (!element) {
-    throw new Error('Missing selector trigger');
+const click = async (label: string) => {
+  const button = [...host.querySelectorAll('button')].find(
+    (item) => item.getAttribute('aria-label') === label || item.textContent?.trim() === label,
+  );
+  if (!button) {
+    throw new Error(`Missing ${label}`);
   }
-  return element;
-};
-const checkbox = (country: CountryList) => {
-  const element = host.querySelector(`input[value="${country}"]`);
-  if (!(element instanceof HTMLInputElement)) {
-    throw new Error('Missing country checkbox');
-  }
-  return element;
+  await act(async () => button.click());
 };
 beforeEach(async () => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
-  // jsdom lacks the native modal API; real focus trapping is checked in Chrome.
-  Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
-    configurable: true,
-    value(this: HTMLDialogElement) {
-      this.open = true;
-    },
-  });
+  for (const [method, open] of [
+    ['showModal', true],
+    ['close', false],
+  ] as const) {
+    Object.defineProperty(HTMLDialogElement.prototype, method, {
+      configurable: true,
+      value(this: HTMLDialogElement) {
+        this.open = open;
+      },
+    });
+  }
   document.body.append(host);
   root = createRoot(host);
   await act(async () => root.render(<Harness />));
+  const trigger = host.querySelector('.country-trigger');
+  if (!(trigger instanceof HTMLButtonElement)) {
+    throw new Error('Missing trigger');
+  }
+  trigger.focus();
+  await act(async () => trigger.click());
 });
 afterEach(async () => {
   await act(async () => root.unmount());
   host.remove();
   vi.unstubAllGlobals();
+  vi.clearAllMocks();
   Reflect.deleteProperty(HTMLDialogElement.prototype, 'showModal');
+  Reflect.deleteProperty(HTMLDialogElement.prototype, 'close');
 });
-
-describe('continent country checklist', () => {
-  it('starts with Indonesia, groups countries, and keeps the panel open while toggling', async () => {
-    expect(button().textContent).toContain('1 selected');
-    await act(async () => button().click());
-    expect([...host.querySelectorAll('legend')].map((element) => element.textContent)).toEqual([
-      'Europe0/47',
-      'Asia1/49',
-      'Africa0/54',
-      'Oceania0/14',
-      'Antarctica0/0',
-      'South America0/12',
-      'North America0/23',
-    ]);
-    expect(checkbox(CountryList.Indonesia).checked).toBe(true);
-    await act(async () => checkbox(CountryList.France).click());
-    expect(button().textContent).toContain('2 selected');
-    expect(checkbox(CountryList.France).checked).toBe(true);
-    await act(async () => checkbox(CountryList.Indonesia).click());
-    expect(checkbox(CountryList.Indonesia).checked).toBe(false);
-    expect(button().getAttribute('aria-expanded')).toBe('true');
+describe('visual country modal', () => {
+  it('dismisses search focus when a country is toggled', async () => {
+    const search = host.querySelector('input[type="search"]');
+    if (!(search instanceof HTMLInputElement)) {
+      throw new Error('Missing country search');
+    }
+    search.focus();
+    expect(document.activeElement).toBe(search);
+    const tile = host.querySelector('button[aria-label="Mark Peru visited"]');
+    if (!(tile instanceof HTMLButtonElement)) {
+      throw new Error('Missing Peru tile');
+    }
+    const pointerDown = new Event('pointerdown', { bubbles: true, cancelable: true });
+    await act(async () => tile.dispatchEvent(pointerDown));
+    expect(pointerDown.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(search);
+    await click('Mark Peru visited');
+    expect(document.activeElement).not.toBe(search);
+    expect(host.textContent).toContain('Peru added to Been to.');
   });
-  it('requires confirmation, preserves flags on cancellation, and clears all on confirmation', async () => {
-    await act(async () => button().click());
-    await act(async () => checkbox(CountryList.France).click());
-    const clear = host.querySelector('.country-actions button');
-    if (!(clear instanceof HTMLButtonElement)) {
-      throw new Error('Missing clear action');
+  it('saves and removes wishes in one tap without changing visits or hiding countries', async () => {
+    await click('Bucket list');
+    const tiles = host.querySelectorAll('button[aria-pressed]').length;
+    await click('Save Peru to bucket list');
+    expect(host.textContent).toContain('Peru saved to your bucket list.');
+    expect(host.textContent).toContain('1 country visited');
+    expect(host.querySelectorAll('button[aria-pressed]')).toHaveLength(tiles);
+    await click('Plan trip');
+    expect(onPlan).toHaveBeenCalledExactlyOnceWith(CountryList.Peru);
+    await click('Remove Peru from bucket list');
+    expect(host.textContent).toContain('Peru removed from your bucket list.');
+    await click('Undo');
+    expect(
+      host
+        .querySelector('button[aria-label="Remove Peru from bucket list"]')
+        ?.getAttribute('aria-pressed'),
+    ).toBe('true');
+  });
+  it('toggles visits directly and keeps country positions stable', async () => {
+    const labels = () =>
+      [...host.querySelectorAll('button[aria-label]')].map((item) => item.textContent);
+    const before = labels();
+    await click('Mark Peru visited');
+    expect(host.textContent).toContain('2 countries visited');
+    expect(
+      host
+        .querySelector('button[aria-label="Remove Peru from Been to"]')
+        ?.getAttribute('aria-pressed'),
+    ).toBe('true');
+    await click('Remove Peru from Been to');
+    expect(host.textContent).toContain('1 country visited');
+    expect(labels()).toEqual(before);
+  });
+  it('keeps repeat-visit wishes independent and undo restores the visit state', async () => {
+    await click('Bucket list');
+    await click('Save Indonesia to bucket list');
+    await click('Been to');
+    await click('Remove Indonesia from Been to');
+    expect(host.textContent).toContain('0 countries visited');
+    await click('Undo');
+    expect(host.textContent).toContain('1 country visited');
+    await click('Bucket list');
+    expect(
+      host
+        .querySelector('button[aria-label="Remove Indonesia from bucket list"]')
+        ?.getAttribute('aria-pressed'),
+    ).toBe('true');
+  });
+  it('dismisses the native modal and restores the opener focus', async () => {
+    const dialog = host.querySelector('dialog');
+    if (!dialog) {
+      throw new Error('Missing modal');
     }
-    await act(async () => clear.click());
-    expect(button().textContent).toContain('2 selected');
-    const cancel = host.querySelector('dialog button');
-    if (!(cancel instanceof HTMLButtonElement)) {
-      throw new Error('Missing cancellation');
-    }
-    await act(async () => cancel.click());
-    expect(button().textContent).toContain('2 selected');
-    expect(document.activeElement).toBe(clear);
-    await act(async () => clear.click());
-    const confirm = host.querySelector('dialog button:last-child');
-    if (!(confirm instanceof HTMLButtonElement)) {
-      throw new Error('Missing confirmation');
-    }
-    await act(async () => confirm.click());
-    expect(button().textContent).toContain('0 selected');
-    expect(checkbox(CountryList.Indonesia).checked).toBe(false);
-    expect(checkbox(CountryList.France).checked).toBe(false);
-    expect(clear.disabled).toBe(true);
+    await act(async () => dialog.dispatchEvent(new Event('cancel', { cancelable: true })));
     expect(host.querySelector('dialog')).toBeNull();
-  });
-  it('closes on Escape with focus restored and on an outside pointer press', async () => {
-    await act(async () => button().click());
-    checkbox(CountryList.Indonesia).focus();
-    await act(async () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })));
-    expect(button().getAttribute('aria-expanded')).toBe('false');
-    expect(document.activeElement).toBe(button());
-    await act(async () => button().click());
-    await act(async () => document.body.dispatchEvent(new Event('pointerdown', { bubbles: true })));
-    expect(button().getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(host.querySelector('.country-trigger'));
   });
 });

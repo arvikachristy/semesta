@@ -5,6 +5,7 @@ import { createCamera } from './camera';
 import { createCountryCollection } from './jelly-flags/country-collection';
 import type { CountryStatus } from '../types/country-status';
 import type { CountryList } from '../types/country';
+import type { TContinentId } from '../types/continent';
 import { createFloor } from './floor';
 import { createGlassSet } from './glasses/glass-set';
 import { createLights } from './lights';
@@ -18,10 +19,12 @@ import { getWheelZoomFactor } from './zoom';
 interface IPlaygroundOptions {
   onFrameReading?: (reading: IFrameReading) => void;
   onCountryStatus?: (country: CountryList, status: CountryStatus) => void;
+  onCountrySelect?: (country: CountryList) => void;
+  onContinentSelect?: (continent: TContinentId) => void;
 }
 export const startPlayground = (
   canvas: HTMLCanvasElement,
-  { onCountryStatus, onFrameReading }: IPlaygroundOptions = {},
+  { onCountryStatus, onCountrySelect, onContinentSelect, onFrameReading }: IPlaygroundOptions = {},
 ) => {
   // React supplies the canvas. These are the raw Three.js pieces inside it.
   const renderer = createRenderer(canvas);
@@ -49,6 +52,13 @@ export const startPlayground = (
     glasses,
     zoomBy,
     panBetween,
+    onSelectGlass: onContinentSelect,
+    onSelectBlock: (block) => {
+      const country = collection.countryForBlock(block);
+      if (country) {
+        onCountrySelect?.(country);
+      }
+    },
   });
   const onResize = () => {
     resize(renderer, camera, quality.getScale());

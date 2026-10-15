@@ -20,7 +20,7 @@ export const UpcomingTrips = memo(
   ({ mobilePanel, onOpenStudio, tripSession }: IUpcomingTripsProps) => {
     const localSession = useTrips(useAccount().trips, !tripSession);
     const { trips, ready, warning, saveTrip } = tripSession ?? localSession;
-    const [desktopOpen, setOpen] = useState(true);
+    const [desktopOpen, setOpen] = useState(false);
     const open = mobilePanel?.open ?? desktopOpen;
     const [creating, setCreating] = useState(false);
     return (

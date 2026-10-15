@@ -22,6 +22,7 @@ export interface ITrip {
   id: string;
   name: string;
   countryIds: CountryList[];
+  visitedCountryIds?: CountryList[];
   startDate: string;
   endDate: string;
   notes: string;

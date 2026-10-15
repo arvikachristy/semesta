@@ -125,7 +125,7 @@ describe('account lifecycle', () => {
       await vi.advanceTimersByTimeAsync(accountConfig.saveDelay);
     });
     expect(cloud.save).toHaveBeenCalledExactlyOnceWith(
-      { countries: [CountryList.Indonesia], trips: [guestTrip] },
+      { countries: [CountryList.Indonesia], trips: [guestTrip], wishlistCountryIds: [] },
       0,
     );
     expect(JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips).toEqual([guestTrip]);
@@ -149,6 +149,7 @@ describe('account lifecycle', () => {
       {
         countries: expect.arrayContaining([CountryList.France, CountryList.Indonesia]),
         trips: [cloudTrip, guestTrip],
+        wishlistCountryIds: [],
       },
       4,
     ]);

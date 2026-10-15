@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { createFlagBlock } from './jelly-flags/flag-block';
 import type { createGlassSet } from './glasses/glass-set';
+import type { TContinentId } from '../types/continent';
 
 enum PointerEventName {
   Down = 'pointerdown',
@@ -20,6 +21,8 @@ interface IPointerOptions {
   glasses: ReturnType<typeof createGlassSet>;
   zoomBy?: (factor: number) => void;
   panBetween: (from: THREE.Vector2, to: THREE.Vector2) => void;
+  onSelectBlock?: (block: ReturnType<typeof createFlagBlock>) => void;
+  onSelectGlass?: (continent: TContinentId) => void;
 }
 
 // A hit creates a camera-facing grab plane. Ray points are converted to the body's local space.
@@ -30,6 +33,8 @@ export const bindPointerEvents = ({
   glasses,
   zoomBy,
   panBetween,
+  onSelectBlock,
+  onSelectGlass,
 }: IPointerOptions) => {
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
@@ -43,6 +48,10 @@ export const bindPointerEvents = ({
   let activePointer: number | null = null;
   let grabbed: ReturnType<typeof createFlagBlock> | null = null;
   let rotatingGlasses = false;
+  let tappedGlass: TContinentId | null = null;
+  const gestureStart = new THREE.Vector2();
+  const tapThreshold = 8;
+  let moved = false;
   const touches = new Map<number, THREE.Vector2>();
   let pinching = false;
   let previousPinchDistance = 0;
@@ -97,7 +106,11 @@ export const bindPointerEvents = ({
       true,
     )[0];
   const release = (jump = false) => {
-    grabbed?.endGrab(jump);
+    const selected = jump && !moved ? grabbed : null;
+    const selectedGlass = jump && !moved && !selected ? tappedGlass : null;
+    grabbed?.endGrab(jump && !selected);
+    tappedGlass = null;
+    moved = false;
     grabbed = null;
     rotatingGlasses = false;
     const id = activePointer;
@@ -106,6 +119,12 @@ export const bindPointerEvents = ({
       canvas.releasePointerCapture(id);
     }
     canvas.style.cursor = Cursor.Grab;
+    if (selected) {
+      onSelectBlock?.(selected);
+    }
+    if (selectedGlass) {
+      onSelectGlass?.(selectedGlass);
+    }
   };
   const down = (event: PointerEvent) => {
     if (event.pointerType === PointerType.Touch && event.button === 0) {
@@ -116,6 +135,8 @@ export const bindPointerEvents = ({
         // Keep both captures, but cancel the one-finger action without launching a jelly.
         grabbed?.endGrab(false);
         grabbed = null;
+        tappedGlass = null;
+        moved = false;
         rotatingGlasses = false;
         activePointer = null;
         pinching = true;
@@ -135,6 +156,8 @@ export const bindPointerEvents = ({
     const intersection = hit();
     activePointer = event.pointerId;
     previous.set(event.clientX, event.clientY);
+    gestureStart.copy(previous);
+    moved = false;
     previousPanPointer.copy(pointer);
     if (intersection) {
       grabbed = blocks.find((block) => intersection.object.parent === block.object) ?? null;
@@ -144,7 +167,9 @@ export const bindPointerEvents = ({
         grabbed.beginGrab(grabbed.object.worldToLocal(point.copy(intersection.point)));
       }
     }
-    rotatingGlasses = !grabbed && raycaster.intersectObject(glasses.object, true).length > 0;
+    const glassHit = !grabbed ? raycaster.intersectObject(glasses.object, true)[0] : undefined;
+    tappedGlass = glassHit ? glasses.continentForObject(glassHit.object) : null;
+    rotatingGlasses = Boolean(glassHit);
     canvas.setPointerCapture(event.pointerId);
     canvas.style.cursor = Cursor.Grabbing;
   };
@@ -171,6 +196,9 @@ export const bindPointerEvents = ({
     if (activePointer === null) {
       canvas.style.cursor = hit() ? Cursor.Pointer : Cursor.Grab;
       return;
+    }
+    if (Math.hypot(event.clientX - gestureStart.x, event.clientY - gestureStart.y) > tapThreshold) {
+      moved = true;
     }
     if (grabbed) {
       if (raycaster.ray.intersectPlane(plane, point)) {

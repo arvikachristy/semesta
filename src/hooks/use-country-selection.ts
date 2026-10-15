@@ -7,7 +7,17 @@ import type { ICountrySelectionRepository } from '../storage/country-selection';
 
 const localRepository = createLocalCountrySelectionRepository();
 
-export const useCountrySelection = (repository: ICountrySelectionRepository = localRepository) => {
+interface ICountrySelectionOptions {
+  initialCountries?: readonly CountryList[];
+  limit?: number;
+}
+export const useCountrySelection = (
+  repository: ICountrySelectionRepository = localRepository,
+  {
+    initialCountries = defaultCountries,
+    limit = glassParameters.capacity,
+  }: ICountrySelectionOptions = {},
+) => {
   const [showedCountries, setShowedCountries] = useState<CountryList[]>([]);
   const [ready, setReady] = useState(false);
   const saveQueue = useRef(Promise.resolve());
@@ -20,7 +30,7 @@ export const useCountrySelection = (repository: ICountrySelectionRepository = lo
     setReady(false);
     void repository
       .load()
-      .catch(() => [...defaultCountries])
+      .catch(() => [...initialCountries])
       .then((countries) => {
         if (active) {
           hydratedRepository.current = repository;
@@ -32,7 +42,7 @@ export const useCountrySelection = (repository: ICountrySelectionRepository = lo
     return () => {
       active = false;
     };
-  }, [repository]);
+  }, [repository, initialCountries]);
 
   useEffect(() => {
     if (
@@ -50,12 +60,10 @@ export const useCountrySelection = (repository: ICountrySelectionRepository = lo
   const onToggle = useCallback(
     (country: CountryList, checked: boolean) => {
       if (usableReady) {
-        setShowedCountries((current) =>
-          toggleCountry(current, country, checked, glassParameters.capacity),
-        );
+        setShowedCountries((current) => toggleCountry(current, country, checked, limit));
       }
     },
-    [usableReady],
+    [usableReady, limit],
   );
   const onClear = useCallback(() => {
     if (usableReady) {

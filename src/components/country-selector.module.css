@@ -1,0 +1,7 @@
+.modal {
+  width: min(40rem, calc(100vw - 2rem));
+  height: min(48rem, calc(100dvh - 2rem));
+  max-height: calc(100dvh - 2rem);
+  padding: 0;
+  overflow: hidden;
+}

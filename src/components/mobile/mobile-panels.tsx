@@ -1,10 +1,10 @@
 import { AccountPanel } from '../account/account-panel';
 import { useAccount } from '../../account/account-context';
-import { MobilePanel, mobilePanelText } from '../../types/mobile-panel';
+import { MobilePanel } from '../../types/mobile-panel';
 import type { TMobilePanel } from '../../types/mobile-panel';
 import { memo, useEffect, useRef, useState } from 'react';
 import { CountrySelector } from '../country-selector';
-import type { ICountrySelectorProps } from '../country-selector';
+import type { ICountryBrowserProps } from '../shared/country-picker/country-browser';
 import { UpcomingTrips } from '../trips/upcoming-trips';
 import { Button, ButtonVariant } from '../ui/button';
 import ui from '../ui/ui.module.css';
@@ -12,11 +12,15 @@ import styles from './mobile-panels.module.css';
 import type { ITrip } from '../../types/trip';
 import type { useTrips } from '../../hooks/use-trips';
 
-interface IMobilePanelsProps extends ICountrySelectorProps {
+interface IMobilePanelsProps {
+  countries: ICountryBrowserProps;
+  panel: TMobilePanel | null;
+  onPanelChange: (panel: TMobilePanel | null) => void;
+  onBrowseAll: () => void;
   studioOpen?: boolean;
   onCollection?: () => void;
   onTrips?: () => void;
-  listRequest?: number;
+
   tripSession?: ReturnType<typeof useTrips>;
   onOpenStudio: (trip: ITrip) => void;
 }
@@ -36,18 +40,14 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
   const account = useAccount();
   const [narrow, setNarrow] = useState(() => window.innerWidth <= panelConfig.breakpoint);
   const mobile = narrow || Boolean(props.studioOpen);
-  const [active, setActive] = useState<TMobilePanel | null>(null);
+  const active = props.panel;
+  const setActive = props.onPanelChange;
   const dialog = useRef<HTMLDialogElement>(null);
-  const closeButton = useRef<HTMLButtonElement>(null);
+  const modal = useRef(false);
+
   const triggers = useRef<Partial<Record<TMobilePanel, HTMLButtonElement | null>>>({});
   const previous = useRef<TMobilePanel | null>(null);
   const dismiss = () => setActive(null);
-  useEffect(() => {
-    if (props.listRequest) {
-      setActive(MobilePanel.Trips);
-    }
-  }, [props.listRequest]);
-
   useEffect(() => {
     const resize = () => setNarrow(window.innerWidth <= panelConfig.breakpoint);
     window.addEventListener(panelConfig.resizeEvent, resize);
@@ -59,19 +59,31 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
     if (!element) {
       return;
     }
-    if (element.open) {
-      element.close();
+    const shouldBeModal = mobile && Boolean(active);
+    // Reopening the desktop shell steals native dismissal from its country modal.
+    // Only change dialog mode when the shell actually enters or leaves a sheet.
+    if (!element.open || modal.current !== shouldBeModal) {
+      if (element.open) {
+        element.close();
+      }
+      if (shouldBeModal) {
+        element.showModal();
+      } else {
+        element.show();
+      }
+      modal.current = shouldBeModal;
     }
-    if (mobile && active) {
-      element.showModal();
+    if (shouldBeModal) {
       const tripClose = element.querySelector('button[data-sheet-close]');
       if (tripClose instanceof HTMLButtonElement && active === MobilePanel.Trips) {
         tripClose.focus();
       } else {
-        closeButton.current?.focus();
+        const close = element.querySelector('button[aria-label="Close countries"]');
+        if (close instanceof HTMLButtonElement) {
+          close.focus();
+        }
       }
     } else {
-      element.show();
       if (mobile && previous.current) {
         triggers.current[previous.current]?.focus();
       }
@@ -126,23 +138,13 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
         }
       }}
     >
-      {mobile && active === MobilePanel.Countries && (
-        <header className={styles.sheetHeader}>
-          <span>{active ? panelConfig.labels[active] : ''}</span>
-          <Button
-            ref={closeButton}
-            variant={ButtonVariant.Quiet}
-            onClick={dismiss}
-            aria-label={mobilePanelText.close}
-          >
-            {mobilePanelText.closeLabel}
-          </Button>
-        </header>
-      )}
       <div className={styles.contents}>
         <div className={styles.feature} hidden={mobile && active !== MobilePanel.Countries}>
           <CountrySelector
-            {...props}
+            {...props.countries}
+            open={active === MobilePanel.Countries}
+            onOpen={props.onBrowseAll}
+            onClose={dismiss}
             mobilePanel={
               mobile ? { open: active === MobilePanel.Countries, onClose: dismiss } : undefined
             }
@@ -178,24 +180,24 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
             }}
             variant={active === panel ? ButtonVariant.Primary : ButtonVariant.Quiet}
             aria-expanded={active === panel}
-            disabled={panel === MobilePanel.Countries && props.disabled}
+            disabled={panel === MobilePanel.Countries && props.countries.disabled}
             onClick={() => {
               if (props.studioOpen && panel === MobilePanel.Countries) {
-                dismiss();
+                setActive(MobilePanel.Countries);
                 props.onCollection?.();
               } else if (props.studioOpen && panel === MobilePanel.Trips) {
                 setActive(MobilePanel.Trips);
                 props.onTrips?.();
+              } else if (panel === MobilePanel.Countries && active !== panel) {
+                props.onBrowseAll();
               } else {
-                setActive((current) => (current === panel ? null : panel));
+                setActive(active === panel ? null : panel);
               }
             }}
           >
-            {props.studioOpen && panel === MobilePanel.Countries
-              ? 'Collection'
-              : panel === MobilePanel.Account && account.hasTrips && account.email === null
-                ? 'Save plans'
-                : panelConfig.labels[panel]}
+            {panel === MobilePanel.Account && account.hasTrips && account.email === null
+              ? 'Save plans'
+              : panelConfig.labels[panel]}
           </Button>
         ))}
       </nav>

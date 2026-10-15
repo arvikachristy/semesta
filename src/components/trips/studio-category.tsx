@@ -7,7 +7,9 @@ import styles from './trip-studio.module.css';
 
 export const studioCategoryLabels = {
   ...planningCategories,
-  transportation: 'Flights & Transport',
+  transportation: 'Getting there',
+  accommodation: 'Your stay',
+  activities: 'Things to do',
 };
 const categorySymbols = {
   transportation: '↗',
@@ -33,7 +35,7 @@ export const StudioCategorySection = ({
   const progress = getPlanningProgress(items);
   const label = studioCategoryLabels[category];
   return (
-    <details className={`${ui.surface} ${styles.category}`}>
+    <details className={`${ui.surface} ${styles.category}`} open>
       <summary className={styles.categoryHeading}>
         <span className={styles.symbol} aria-hidden="true">
           {categorySymbols[category]}
@@ -41,22 +43,28 @@ export const StudioCategorySection = ({
         <span className={styles.categoryTitle}>
           {label}
           <small>
-            {progress.completed} of {progress.total} collected
+            {progress.total
+              ? `${progress.completed} of ${progress.total} booked or ready`
+              : 'No plans yet'}
           </small>
         </span>
-        <span className={styles.categoryCount}>{progress.percent}%</span>
+        {progress.total > 0 && <span className={styles.categoryCount}>{progress.percent}%</span>}
         <span aria-hidden="true" className={styles.expand}>
           ⌄
         </span>
-        <progress
-          className={styles.progress}
-          aria-label={`${planningCategories[category]} planning progress`}
-          value={progress.completed}
-          max={progress.total || 1}
-        />
+        {progress.total > 0 && (
+          <progress
+            className={styles.progress}
+            aria-label={`${planningCategories[category]} planning progress`}
+            value={progress.completed}
+            max={progress.total || 1}
+          />
+        )}
       </summary>
       <div className={styles.categoryBody}>
-        {!items.length && <p className={styles.eyebrow}>Room for your first reservation.</p>}
+        {!items.length && (
+          <p className={styles.eyebrow}>Add an idea now. Details can come later.</p>
+        )}
         <ul className={styles.tickets} aria-label={`${label} bookings`}>
           {items.map((item) => (
             <TripPlanningItem
