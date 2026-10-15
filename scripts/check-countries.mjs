@@ -1,4 +1,4 @@
-import { chromium } from '@playwright/test';
+import { chromium, expect } from '@playwright/test';
 import assert from 'node:assert/strict';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -115,8 +115,8 @@ for (const [name, viewport] of [
   await page.getByRole('button', { name: 'Explore Peru', exact: true }).waitFor();
   assert.equal(await page.getByRole('button', { name: /^Explore / }).count(), 6);
   await page.keyboard.press('Escape');
-  assert.equal(await trigger.getAttribute('aria-expanded'), 'false');
-  assert.ok(await trigger.evaluate((element) => element === document.activeElement));
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  await expect(trigger).toBeFocused();
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
   console.log(name + ' journey passed');
   await browser.close();
