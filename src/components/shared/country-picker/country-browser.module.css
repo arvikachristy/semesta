@@ -84,7 +84,8 @@
 .grid .tile {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: center;
+  align-items: center;
   gap: var(--space-2);
   min-width: 0;
   text-align: center;
@@ -203,7 +204,6 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     overflow: hidden;
-    min-height: 2.5em;
     line-height: 1.25;
   }
   .selection {
