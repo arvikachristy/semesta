@@ -126,6 +126,7 @@ export const CountryBrowser = (props: ICountryBrowserProps) => {
           variant={ButtonVariant.Quiet}
           icon
           aria-label="Close countries"
+          onPointerDown={keepSearchFocus}
           onClick={props.onClose}
         >
           ×
