@@ -73,15 +73,15 @@ describe('visited world, wishes and trips', () => {
     await act(async () =>
       vi.mocked(startPlayground).mock.calls[0][1]?.onContinentSelect?.(ContinentId.SouthAmerica),
     );
-    await click('button[aria-label="Explore Peru"]');
-    await clickText('Save to bucket list');
+    await clickText('Bucket list');
+    await click('button[aria-label="Save Peru to bucket list"]');
     expect(JSON.parse(localStorage.getItem(wishlistStorage.key) ?? '{}').countryIds).toEqual([
       CountryList.Peru,
     ]);
     expect(
       JSON.parse(localStorage.getItem(selectionStorage.key) ?? '{}').selectedCountryIds,
     ).toEqual([CountryList.France]);
-    await clickText('Plan a trip');
+    await clickText('Plan trip');
     expect(host.querySelector('section[aria-label="Trip Studio"] h1')?.textContent).toBe(
       'Peru trip',
     );
@@ -97,6 +97,25 @@ describe('visited world, wishes and trips', () => {
     await clickText('Plan a new trip');
     expect(JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips).toHaveLength(2);
     expect(startPlayground).toHaveBeenCalledOnce();
+  });
+  it('undo restores both a visit and the wish fulfilled by that visit', async () => {
+    localStorage.setItem(
+      wishlistStorage.key,
+      JSON.stringify({ version: 1, countryIds: [CountryList.Peru] }),
+    );
+    await act(async () => root.render(<App />));
+    await act(async () =>
+      vi.mocked(startPlayground).mock.calls[0][1]?.onContinentSelect?.(ContinentId.SouthAmerica),
+    );
+    await click('button[aria-label="Mark Peru visited"]');
+    expect(JSON.parse(localStorage.getItem(wishlistStorage.key) ?? '{}').countryIds).toEqual([]);
+    await clickText('Undo');
+    expect(JSON.parse(localStorage.getItem(wishlistStorage.key) ?? '{}').countryIds).toEqual([
+      CountryList.Peru,
+    ]);
+    expect(
+      JSON.parse(localStorage.getItem(selectionStorage.key) ?? '{}').selectedCountryIds,
+    ).not.toContain(CountryList.Peru);
   });
   it('confirms only selected destinations, fulfills their wishes and records repeat visits without duplicate jellies', async () => {
     const trip = {
@@ -143,7 +162,7 @@ describe('visited world, wishes and trips', () => {
     expect(host.querySelector('footer[aria-label="Country actions"]')?.textContent).toContain(
       'Indonesia',
     );
-    await clickText('Plan a trip');
+    await clickText('Plan trip');
     await click('section[aria-label="Trip Studio"] button');
     expect(host.querySelector('canvas')).toBe(canvas);
     expect(startPlayground).toHaveBeenCalledOnce();

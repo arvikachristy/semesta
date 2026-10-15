@@ -78,29 +78,53 @@ afterEach(async () => {
   Reflect.deleteProperty(HTMLDialogElement.prototype, 'close');
 });
 describe('visual country modal', () => {
-  it('selects without changing visits, saves a wish, and plans with that country', async () => {
-    await click('Explore Peru');
-    expect(host.textContent).toContain('1 country visited');
-    await click('Save to bucket list');
-    expect(host.textContent).toContain('On your bucket list');
-    expect(host.textContent).toContain('1 country visited');
-    await click('Plan a trip');
-    expect(onPlan).toHaveBeenCalledExactlyOnceWith(CountryList.Peru);
+  it('saves and removes wishes in one tap without changing visits or hiding countries', async () => {
     await click('Bucket list');
-    expect(host.querySelectorAll('button[aria-label^="Explore "]')).toHaveLength(1);
-    await click('Explore Peru');
-    await click('Remove wish');
-    expect(host.textContent).toContain('Your next adventure starts here');
-  });
-  it('supports explicit visited edits and repeat-visit wishes', async () => {
-    await click('Explore Indonesia');
-    await click('Save to bucket list');
-    expect(host.textContent).toContain('Been to · On your bucket list');
-    await click('Remove visit');
-    expect(host.textContent).toContain('0 countries visited');
-    expect(host.textContent).toContain('Not visited · On your bucket list');
-    await click('Mark visited');
+    const tiles = host.querySelectorAll('button[aria-pressed]').length;
+    await click('Save Peru to bucket list');
+    expect(host.textContent).toContain('Peru saved to your bucket list.');
     expect(host.textContent).toContain('1 country visited');
+    expect(host.querySelectorAll('button[aria-pressed]')).toHaveLength(tiles);
+    await click('Plan trip');
+    expect(onPlan).toHaveBeenCalledExactlyOnceWith(CountryList.Peru);
+    await click('Remove Peru from bucket list');
+    expect(host.textContent).toContain('Peru removed from your bucket list.');
+    await click('Undo');
+    expect(
+      host
+        .querySelector('button[aria-label="Remove Peru from bucket list"]')
+        ?.getAttribute('aria-pressed'),
+    ).toBe('true');
+  });
+  it('toggles visits directly and keeps country positions stable', async () => {
+    const labels = () =>
+      [...host.querySelectorAll('button[aria-label]')].map((item) => item.textContent);
+    const before = labels();
+    await click('Mark Peru visited');
+    expect(host.textContent).toContain('2 countries visited');
+    expect(
+      host
+        .querySelector('button[aria-label="Remove Peru from Been to"]')
+        ?.getAttribute('aria-pressed'),
+    ).toBe('true');
+    await click('Remove Peru from Been to');
+    expect(host.textContent).toContain('1 country visited');
+    expect(labels()).toEqual(before);
+  });
+  it('keeps repeat-visit wishes independent and undo restores the visit state', async () => {
+    await click('Bucket list');
+    await click('Save Indonesia to bucket list');
+    await click('Been to');
+    await click('Remove Indonesia from Been to');
+    expect(host.textContent).toContain('0 countries visited');
+    await click('Undo');
+    expect(host.textContent).toContain('1 country visited');
+    await click('Bucket list');
+    expect(
+      host
+        .querySelector('button[aria-label="Remove Indonesia from bucket list"]')
+        ?.getAttribute('aria-pressed'),
+    ).toBe('true');
   });
   it('dismisses the native modal and restores the opener focus', async () => {
     const dialog = host.querySelector('dialog');

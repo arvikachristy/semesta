@@ -78,7 +78,7 @@ content and progress come from the existing planning model and repository.
 
 At 600px and below, route the Countries, Trips and Account interfaces through `MobilePanels`. It owns the single active sheet and bottom navigation. Keep feature components mounted so closing a sheet or switching tabs preserves drafts. Desktop keeps its existing floating controls.
 
-Use the native dialog modal state for focus containment and scene input blocking. Countries use the expanded sheet with a scrolling flag grid and independently scrolling country actions. Trip lists use the short sheet; editing expands it. Use explicit Close and backdrop dismissal; no draggable heights in the MVP. The form fields scroll while actions and navigation remain visible. `visualViewport` sizes the sheet above the mobile keyboard; include safe-area padding. Use `--color-sheet` for mobile readability.
+Use the native dialog modal state for focus containment and scene input blocking. Countries use the expanded sheet with a scrolling flag grid and compact feedback actions. Trip lists use the short sheet; editing expands it. Use explicit Close and backdrop dismissal; no draggable heights in the MVP. The form fields scroll while actions and navigation remain visible. `visualViewport` sizes the sheet above the mobile keyboard; include safe-area padding. Use `--color-sheet` for mobile readability.
 
 Check Escape and focus return, switching tabs, a nested confirmation dialog, draft retention and keyboard-sized viewport changes when modifying this shell. Do not give individual features independent mobile overlays.
 
@@ -89,8 +89,11 @@ Account backup uses the same controls and surfaces. Desktop opens a native modal
 Desktop wraps `CountryBrowser` in the shared native Overlay; mobile places its content
 inside the existing MobilePanels dialog. Never nest another country dialog. The
 header shows the continent and visited progress, followed by native search/select
-controls and All / Been to / Bucket list filters. Flag tiles select a country;
-selection reveals visit, wish and trip actions in a pinned footer. Use shared Button
-variants and field recipes. Wishes use a distinct diamond marker; visited flags use
-a check. Both states can coexist for return visits. Trip return restores browser
-state; confirming visits explicitly returns to the scene.
+controls and Been to / Bucket list editing modes. Both modes show the searchable
+catalogue in stable order. A tile toggles membership in the active mode in one tap;
+its pressed state reflects membership, not focus or selection. Show a short mode
+instruction and compact confirmation with Undo and Plan trip. Undo restores a wish
+fulfilled by marking a visit. Existing trips expand from a native details control.
+Use shared Button variants and field recipes. Wishes use a distinct diamond marker;
+visited flags use a check. Both states can coexist for return visits. Trip return
+restores browser state; confirming visits explicitly returns to the scene.

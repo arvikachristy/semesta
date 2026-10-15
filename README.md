@@ -5,10 +5,12 @@ Tap a glass to browse that continent, or tap a jelly to open its country. Draggi
 rotating, panning and pinching still work. **All countries** on desktop and
 **Countries** on mobile provide the same keyboard-accessible browser.
 
-The country modal combines a flag grid, continent selector, search and **All / Been to /
-Bucket list** filters. Selecting a flag reveals actions in the same modal: mark a
-visit, save a wish, or plan a trip. Wishes never add jellies and can include return
-visits. Existing trips are listed individually; a new trip is always available.
+The country modal combines a flag grid, continent selector, search and two editing
+modes: **Been to / Bucket list**. Tap a flag once to toggle a visit or wish in the
+active mode. Both modes keep the searchable catalogue in stable order. A compact
+confirmation offers **Undo** and **Plan trip**, with existing trips expandable
+individually. Undo also restores a wish fulfilled by marking a visit. Wishes never
+add jellies and can include return visits.
 
 **Plan a trip** saves a destination-filled draft and opens Trip Studio immediately.
 Dates, travellers and bookings can come later. One planning board starts with

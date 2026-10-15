@@ -7,18 +7,18 @@ const errors = [];
 const output = process.env.BROWSER_OUTPUT ?? join(tmpdir(), 'semesta-country-journey');
 const url = process.env.BROWSER_URL ?? 'http://127.0.0.1:5173/';
 await fs.mkdir(output, { recursive: true });
+const browser = await chromium.launch({
+  executablePath: process.env.CHROMIUM_PATH,
+  args: process.env.BROWSER_ARGS
+    ? JSON.parse(process.env.BROWSER_ARGS)
+    : ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
+  headless: true,
+});
 for (const [name, viewport] of [
   ['small-mobile', { width: 320, height: 740 }],
   ['mobile', { width: 390, height: 844 }],
   ['desktop', { width: 1440, height: 1000 }],
 ]) {
-  const browser = await chromium.launch({
-    executablePath: process.env.CHROMIUM_PATH,
-    args: process.env.BROWSER_ARGS
-      ? JSON.parse(process.env.BROWSER_ARGS)
-      : ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
-    headless: true,
-  });
   const context = await browser.newContext({
     viewport,
     isMobile: name !== 'desktop',
@@ -49,25 +49,51 @@ for (const [name, viewport] of [
     })
     .click();
   await page.screenshot({ path: `${output}/${name}-opened.png` });
-  assert.equal(await page.getByRole('button', { name: /^Explore / }).count(), 199);
+  assert.equal(
+    await page.getByRole('button', { name: /^(Mark .+ visited|Remove .+ from Been to)$/ }).count(),
+    199,
+  );
   for (const [query, country] of [
     ['HK', 'Hong Kong'],
     ['holy see', 'Vatican City'],
     ['england', 'England'],
   ]) {
     await page.getByRole('searchbox').fill(query);
-    await page.getByRole('button', { name: `Explore ${country}`, exact: true }).waitFor();
-    assert.equal(await page.getByRole('button', { name: /^Explore / }).count(), 1);
+    await page.getByRole('button', { name: `Mark ${country} visited`, exact: true }).waitFor();
+    assert.equal(
+      await page
+        .getByRole('button', { name: /^(Mark .+ visited|Remove .+ from Been to)$/ })
+        .count(),
+      1,
+    );
   }
   await page.getByRole('searchbox').fill('united kingdom');
-  assert.equal(await page.getByRole('button', { name: /^Explore / }).count(), 0);
+  assert.equal(
+    await page.getByRole('button', { name: /^(Mark .+ visited|Remove .+ from Been to)$/ }).count(),
+    0,
+  );
   await page.getByRole('searchbox').fill('');
   await page
     .getByRole('combobox', { name: 'Continent', exact: true })
     .selectOption('south-america');
   await page.screenshot({ path: `${output}/${name}-continent.png` });
-  await page.getByRole('button', { name: 'Explore Peru', exact: true }).click();
-  await page.getByRole('button', { name: 'Save to bucket list', exact: true }).click();
+  await page.getByRole('button', { name: 'Bucket list', exact: true }).click();
+  await page.getByRole('button', { name: 'Save Peru to bucket list', exact: true }).click();
+  await page.getByRole('button', { name: 'Been to', exact: true }).click();
+  await page.getByRole('button', { name: 'Mark Peru visited', exact: true }).click();
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: 'Mark Peru visited', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'false');
+  assert.ok(
+    JSON.parse(
+      await page.evaluate(() => window.localStorage.getItem('semesta.country-wishlist')),
+    ).countryIds.includes('PE'),
+  );
+  await page.getByRole('button', { name: 'Bucket list', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: 'Remove Peru from bucket list', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
   await page.screenshot({ path: `${output}/${name}-country.png` });
   const visited = JSON.parse(
     await page.evaluate(() => window.localStorage.getItem('semesta.country-selection')),
@@ -75,7 +101,7 @@ for (const [name, viewport] of [
   if (visited.includes('PE')) {
     throw new Error('Saving a wish changed visited countries');
   }
-  await page.getByRole('button', { name: 'Plan a trip', exact: true }).click();
+  await page.getByRole('button', { name: 'Plan trip', exact: true }).click();
   await page.getByRole('heading', { name: 'Peru trip', exact: true }).waitFor();
   await page.screenshot({ path: `${output}/${name}-studio.png` });
   await page.getByRole('button', { name: 'Add activities', exact: true }).click();
@@ -86,6 +112,7 @@ for (const [name, viewport] of [
   await page.getByText('Walk through Cusco', { exact: true }).waitFor();
   await page.getByRole('button', { name: '‹ Back to South America', exact: true }).click();
   await page.getByRole('heading', { name: 'South America', exact: true }).waitFor();
+  await page.getByText('Trips (1)', { exact: true }).click();
   await page.getByRole('button', { name: 'Peru trip ›', exact: true }).click();
   await page.getByRole('button', { name: 'Mark countries visited', exact: true }).click();
   await page.screenshot({ path: `${output}/${name}-confirm.png` });
@@ -112,15 +139,19 @@ for (const [name, viewport] of [
   });
   await trigger.click();
   await page.getByRole('button', { name: 'Been to', exact: true }).click();
-  await page.getByRole('button', { name: 'Explore Peru', exact: true }).waitFor();
-  assert.equal(await page.getByRole('button', { name: /^Explore / }).count(), 6);
+  await page.getByRole('button', { name: 'Remove Peru from Been to', exact: true }).waitFor();
+  assert.equal(
+    await page.getByRole('button', { name: /^(Mark .+ visited|Remove .+ from Been to)$/ }).count(),
+    199,
+  );
   await page.keyboard.press('Escape');
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   await expect(trigger).toBeFocused();
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
   console.log(name + ' journey passed');
-  await browser.close();
+  await context.close();
 }
+await browser.close();
 console.log(JSON.stringify({ errors }));
 if (errors.length) {
   process.exitCode = 1;

@@ -15,13 +15,11 @@
   flex: 1;
   min-width: 0;
 }
-.heading h2,
-.selectedHeading h3 {
+.heading h2 {
   margin: 0;
   font: 400 var(--text-title) / 1.2 var(--font-display);
 }
-.heading p,
-.selectedHeading p {
+.heading p {
   margin: var(--space-2) 0;
   color: var(--color-muted);
   font-size: var(--text-small);
@@ -78,11 +76,6 @@
   margin: 0 0 var(--space-3);
   font: 400 var(--text-item) / 1.2 var(--font-display);
 }
-.sectionLabel {
-  margin: var(--space-3) 0;
-  color: var(--color-muted);
-  font-size: var(--text-small);
-}
 .grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -135,24 +128,41 @@
   display: grid;
   gap: var(--space-3);
   flex: 0 0 auto;
-  max-height: 45%;
+  max-height: 30%;
   overflow-y: auto;
   padding: var(--space-4) var(--space-5);
   border-top: 1px solid var(--color-border);
   background: var(--color-sheet);
 }
-.selectedHeading {
+.instruction {
+  margin: 0;
+  padding: var(--space-3) var(--space-5) 0;
+  color: var(--color-muted);
+  font-size: var(--text-small);
+}
+.continent {
+  color: var(--color-muted);
+  font-size: var(--text-small);
+}
+.feedback {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
-.selectedHeading img {
-  width: 2.75rem;
-  height: 1.9rem;
-  object-fit: contain;
+.feedback p {
+  flex: 1 1 10rem;
+  margin: 0;
+  font-size: var(--text-body);
 }
-.selectedHeading h3 {
-  font-size: var(--text-item);
+.savedTrips summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--control-height);
+  cursor: pointer;
+}
+.savedTrips summary:focus-visible {
+  outline: var(--focus-ring);
 }
 .savedTrips {
   display: grid;
@@ -164,14 +174,6 @@
   line-height: 1.5;
   color: var(--color-muted);
 }
-.live:empty {
-  display: none;
-}
-.live {
-  margin: 0;
-  padding: var(--space-2) var(--space-5);
-  font-size: var(--text-small);
-}
 @media (max-width: 600px) {
   .header {
     padding: var(--space-3) var(--space-4);
@@ -182,10 +184,10 @@
     padding-inline: var(--space-4);
   }
   .grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .selection {
     gap: var(--space-2);
-    max-height: 48%;
+    max-height: 30%;
   }
 }
