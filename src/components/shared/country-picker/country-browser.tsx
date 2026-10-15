@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import type { PointerEvent } from 'react';
 import { countries, countryGroups } from '../../../data/countries';
 import { flagAssetPath } from '../../../data/flag-definitions';
 import { continents } from '../../../three/glasses/continents';
@@ -43,6 +44,7 @@ const filters = [
 export const CountryBrowser = (props: ICountryBrowserProps) => {
   const { state, onStateChange, visitedCountryIds, wishlistCountryIds, statuses } = props;
   const [change, setChange] = useState<ICountryChange | null>(null);
+  const searchInput = useRef<HTMLInputElement>(null);
   const visited = new Set(visitedCountryIds);
   const wishlist = new Set(wishlistCountryIds);
   const continent = continents.find((item) => item.id === state.continent);
@@ -66,7 +68,14 @@ export const CountryBrowser = (props: ICountryBrowserProps) => {
 
   const activeChange = change?.country === state.selected ? change : null;
   const wishlistMode = state.filter === CountryFilter.Wishlist;
+  const keepSearchFocus = (event: PointerEvent<HTMLButtonElement>) => {
+    // Avoid moving the tapped control before its click completes.
+    if (document.activeElement === searchInput.current) {
+      event.preventDefault();
+    }
+  };
   const toggleCountry = (country: CountryList) => {
+    searchInput.current?.blur();
     const wasVisited = visited.has(country);
     const wasSaved = wishlist.has(country);
     onStateChange({ ...state, selected: country });
@@ -126,6 +135,7 @@ export const CountryBrowser = (props: ICountryBrowserProps) => {
         <label className={ui.field}>
           Search countries
           <input
+            ref={searchInput}
             className={ui.control}
             type="search"
             value={state.query}
@@ -158,6 +168,7 @@ export const CountryBrowser = (props: ICountryBrowserProps) => {
               key={filter.id}
               variant={state.filter === filter.id ? ButtonVariant.Primary : ButtonVariant.Quiet}
               aria-pressed={state.filter === filter.id}
+              onPointerDown={keepSearchFocus}
               onClick={() => {
                 setChange(null);
                 onStateChange({ ...state, filter: filter.id });
@@ -201,6 +212,7 @@ export const CountryBrowser = (props: ICountryBrowserProps) => {
                           : `Mark ${country.name} visited`
                     }
                     aria-pressed={checked}
+                    onPointerDown={keepSearchFocus}
                     onClick={() => toggleCountry(country.code)}
                   >
                     <span className={styles.flag}>
@@ -216,7 +228,7 @@ export const CountryBrowser = (props: ICountryBrowserProps) => {
                         </span>
                       )}
                     </span>
-                    <span>{country.name}</span>
+                    <span className={styles.name}>{country.name}</span>
                     <span className={styles.continent}>{group.name}</span>
                   </Button>
                 );

@@ -184,10 +184,51 @@
     padding-inline: var(--space-4);
   }
   .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .grid .tile {
+    padding: var(--space-2);
+    gap: var(--space-1);
+    font-size: var(--text-label);
+  }
+  .flag {
+    width: 2rem;
+    height: 1.4rem;
+  }
+  .continent {
+    display: none;
+  }
+  .name {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    min-height: 2.5em;
+    line-height: 1.25;
   }
   .selection {
     gap: var(--space-2);
     max-height: 30%;
+  }
+  .browser:has(input[type='search']:focus) .header {
+    padding-block: var(--space-1);
+  }
+  .browser:has(input[type='search']:focus) .heading h2 {
+    font-size: var(--text-item);
+  }
+  .browser:has(input[type='search']:focus) .heading p,
+  .browser:has(input[type='search']:focus) .heading progress,
+  .browser:has(input[type='search']:focus) .thumbnail,
+  .browser:has(input[type='search']:focus) .instruction,
+  .browser:has(input[type='search']:focus) .selection,
+  .browser:has(input[type='search']:focus) .group h3 {
+    display: none;
+  }
+  .browser:has(input[type='search']:focus) .controls {
+    gap: var(--space-2);
+    padding-bottom: var(--space-2);
+  }
+  .browser:has(input[type='search']:focus) .scroll {
+    padding-block: var(--space-2);
   }
 }

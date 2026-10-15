@@ -78,6 +78,25 @@ afterEach(async () => {
   Reflect.deleteProperty(HTMLDialogElement.prototype, 'close');
 });
 describe('visual country modal', () => {
+  it('dismisses search focus when a country is toggled', async () => {
+    const search = host.querySelector('input[type="search"]');
+    if (!(search instanceof HTMLInputElement)) {
+      throw new Error('Missing country search');
+    }
+    search.focus();
+    expect(document.activeElement).toBe(search);
+    const tile = host.querySelector('button[aria-label="Mark Peru visited"]');
+    if (!(tile instanceof HTMLButtonElement)) {
+      throw new Error('Missing Peru tile');
+    }
+    const pointerDown = new Event('pointerdown', { bubbles: true, cancelable: true });
+    await act(async () => tile.dispatchEvent(pointerDown));
+    expect(pointerDown.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(search);
+    await click('Mark Peru visited');
+    expect(document.activeElement).not.toBe(search);
+    expect(host.textContent).toContain('Peru added to Been to.');
+  });
   it('saves and removes wishes in one tap without changing visits or hiding countries', async () => {
     await click('Bucket list');
     const tiles = host.querySelectorAll('button[aria-pressed]').length;

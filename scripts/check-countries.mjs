@@ -49,6 +49,47 @@ for (const [name, viewport] of [
     })
     .click();
   await page.screenshot({ path: `${output}/${name}-opened.png` });
+  const columns = await page
+    .locator('[aria-label="Country collection"] [class*="grid"]')
+    .first()
+    .evaluate((grid) => window.getComputedStyle(grid).gridTemplateColumns.split(' ').length);
+  assert.equal(columns, name === 'desktop' ? 4 : 3);
+  if (name !== 'desktop') {
+    const search = page.getByRole('searchbox');
+    await search.fill('japan');
+    await search.focus();
+    // Emulate the visual viewport above a software keyboard, including iOS pan.
+    await page.evaluate(() => {
+      const viewport = window.visualViewport;
+      if (!viewport) {
+        throw new Error('Missing visual viewport');
+      }
+      Object.defineProperty(viewport, 'height', { configurable: true, value: 340 });
+      Object.defineProperty(viewport, 'offsetTop', { configurable: true, value: 60 });
+      viewport.dispatchEvent(new window.Event('resize'));
+      viewport.dispatchEvent(new window.Event('scroll'));
+    });
+    await expect(page.getByRole('navigation', { name: 'Explore and plan' })).toBeHidden();
+    const result = page.getByRole('button', { name: 'Mark Japan visited', exact: true });
+    await expect(result).toBeInViewport({ ratio: 1 });
+    const bounds = await result.boundingBox();
+    assert.ok(bounds && bounds.y >= 60 && bounds.y + bounds.height <= 400);
+    await page.waitForTimeout(200);
+    await page.screenshot({ path: `${output}/${name}-keyboard.png` });
+    await result.click();
+    await expect(search).not.toBeFocused();
+    await page.evaluate(() => {
+      const viewport = window.visualViewport;
+      if (viewport) {
+        Reflect.deleteProperty(viewport, 'height');
+        Reflect.deleteProperty(viewport, 'offsetTop');
+        viewport.dispatchEvent(new window.Event('resize'));
+      }
+    });
+    await expect(page.getByRole('navigation', { name: 'Explore and plan' })).toBeVisible();
+    await page.getByRole('button', { name: 'Undo', exact: true }).click();
+    await search.fill('');
+  }
   assert.equal(
     await page.getByRole('button', { name: /^(Mark .+ visited|Remove .+ from Been to)$/ }).count(),
     199,

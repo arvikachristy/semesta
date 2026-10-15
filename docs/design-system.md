@@ -97,3 +97,11 @@ fulfilled by marking a visit. Existing trips expand from a native details contro
 Use shared Button variants and field recipes. Wishes use a distinct diamond marker;
 visited flags use a check. Both states can coexist for return visits. Trip return
 restores browser state; confirming visits explicitly returns to the scene.
+
+Mobile uses three compact country tiles per row, with names wrapping and full
+44px minimum touch targets. Redundant continent subtitles are hidden. While search
+has focus, collapse header metadata and hide the instruction, country-action footer
+and bottom navigation to prioritise results within the visual viewport. Keep the
+title, Close, search, continent selector and editing modes available. Tapping a tile
+blurs search to dismiss the software keyboard and restore trip actions. Desktop
+layout stays unchanged.

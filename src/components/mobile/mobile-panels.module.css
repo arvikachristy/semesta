@@ -101,3 +101,7 @@
     var(--visible-height, 100dvh) - max(var(--space-4), env(safe-area-inset-top))
   );
 }
+
+.shell[data-mobile='true'][data-active='countries']:has(input[type='search']:focus) .bar {
+  display: none;
+}
