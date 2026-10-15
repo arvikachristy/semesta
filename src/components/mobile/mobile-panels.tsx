@@ -43,6 +43,7 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
   const active = props.panel;
   const setActive = props.onPanelChange;
   const dialog = useRef<HTMLDialogElement>(null);
+  const modal = useRef(false);
 
   const triggers = useRef<Partial<Record<TMobilePanel, HTMLButtonElement | null>>>({});
   const previous = useRef<TMobilePanel | null>(null);
@@ -58,11 +59,21 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
     if (!element) {
       return;
     }
-    if (element.open) {
-      element.close();
+    const shouldBeModal = mobile && Boolean(active);
+    // Reopening the desktop shell steals native dismissal from its country modal.
+    // Only change dialog mode when the shell actually enters or leaves a sheet.
+    if (!element.open || modal.current !== shouldBeModal) {
+      if (element.open) {
+        element.close();
+      }
+      if (shouldBeModal) {
+        element.showModal();
+      } else {
+        element.show();
+      }
+      modal.current = shouldBeModal;
     }
-    if (mobile && active) {
-      element.showModal();
+    if (shouldBeModal) {
       const tripClose = element.querySelector('button[data-sheet-close]');
       if (tripClose instanceof HTMLButtonElement && active === MobilePanel.Trips) {
         tripClose.focus();
@@ -73,7 +84,6 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
         }
       }
     } else {
-      element.show();
       if (mobile && previous.current) {
         triggers.current[previous.current]?.focus();
       }
