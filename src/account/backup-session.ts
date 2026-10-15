@@ -106,7 +106,12 @@ export const createBackupSession = ({
     load: async () => [...record.workspace.trips],
     save: async (trips) => update({ ...record.workspace, trips: [...trips] }),
   };
+  const wishlist: ICountrySelectionRepository = {
+    load: async () => [...(record.workspace.wishlistCountryIds ?? [])],
+    save: async (ids) => update({ ...record.workspace, wishlistCountryIds: [...ids] }),
+  };
   return {
+    wishlist,
     countries,
     trips,
     flush,

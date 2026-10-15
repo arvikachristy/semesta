@@ -7,8 +7,16 @@ interface IOverlayProps {
   title: string;
   onDismiss: () => void;
   children: ReactNode;
+  className?: string;
+  hideHeader?: boolean;
 }
-export const Overlay = ({ title, onDismiss, children }: IOverlayProps) => {
+export const Overlay = ({
+  title,
+  onDismiss,
+  children,
+  className = '',
+  hideHeader = false,
+}: IOverlayProps) => {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const element = ref.current;
@@ -24,7 +32,7 @@ export const Overlay = ({ title, onDismiss, children }: IOverlayProps) => {
   return (
     <dialog
       ref={ref}
-      className={`${ui.surface} ${ui.raised} ${ui.dialog}`}
+      className={`${ui.surface} ${ui.raised} ${ui.dialog} ${className}`}
       aria-label={title}
       onCancel={(event) => {
         event.preventDefault();
@@ -44,12 +52,14 @@ export const Overlay = ({ title, onDismiss, children }: IOverlayProps) => {
         }
       }}
     >
-      <header className={ui.dialogHeader}>
-        <h2>{title}</h2>
-        <Button variant={ButtonVariant.Quiet} onClick={onDismiss} aria-label={`Close ${title}`}>
-          Close
-        </Button>
-      </header>
+      {!hideHeader && (
+        <header className={ui.dialogHeader}>
+          <h2>{title}</h2>
+          <Button variant={ButtonVariant.Quiet} onClick={onDismiss} aria-label={`Close ${title}`}>
+            Close
+          </Button>
+        </header>
+      )}
       {children}
     </dialog>
   );

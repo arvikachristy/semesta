@@ -1,19 +1,26 @@
 # Semesta
 
-Selecting a trip opens Trip Studio using the existing planner and trip repository.
-The destination, abstract journey route and readiness panel form the main workspace.
-Collapsed category tickets use real bookings, with create/edit forms in compact
-dialogs. Travellers are optional real trip data; initials appear when no avatar is
-provided. Collection, Trips and account navigation stay available throughout.
-Choose optional Transportation, Accommodation, Activities, Restaurants and Travel
-essentials categories. Turning a category off preserves its items but excludes them
-from readiness; empty categories never lower progress. Category and overall bars
-count Booked items (Ready for essentials). Expand an item to change Idea, To book,
-or Booked status and edit its date/time, details, reference and http/https link.
-Back to collection restores the glasses and existing trip editing controls.
-Trip rows and successful trip creation open Studio directly. Returning shows the
-compact chronological trip list; metadata editing and confirmed deletion live in
-Studio's More menu. There is no intermediate sidebar trip-details view.
+Your world starts with seven continent glasses containing countries you have **been to**.
+Tap a glass to browse that continent, or tap a jelly to open its country. Dragging,
+rotating, panning and pinching still work. **All countries** on desktop and
+**Countries** on mobile provide the same keyboard-accessible browser.
+
+The country modal combines a flag grid, continent selector, search and **All / Been to /
+Bucket list** filters. Selecting a flag reveals actions in the same modal: mark a
+visit, save a wish, or plan a trip. Wishes never add jellies and can include return
+visits. Existing trips are listed individually; a new trip is always available.
+
+**Plan a trip** saves a destination-filled draft and opens Trip Studio immediately.
+Dates, travellers and bookings can come later. One planning board starts with
+**Things to do / Getting there / Your stay**, using the existing booking editors.
+Optional categories remain available; disabling one keeps its saved items. Only
+added items count toward readiness. Back returns to the original country, continent,
+search and filter. Trips opened from the timeline return to Trips instead.
+
+After travelling, **Mark countries visited** asks which destinations were actually
+visited. Confirmation adds new jellies, fulfils those wishes and records the visits
+on the retained trip. Repeat visits do not create duplicate jellies. Planning or
+booking alone never changes visited countries.
 
 Local trips and account backups use the same validators and keep storage version 1.
 Legacy completed booleans map to Booked or To book, with every item and ID retained.
@@ -25,10 +32,12 @@ their details; mark them booked (or ready for essentials) to update the progress
 Only added items count towards progress. Planning is saved with the trip and included
 in account backups; existing trips start with an empty plan.
 
-The destination picker has 198 entries: the UK is represented by England, Scotland,
+The destination picker has 199 entries: the UK is represented by England, Scotland,
 Wales and Northern Ireland instead of a separate United Kingdom option. Previously
 saved UK trips remain readable. Country counts in older performance measurements
-refer to the catalogue used when those measurements were recorded.
+refer to the catalogue used when those measurements were recorded. Hong Kong is a separate
+travel destination with ISO code HK. Vatican City retains the VA ID used in existing
+saved trips. See [catalogue sources and policy](docs/country-catalogue.md).
 
 semesta means universe in Bahasa Indonesia. My mother tongue.
 embarking my creative journey leveraging my background in Frontend engineering
@@ -38,7 +47,7 @@ each semesta will be a personal space journey telling hidden stories but at the 
 
 # Let's begin
 
-A minimal Three.js learning workspace inside Semesta. React renders the canvas and one bottom country checklist; raw Three.js drops selected miniature gummy flags into seven open continent glasses in a pale pink world. Built with Vite, TypeScript and plain CSS.
+A minimal Three.js learning workspace inside Semesta. React renders the canvas and country browser; raw Three.js drops selected miniature gummy flags into seven open continent glasses in a pale pink world. Built with Vite, TypeScript and plain CSS.
 
 ```sh
 npm ci
@@ -47,15 +56,20 @@ npm run dev
 
 The same playground is available at `/` and `/countryjellies/`.
 
-Open **Countries** at the bottom to search and tick any of the 198 destinations (194 state entries plus the four UK constituent nations), grouped by continent. Indonesia is selected on a first visit. Selections, including an intentionally empty selection, survive reloads in this browser. Ticking a country queues one miniature jelly into its continent glass; unticking removes it, including during loading or grabbing. All 198 can be selected together; large selections fill gradually to keep input responsive. Antarctica has no state in this catalogue, so its glass stays empty. Grab a region to stretch a jelly, then release to let it settle. Drag a glass to rotate the circle; drag the background to pan and use the wheel to zoom. Panning follows ground-plane ray intersections at the current zoom and can reach every glass within the composition bounds plus a small margin. Two-finger dragging pans over glasses; changing the finger spacing zooms. Touch updates are combined once per frame to avoid accidental zoom during a parallel drag. Mouse and touch use Pointer Events. Wheel/trackpad zoom and two-finger touch pinch share proportional camera zoom and the same distance limits. Spreading fingers zooms in; bringing them together zooms out. Starting a pinch cancels a local grab without launching the jelly, and one-finger movement stays paused until all fingers lift. `zoom.ts` normalizes wheel units; `pointer.ts` tracks the touch pair; `pan.ts` maps screen movement to the ground and defines the travel margin.
+Open **Countries** to browse the 199 destinations (194 state entries, Hong Kong
+and the four UK constituent nations), grouped by continent. Indonesia remains the
+legacy first-visit default. Saved visits, including an intentionally empty collection,
+survive reloads. Marking a country visited queues its jelly; removing a visit removes
+it. Wishes have their own repository and do not affect the scene. Antarctica has no
+selectable destinations in this catalogue, so its glass stays empty. Grab a region to stretch a jelly, then release to let it settle. Drag a glass to rotate the circle; drag the background to pan and use the wheel to zoom. Panning follows ground-plane ray intersections at the current zoom and can reach every glass within the composition bounds plus a small margin. Two-finger dragging pans over glasses; changing the finger spacing zooms. Touch updates are combined once per frame to avoid accidental zoom during a parallel drag. Mouse and touch use Pointer Events. Wheel/trackpad zoom and two-finger touch pinch share proportional camera zoom and the same distance limits. Spreading fingers zooms in; bringing them together zooms out. Starting a pinch cancels a local grab without launching the jelly, and one-finger movement stays paused until all fingers lift. `zoom.ts` normalizes wheel units; `pointer.ts` tracks the touch pair; `pan.ts` maps screen movement to the ground and defines the travel margin.
 
-The token at the top right shows FPS and average milliseconds per frame, sampled from the scene loop once per second. Green **Butter mode** means at least 50 FPS, amber **Jelly legs** means 30–49 FPS, and red **Potato mode** means below 30 FPS. Hidden-tab pauses reset sampling. This measures frame pacing; it does not isolate CPU or GPU cost. Thresholds and labels live in `src/performance/frame-monitor.ts`.
+In development, the token at the top right shows FPS and average milliseconds per frame, sampled from the scene loop once per second. Green **Butter mode** means at least 50 FPS, amber **Jelly legs** means 30–49 FPS, and red **Potato mode** means below 30 FPS. Hidden-tab pauses reset sampling. This measures frame pacing; it does not isolate CPU or GPU cost. Thresholds and labels live in `src/performance/frame-monitor.ts`.
 
 ## Upcoming trips MVP
 
-**Upcoming trips** opens a glass timeline panel on the right on desktop. On mobile, the bottom **Countries / Trips / Account** bar opens one bottom sheet at a time. Browsing uses a half-height sheet; trip details and editing expand it to nearly the full visible screen. Close, Escape, or a backdrop tap dismisses the sheet. Drafts survive dismissal and switching sheets; the scene cannot receive gestures while a sheet is open. The form scrolls above fixed actions, and sheet height follows the visual viewport when a keyboard opens. Dated trips appear chronologically, with undated trips last. Rows show compact dates and a circular flag thumbnail for the first destination; the **+** button creates a trip. Select a row to see its destinations and notes, edit it, or delete with confirmation. **All trips** returns to the timeline. Use **Save trip** to keep changes. Collapsing the panel retains the current draft, but reloading discards unsaved edits.
+**Upcoming trips** opens a glass timeline panel on the right on desktop. On mobile, the bottom **Countries / Trips / Account** bar opens one bottom sheet at a time. Country browsing uses a nearly full-height sheet so flags and country actions remain reachable; trip lists use the compact sheet and trip editing expands it. Close, Escape, or a backdrop tap dismisses the sheet. Drafts survive dismissal and switching sheets; the scene cannot receive gestures while a sheet is open. The form scrolls above fixed actions, and sheet height follows the visual viewport when a keyboard opens. Dated trips appear chronologically, with undated trips last. Rows show compact dates and a circular flag thumbnail for the first destination; the **+** button creates a trip. Select a row to see its destinations and notes, edit it, or delete with confirmation. **All trips** returns to the timeline. Use **Save trip** to keep changes. Collapsing the panel retains the current draft, but reloading discards unsaved edits.
 
-Trips are separate from the cups: planning or deleting a trip never changes selected jellies. Destinations reuse the existing country registry and `CountryList` IDs. Guest trips are saved in this browser under `semesta.upcoming-trips`. Optional email-code or Google sign-in backs up countries and trips across devices once Supabase is configured. Storage failures show a warning. Both guest and account persistence use the existing repository interfaces. See [account setup](docs/account-setup.md) for the SQL migration, authentication providers and email delivery configuration.
+Planning or deleting a trip never changes visited jellies. Only an explicit visit action updates the collection. Destinations reuse the existing country registry and `CountryList` IDs. Guest trips are saved in this browser under `semesta.upcoming-trips`. Optional email-code or Google sign-in backs up visited countries, wishes and trips across devices once Supabase is configured. Storage failures show a warning. Both guest and account persistence use the existing repository interfaces. See [account setup](docs/account-setup.md) for the SQL migration, authentication providers and email delivery configuration.
 
 ```mermaid
 flowchart LR
@@ -66,12 +80,30 @@ flowchart LR
   storage --> account["Optional account backup: local cache + Supabase"]
 ```
 
+## Country journey persistence and verification
+
+Visited IDs keep the existing `semesta.country-selection` record. Wishes use
+`semesta.country-wishlist` with `{version: 1, countryIds: []}` and start empty.
+Legacy account workspaces without `wishlistCountryIds` decode to an empty wish list;
+imports merge wishes independently of visits. Trip `visitedCountryIds` are optional,
+validated against that trip's destinations, and included in account backups. No
+existing visits are reclassified as wishes.
+
+`country-browser-state.ts` keeps browsing context in App, while `country-search.ts`
+shares names, codes and aliases with the trip destination picker. Scene tap callbacks
+pass IDs to React; persistence stays behind repositories.
+
+Run `npm run check` and `npm run build`. With the app running, `npm run test:browser`
+checks the complete country-to-trip-to-visit journey at 320px, 390px and desktop widths.
+Set `BROWSER_URL` for a preview server, `CHROMIUM_PATH` for a custom executable and
+`BROWSER_OUTPUT` for screenshots. The default uses Playwright's installed Chromium.
+
 ## How the files fit together
 
 ```mermaid
 flowchart TD
   entry["index.html → main.tsx → app.tsx"] --> scene["playground.ts"]
-  entry --> selector["country-selector.tsx: grouped checkboxes"]
+  entry --> selector["country-selector.tsx: shared country browser"]
   registry["data/countries.ts + country/continent enums: artwork and metadata"] --> selector
   selector --> selected["use-country-selection: showedCountries CountryList array"]
   selected <--> persistence["use-country-selection → storage/country-selection: versioned local IDs"]
@@ -128,7 +160,7 @@ Rendering starts at pixel ratio 1 and can step down to 0.875 or 0.75 after susta
 
 The existing `camera.ts`, `scene.ts`, `renderer.ts`, and `resize.ts` keep the Three.js pieces explicit. React owns the selected enum IDs through `use-country-selection.ts`; rendering and physics stay outside React. The registry drives both the checklist and the flags. `country-collection.ts` reconciles IDs, bounds artwork construction to one load at a time, spreads drops across each glass, and slows insertion while a pile is active, with an admission target of 12 awake bodies globally and a bounded pause so loading cannot stall. Contacts may wake additional existing bodies; the limit controls new drops, never freezes active grabs. It cancels stale loads and releases resources when countries are removed. Failed artwork leaves the saved choice checked; untick and tick to retry.
 
-`storage/country-selection.ts` is the only module that accesses localStorage. The key `semesta.country-selection` holds `{version: 1, selectedCountryIds: ["ID", "FR"]}`. IDs are validated, deduplicated and restored in canonical order. Invalid records fall back to Indonesia; empty arrays remain empty. If storage is disabled, selections work in memory. Hydration completes before any jelly is requested. The asynchronous `ICountrySelectionRepository` (`load`/`save`) allows a later API adapter without changing the selector or scene. Only choices are persisted, not physics positions or load status. Browser storage is per origin/device; this does not sync accounts or other tabs automatically.
+`storage/country-selection.ts` owns visited-country localStorage access. The key `semesta.country-selection` holds `{version: 1, selectedCountryIds: ["ID", "FR"]}`. IDs are validated, deduplicated and restored in canonical order. Invalid records fall back to Indonesia; empty arrays remain empty. If storage is disabled, selections work in memory. Hydration completes before any jelly is requested. The asynchronous `ICountrySelectionRepository` (`load`/`save`) allows a later API adapter without changing the selector or scene. Only choices are persisted, not physics positions or load status. Browser storage is per origin/device; this does not sync accounts or other tabs automatically.
 
 ## Checks
 

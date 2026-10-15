@@ -24,6 +24,7 @@ describe('pointer gestures', () => {
   let unbind: () => void;
   let glassPoint: THREE.Vector2;
   const zoomBy = vi.fn();
+  const onSelectGlass = vi.fn();
   const frames = new Map<number, FrameRequestCallback>();
   let nextFrame = 0;
   const flushGesture = () => {
@@ -51,6 +52,7 @@ describe('pointer gestures', () => {
       blocks,
       glasses,
       zoomBy,
+      onSelectGlass,
       panBetween: createCameraPan(camera, cameraTarget, glasses.bounds),
     }).unbind;
   };
@@ -65,13 +67,11 @@ describe('pointer gestures', () => {
     });
     vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id));
     zoomBy.mockClear();
+    onSelectGlass.mockClear();
     canvas = document.createElement('canvas');
     document.body.append(canvas);
     vi.spyOn(canvas, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 1000, 800));
-    Object.defineProperties(canvas, {
-      clientWidth: { value: 1000 },
-      clientHeight: { value: 800 },
-    });
+    Object.defineProperties(canvas, { clientWidth: { value: 1000 }, clientHeight: { value: 800 } });
     canvas.setPointerCapture = (id) => {
       captures.add(id);
     };
@@ -219,51 +219,21 @@ describe('pointer gestures', () => {
   });
 
   it.each(Object.values(PointerTypes))(
-    'selects a tapped jelly with %s while preserving drag release',
+    'opens a continent on a %s tap but not after rotating or cancellation',
     (pointerType) => {
-      unbind();
-      const object = new THREE.Group();
-      object.position.copy(glasses.object.children[0].position);
-      object.position.y = 1.5;
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial());
-      object.add(mesh);
-      const endGrab = vi.fn();
-      const block: ReturnType<typeof createFlagBlock> = {
-        object,
-        beginGrab: vi.fn(),
-        moveGrab: vi.fn(),
-        endGrab,
-        setBounds: vi.fn(),
-        setCountry: vi.fn(async () => {}),
-        update: vi.fn(),
-        dispose: vi.fn(),
-        syncSurface: vi.fn(),
-        getBody: () => null,
-      };
-      const onSelectBlock = vi.fn();
-      unbind = bindPointerEvents({
-        canvas,
-        camera,
-        blocks: [block],
-        glasses,
-        panBetween: createCameraPan(camera, cameraTarget, glasses.bounds),
-        onSelectBlock,
-      }).unbind;
       const { x, y } = glassPoint;
       send(Events.down, x, y, { pointerType });
       send(Events.up, x, y, { pointerType });
-      expect(onSelectBlock).toHaveBeenCalledExactlyOnceWith(block);
-      expect(endGrab).toHaveBeenLastCalledWith(false);
+      expect(onSelectGlass).toHaveBeenCalledOnce();
       send(Events.down, x, y, { pointerType });
       send(Events.move, x + 50, y, { pointerType });
       send(Events.up, x + 50, y, { pointerType });
-      expect(onSelectBlock).toHaveBeenCalledOnce();
-      expect(endGrab).toHaveBeenLastCalledWith(true);
-      mesh.geometry.dispose();
-      mesh.material.dispose();
+      expect(onSelectGlass).toHaveBeenCalledOnce();
+      send(Events.down, x, y, { pointerType });
+      send(Events.cancel, x, y, { pointerType });
+      expect(onSelectGlass).toHaveBeenCalledOnce();
     },
   );
-
   it('releases capture and removes listeners on cleanup', () => {
     const { x, y } = glassPoint;
     send(Events.down, x, y);
@@ -277,11 +247,7 @@ describe('pointer gestures', () => {
   it('zooms and pans with both touch pointers, then waits for all fingers to lift', () => {
     const before = cameraTarget.clone();
     const first = { pointerType: PointerTypes.touch, pointerId: 1 };
-    const second = {
-      pointerType: PointerTypes.touch,
-      pointerId: 2,
-      isPrimary: false,
-    };
+    const second = { pointerType: PointerTypes.touch, pointerId: 2, isPrimary: false };
     send(Events.down, 10, 300, first);
     send(Events.down, 110, 300, second);
     send(Events.move, 160, 300, second);
@@ -319,11 +285,7 @@ describe('pointer gestures', () => {
     const before = cameraTarget.clone();
     const { x, y } = glassPoint;
     const first = { pointerType: PointerTypes.touch, pointerId: 1 };
-    const second = {
-      pointerType: PointerTypes.touch,
-      pointerId: 2,
-      isPrimary: false,
-    };
+    const second = { pointerType: PointerTypes.touch, pointerId: 2, isPrimary: false };
     send(Events.down, x, y, first);
     send(Events.down, x + 100, y, second);
     send(Events.move, x + 50, y, first);
@@ -338,11 +300,7 @@ describe('pointer gestures', () => {
 
   it('does not temporarily zoom when both fingers move together in a frame', () => {
     const first = { pointerType: PointerTypes.touch, pointerId: 1 };
-    const second = {
-      pointerType: PointerTypes.touch,
-      pointerId: 2,
-      isPrimary: false,
-    };
+    const second = { pointerType: PointerTypes.touch, pointerId: 2, isPrimary: false };
     send(Events.down, 10, 300, first);
     send(Events.down, 110, 300, second);
     send(Events.move, 90, 300, first);
@@ -356,11 +314,7 @@ describe('pointer gestures', () => {
     'cleans up a pinch on %s without stale gestures',
     (eventName) => {
       const first = { pointerType: PointerTypes.touch, pointerId: 1 };
-      const second = {
-        pointerType: PointerTypes.touch,
-        pointerId: 2,
-        isPrimary: false,
-      };
+      const second = { pointerType: PointerTypes.touch, pointerId: 2, isPrimary: false };
       send(Events.down, 10, 10, first);
       send(Events.down, 110, 10, second);
       if (eventName === Events.blur) {

@@ -20,6 +20,18 @@ const setup = (dirty = false) => {
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 describe('ordered account backup', () => {
+  it('backs up wishes alongside visits without changing either collection', async () => {
+    const { session, cloud } = setup();
+    await session.wishlist.save([CountryList.France]);
+    await session.countries.save([CountryList.Indonesia]);
+    await vi.advanceTimersByTimeAsync(accountConfig.saveDelay);
+    expect(cloud.save).toHaveBeenCalledExactlyOnceWith(
+      { countries: [CountryList.Indonesia], trips: [], wishlistCountryIds: [CountryList.France] },
+      1,
+    );
+    expect(await session.wishlist.load()).toEqual([CountryList.France]);
+    session.dispose();
+  });
   it('never uploads a hydrated workspace until it is edited', async () => {
     const { session, cloud } = setup();
     session.start();
@@ -34,11 +46,17 @@ describe('ordered account backup', () => {
     await session.countries.save([CountryList.France]);
     await session.countries.save([]);
     expect(persist).toHaveBeenLastCalledWith(
-      expect.objectContaining({ dirty: true, workspace: { countries: [], trips: [] } }),
+      expect.objectContaining({
+        dirty: true,
+        workspace: { countries: [], trips: [], wishlistCountryIds: [] },
+      }),
     );
     expect(onStatus).toHaveBeenLastCalledWith(BackupStatus.Pending);
     await vi.advanceTimersByTimeAsync(accountConfig.saveDelay);
-    expect(cloud.save).toHaveBeenCalledExactlyOnceWith({ countries: [], trips: [] }, 1);
+    expect(cloud.save).toHaveBeenCalledExactlyOnceWith(
+      { countries: [], trips: [], wishlistCountryIds: [] },
+      1,
+    );
     expect(onStatus).toHaveBeenLastCalledWith(BackupStatus.Saved);
     session.dispose();
   });
@@ -58,7 +76,10 @@ describe('ordered account backup', () => {
     await first;
     expect(persist).toHaveBeenLastCalledWith(expect.objectContaining({ revision: 2, dirty: true }));
     await vi.advanceTimersByTimeAsync(accountConfig.saveDelay);
-    expect(cloud.save).toHaveBeenLastCalledWith({ countries: [], trips: [] }, 2);
+    expect(cloud.save).toHaveBeenLastCalledWith(
+      { countries: [], trips: [], wishlistCountryIds: [] },
+      2,
+    );
     session.dispose();
   });
   it('retains an offline edit and retries without dropping intentional empty selections', async () => {
@@ -68,7 +89,10 @@ describe('ordered account backup', () => {
     await session.flush();
     expect(onStatus).toHaveBeenLastCalledWith(BackupStatus.Pending);
     await vi.advanceTimersByTimeAsync(accountConfig.retryDelay);
-    expect(cloud.save).toHaveBeenLastCalledWith({ countries: [], trips: [] }, 1);
+    expect(cloud.save).toHaveBeenLastCalledWith(
+      { countries: [], trips: [], wishlistCountryIds: [] },
+      1,
+    );
     expect(onStatus).toHaveBeenLastCalledWith(BackupStatus.Saved);
     session.dispose();
   });

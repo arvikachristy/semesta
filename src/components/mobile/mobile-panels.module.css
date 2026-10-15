@@ -95,3 +95,9 @@
   box-shadow: none;
   backdrop-filter: none;
 }
+
+.shell[data-mobile='true'][data-active='countries']:not([data-active='']) {
+  --sheet-height: calc(
+    var(--visible-height, 100dvh) - max(var(--space-4), env(safe-area-inset-top))
+  );
+}

@@ -16,7 +16,10 @@ describe('account workspace migration', () => {
         trips: [{ ...trip, participants: [{ id: 'person', name: 'Taylor' }] }],
       },
     };
-    expect(decodeWorkspaceRecord(JSON.parse(JSON.stringify(record)))).toEqual(record);
+    expect(decodeWorkspaceRecord(JSON.parse(JSON.stringify(record)))).toEqual({
+      ...record,
+      workspace: { ...record.workspace, wishlistCountryIds: [] },
+    });
     expect(() =>
       decodeWorkspaceRecord({
         ...record,

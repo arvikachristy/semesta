@@ -4,7 +4,6 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TripStudio } from './trip-studio';
 import { emptyTripDetails } from '../../types/trip';
-import type { ITrip } from '../../types/trip';
 import { CountryList } from '../../types/country';
 import { tripStorage } from '../../storage/trips';
 const host = document.createElement('div');
@@ -37,144 +36,45 @@ afterEach(async () => {
   Reflect.deleteProperty(HTMLDialogElement.prototype, 'close');
 });
 describe('Trip Studio planning', () => {
-  it('confirms suggested flights in one click without creating placeholders or invented details', async () => {
+  it('starts with one plan board and no invented readiness or bookings', async () => {
     const trip = {
       ...emptyTripDetails,
-      id: 'lisbon-quick',
-      name: 'Lisbon',
-      startDate: '2027-11-19',
-      endDate: '2027-11-22',
+      id: 'draft',
+      name: 'Peru trip',
+      countryIds: [CountryList.Peru],
     };
     localStorage.setItem(tripStorage.key, JSON.stringify({ version: 1, trips: [trip] }));
     await act(async () => root.render(<TripStudio trip={trip} onBack={vi.fn()} />));
-    const plans = host.querySelector('section[aria-label="Your plans"]');
-    expect(plans?.textContent).toContain('Outbound flight19 Nov');
-    expect(plans?.textContent).toContain('Return flight22 Nov');
-    expect(plans?.textContent).toContain('Your stay19–22 Nov');
-    expect(
-      JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips[0].planning,
-    ).toBeUndefined();
-    expect(host.querySelector('dialog[open]')).toBeNull();
-
-    const outbound = plans?.querySelector('button[aria-label="Mark outbound flight booked"]');
-    if (!(outbound instanceof HTMLButtonElement)) {
-      throw new Error('Missing outbound flight action');
+    expect(host.querySelector('section[aria-label="Your plans"]')).toBeNull();
+    expect(host.querySelector('section[aria-label="Trip readiness"]')).toBeNull();
+    expect(host.textContent).toContain('Your trip plan');
+    expect(host.textContent).toContain('Things to do');
+    expect(host.textContent).not.toContain('0%');
+    expect(host.querySelector('form')).toBeNull();
+    const add = [...host.querySelectorAll('button')].find(
+      (button) => button.textContent === 'Add activities',
+    );
+    if (!add) {
+      throw new Error('Missing idea action');
     }
-    await act(async () => outbound.click());
-    const saved = JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips[0];
-    expect(saved.planning).toHaveLength(1);
-    expect(saved.planning[0]).toMatchObject({
-      templateId: 'outbound-flight',
-      category: 'transportation',
-      name: 'Outbound flight',
-      details: '',
-      status: 'booked',
-      completed: true,
-    });
-    expect(saved.planning[0].dateTime).toBeUndefined();
-    expect(saved.planning[0].bookingReference).toBeUndefined();
-    expect(saved.activePlanningCategories).toEqual(['transportation']);
-    expect(host.textContent).toContain('1 of 1 items booked or ready · 100%');
-    expect(plans?.querySelector('[data-confirmed="true"]')?.textContent).toContain('Booked');
-    expect(host.querySelector('dialog[open]')).toBeNull();
-
-    const returnAction = plans?.querySelector('button[aria-label="Mark return flight booked"]');
-    if (!(returnAction instanceof HTMLButtonElement)) {
-      throw new Error('Missing return flight action');
+    await act(async () => add.click());
+    const input = host.querySelector('input[name="name"]');
+    if (!(input instanceof HTMLInputElement)) {
+      throw new Error('Missing idea name');
     }
-    await act(async () => returnAction.click());
-    const savedAfterReturn = JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips[0];
-    expect(savedAfterReturn.planning).toHaveLength(2);
-    expect(savedAfterReturn.planning[1].templateId).toBe('return-flight');
-    expect(host.textContent).toContain('2 of 2 items booked or ready · 100%');
-  });
-  it('reuses existing bookings, activates a hidden category, and supports undo after reload', async () => {
-    const trip: ITrip = {
-      ...emptyTripDetails,
-      id: 'existing-quick',
-      name: 'Lisbon',
-      startDate: '2027-11-19',
-      endDate: '2027-11-22',
-      activePlanningCategories: ['transportation'],
-      planning: [
-        {
-          id: 'train',
-          category: 'transportation',
-          name: 'Airport train',
-          details: 'Keep this transfer',
-          completed: false,
-        },
-        {
-          id: 'outbound',
-          category: 'transportation',
-          name: 'Outbound flight',
-          details: 'Seat chosen',
-          completed: false,
-        },
-        {
-          id: 'hotel',
-          category: 'accommodation',
-          name: 'Hotel',
-          details: 'Keep this address',
-          completed: false,
-        },
-      ],
-    };
-    localStorage.setItem(tripStorage.key, JSON.stringify({ version: 1, trips: [trip] }));
-    await act(async () => root.render(<TripStudio trip={trip} onBack={vi.fn()} />));
-    const clickPlan = async (label: string) => {
-      const button = host.querySelector(
-        `section[aria-label="Your plans"] button[aria-label="${label}"]`,
-      );
-      if (!(button instanceof HTMLButtonElement)) {
-        throw new Error(`Missing ${label}`);
-      }
-      await act(async () => button.click());
-    };
-    await clickPlan('Mark outbound flight booked');
-    await clickPlan('Mark your stay booked');
-    const saved = JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips[0];
-    expect(saved.planning).toHaveLength(3);
-    expect(saved.planning[0]).toMatchObject({
-      id: 'train',
-      details: 'Keep this transfer',
-      completed: false,
-    });
-    expect(saved.planning[1]).toMatchObject({
-      id: 'outbound',
-      templateId: 'outbound-flight',
-      details: 'Seat chosen',
-      status: 'booked',
-      completed: true,
-    });
-    expect(saved.planning[2]).toMatchObject({
-      id: 'hotel',
-      templateId: 'stay',
-      name: 'Hotel',
-      details: 'Keep this address',
-      status: 'booked',
-      completed: true,
-    });
-    expect(saved.activePlanningCategories).toEqual(['transportation', 'accommodation']);
-    expect(host.textContent).toContain('2 of 3 items booked or ready · 67%');
-
-    await act(async () => root.unmount());
-    root = createRoot(host);
-    await act(async () => root.render(<TripStudio trip={trip} onBack={vi.fn()} />));
-    await clickPlan('Undo Your stay booking');
-    const undone = JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips[0];
-    expect(undone.planning).toHaveLength(3);
-    expect(undone.planning[2]).toMatchObject({
-      id: 'hotel',
-      templateId: 'stay',
-      status: 'to-book',
-      completed: false,
-    });
-    expect(host.textContent).toContain('1 of 3 items booked or ready · 33%');
-    await clickPlan('Mark your stay booked');
+    input.value = 'Walk through Cusco';
+    const form = host.querySelector('form');
+    if (!form) {
+      throw new Error('Missing editor');
+    }
+    await act(async () =>
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })),
+    );
+    expect(host.querySelectorAll('li[data-confirmed]')).toHaveLength(1);
+    expect(host.querySelector('li[data-confirmed]')?.closest('details')?.open).toBe(true);
     expect(
-      JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips[0].planning,
-    ).toHaveLength(3);
+      JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips[0].planning[0],
+    ).toMatchObject({ name: 'Walk through Cusco', category: 'activities', status: 'idea' });
   });
   it('edits metadata without replacing bookings, and requires confirmation before deletion', async () => {
     const trip = {
@@ -182,6 +82,8 @@ describe('Trip Studio planning', () => {
       id: 'lisbon',
       name: 'Lisbon',
       notes: 'Remember the train',
+      countryIds: [CountryList.Portugal, CountryList.France],
+      visitedCountryIds: [CountryList.Portugal, CountryList.France],
       planning: [
         {
           id: 'train',
@@ -221,6 +123,11 @@ describe('Trip Studio planning', () => {
       );
       input.dispatchEvent(new Event('input', { bubbles: true }));
     });
+    const remove = host.querySelector('button[aria-label="Remove France"]');
+    if (!(remove instanceof HTMLButtonElement)) {
+      throw new Error('Missing destination removal');
+    }
+    await act(async () => remove.click());
     await click('Save trip');
     const saved = JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips[0];
     expect(saved).toMatchObject({
@@ -228,6 +135,8 @@ describe('Trip Studio planning', () => {
       name: 'Lisbon summer',
       notes: trip.notes,
       participants: trip.participants,
+      countryIds: [CountryList.Portugal],
+      visitedCountryIds: [CountryList.Portugal],
     });
     expect(saved.planning[0]).toMatchObject({
       id: 'train',
@@ -284,9 +193,9 @@ describe('Trip Studio planning', () => {
       host.querySelectorAll(
         'section[aria-label="Trip Studio planning"] > div:last-of-type > details[open]',
       ),
-    ).toHaveLength(0);
+    ).toHaveLength(2);
     const choose = [...host.querySelectorAll('button')].find(
-      (button) => button.textContent === 'Choose optional categories',
+      (button) => button.textContent === 'Choose categories',
     );
     if (!choose) {
       throw new Error('Missing category action');
@@ -299,12 +208,12 @@ describe('Trip Studio planning', () => {
     }
     await act(async () => accommodation.click());
     expect(host.textContent).toContain('100%');
-    expect(host.querySelector('ul[aria-label="Accommodation bookings"]')).toBeNull();
+    expect(host.querySelector('ul[aria-label="Your stay bookings"]')).toBeNull();
     const stored = JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips[0];
     expect(stored.planning).toHaveLength(2);
     expect(stored.planning[0]).toMatchObject({ id: 'train', status: 'booked', completed: true });
     await act(async () => accommodation.click());
-    expect(host.querySelector('ul[aria-label="Accommodation bookings"]')?.textContent).toContain(
+    expect(host.querySelector('ul[aria-label="Your stay bookings"]')?.textContent).toContain(
       'Hotel',
     );
     expect(host.textContent).toContain('50%');

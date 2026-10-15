@@ -6,7 +6,7 @@ import { join } from 'node:path';
 const settings = {
   url: process.env.BENCHMARK_URL ?? 'http://127.0.0.1:5173/',
   output: process.env.BENCHMARK_OUTPUT ?? join(tmpdir(), 'semesta-country-benchmark.json'),
-  counts: (process.env.BENCHMARK_COUNTS ?? '1,7,25,60,198').split(',').map(Number),
+  counts: (process.env.BENCHMARK_COUNTS ?? '1,7,25,60,199').split(',').map(Number),
   duration: 4000,
   settle: 10000,
   viewport: { width: 1280, height: 800 },

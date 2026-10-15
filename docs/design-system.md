@@ -7,7 +7,7 @@ Semesta's small DOM design system: warm translucent surfaces, burgundy ink, quie
 - `src/styles/tokens.css`: named colours, spacing, type, radii, heights, shadows and motion.
 - `src/components/ui/ui.module.css`: surfaces, fields, focus, action rows and interaction states.
 - `src/components/ui/button.tsx`: native React button with shared variants and ref support.
-- Existing examples: `trip-editor.tsx` for a form, `upcoming-trips.tsx` for a panel, `country-selector.tsx` for search, checkboxes and a confirmation dialog.
+- Existing examples: `trip-editor.tsx` for a form, `upcoming-trips.tsx` for a panel, `country-selector.tsx` for the shared flag-grid country modal.
 
 Read these before making a component. Feature CSS Modules arrange content; shared recipes define how controls look. Do not copy the old feature-specific button/field rules or introduce a second palette.
 
@@ -69,8 +69,8 @@ Token naming follows the [Design Tokens Community Group](https://www.w3.org/comm
 ## Mobile sheets
 
 Trip Studio keeps the collection mounted and uses the existing navigation shell for
-Collection, Trips and Account access. Its abstract SVG journey and transparent
-readiness panel lead into collapsed booking tickets. Category selection, traveller
+Countries, Trips and Account access. Its abstract SVG journey and transparent
+readiness panel lead into a single planning board. Empty plans omit readiness percentages; categories start expanded so newly added ideas remain visible. Category selection, traveller
 management and booking create/edit actions use the shared native Overlay dialog;
 forms are mounted only on request. Escape and Close dismiss overlays, focus returns
 to the opener, and native date/time inputs retain their usual behaviour. All ticket
@@ -78,8 +78,19 @@ content and progress come from the existing planning model and repository.
 
 At 600px and below, route the Countries, Trips and Account interfaces through `MobilePanels`. It owns the single active sheet and bottom navigation. Keep feature components mounted so closing a sheet or switching tabs preserves drafts. Desktop keeps its existing floating controls.
 
-Use the native dialog modal state for focus containment and scene input blocking. Countries and trip lists use the short sheet; trip details/editing use the expanded sheet. Use explicit Close and backdrop dismissal; no draggable heights in the MVP. The form fields scroll while actions and navigation remain visible. `visualViewport` sizes the sheet above the mobile keyboard; include safe-area padding. Use `--color-sheet` for mobile readability.
+Use the native dialog modal state for focus containment and scene input blocking. Countries use the expanded sheet with a scrolling flag grid and independently scrolling country actions. Trip lists use the short sheet; editing expands it. Use explicit Close and backdrop dismissal; no draggable heights in the MVP. The form fields scroll while actions and navigation remain visible. `visualViewport` sizes the sheet above the mobile keyboard; include safe-area padding. Use `--color-sheet` for mobile readability.
 
 Check Escape and focus return, switching tabs, a nested confirmation dialog, draft retention and keyboard-sized viewport changes when modifying this shell. Do not give individual features independent mobile overlays.
 
 Account backup uses the same controls and surfaces. Desktop opens a native modal from the quiet top-left entry; mobile uses the shared Account sheet. Keep email-code fields labelled, asynchronous status in live regions, and destructive account actions behind explicit confirmation.
+
+## Country browser
+
+Desktop wraps `CountryBrowser` in the shared native Overlay; mobile places its content
+inside the existing MobilePanels dialog. Never nest another country dialog. The
+header shows the continent and visited progress, followed by native search/select
+controls and All / Been to / Bucket list filters. Flag tiles select a country;
+selection reveals visit, wish and trip actions in a pinned footer. Use shared Button
+variants and field recipes. Wishes use a distinct diamond marker; visited flags use
+a check. Both states can coexist for return visits. Trip return restores browser
+state; confirming visits explicitly returns to the scene.
