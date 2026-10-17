@@ -79,6 +79,12 @@ readiness hero, category chooser or traveller editor is shown. Escape and Close
 dismiss overlays and restore focus. Native date/time inputs keep their usual behaviour.
 Use the existing tokens and controls; the MVP adds no image service or new theme.
 
+Trip setup and stop editors use the shared CountryPicker destination mode. Typing
+shows up to eight matching country names and flags using the existing country/code/
+alias matcher. Tap a result or press Enter to select it. Escape closes suggestions
+without closing the dialog. Country results replace the native datalist; unmatched
+city names remain usable as free text. Results scroll within a bounded area.
+
 At 600px and below, route the Countries, Trips and Account interfaces through `MobilePanels`. It owns the single active sheet and bottom navigation. Keep feature components mounted so closing a sheet or switching tabs preserves drafts. Desktop keeps its existing floating controls.
 
 Use the native dialog modal state for focus containment and scene input blocking. Countries use the expanded sheet with a scrolling flag grid and compact feedback actions. Trip lists use the short sheet; editing expands it. Use explicit Close and backdrop dismissal; no draggable heights in the MVP. The form fields scroll while actions and navigation remain visible. `visualViewport` sizes the sheet above the mobile keyboard; include safe-area padding. Use `--color-sheet` for mobile readability.

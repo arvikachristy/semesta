@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { countries } from '../../data/countries';
+import { CountryPicker, CountryPickerMode } from '../shared/country-picker/country-picker';
 import type { ITrip } from '../../types/trip';
 import { Button, ButtonVariant } from '../ui/button';
 import { Overlay } from '../ui/overlay';
@@ -49,17 +51,14 @@ export const TripStopEditor = ({ trip, stopId, onCancel, onSave }: ITripStopEdit
       >
         {canSplit ? (
           <>
-            <label className={ui.field}>
-              {editing ? 'Where?' : 'Where next?'}
-              <input
-                className={ui.control}
-                required
-                maxLength={80}
-                placeholder="Country or city"
-                value={name}
-                onChange={(event) => setName(event.currentTarget.value)}
-              />
-            </label>
+            <CountryPicker
+              mode={CountryPickerMode.Destination}
+              selectedCountries={[]}
+              searchValue={name}
+              onSearchChange={setName}
+              label={editing ? 'Where?' : 'Where next?'}
+              onToggle={(country) => setName(countries[country].name)}
+            />
             <label className={ui.field}>
               How many nights?
               <input

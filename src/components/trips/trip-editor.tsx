@@ -1,5 +1,6 @@
-import { useId, useState } from 'react';
-import { countries, countryIds } from '../../data/countries';
+import { useState } from 'react';
+import { countries } from '../../data/countries';
+import { CountryPicker, CountryPickerMode } from '../shared/country-picker/country-picker';
 import type { TTripDetails } from '../../types/trip';
 import { Button, ButtonVariant } from '../ui/button';
 import { createTripDetails, getDestination, getDurationDays, tripDuration } from './trip-itinerary';
@@ -13,7 +14,6 @@ interface ITripEditorProps {
 }
 
 export const TripEditor = ({ initial, onSave, onCancel }: ITripEditorProps) => {
-  const destinations = useId();
   const [destination, setDestination] = useState(initial ? getDestination(initial) : '');
   const [days, setDays] = useState(initial ? getDurationDays(initial) : tripDuration.defaultDays);
   const [dated, setDated] = useState(Boolean(initial?.startDate && initial.endDate));
@@ -80,24 +80,15 @@ export const TripEditor = ({ initial, onSave, onCancel }: ITripEditorProps) => {
       }}
     >
       <div className={styles.editorFields}>
-        <label className={ui.field}>
-          <span className={styles.question}>Where do you want to go?</span>
-          <input
-            className={ui.control}
-            name="destination"
-            required
-            maxLength={80}
-            list={destinations}
-            value={destination}
-            placeholder="Country or city"
-            onChange={(event) => setDestination(event.currentTarget.value)}
-          />
-          <datalist id={destinations}>
-            {countryIds.map((id) => (
-              <option key={id} value={countries[id].name} />
-            ))}
-          </datalist>
-        </label>
+        <CountryPicker
+          mode={CountryPickerMode.Destination}
+          selectedCountries={[]}
+          searchValue={destination}
+          onSearchChange={setDestination}
+          label="Where do you want to go?"
+          labelClassName={styles.question}
+          onToggle={(country) => setDestination(countries[country].name)}
+        />
         <fieldset className={styles.duration}>
           <legend className={styles.question}>How long?</legend>
           <div className={styles.durationModes}>

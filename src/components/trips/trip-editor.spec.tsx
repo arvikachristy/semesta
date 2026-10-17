@@ -36,6 +36,43 @@ const submit = async () => {
   );
 };
 describe('two-question trip setup', () => {
+  it('shows tappable country results for a partial name and saves the selected country', async () => {
+    const onSave = vi.fn();
+    await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));
+    await fill('input[name="destination"]', 'Jap');
+    const result = [...host.querySelectorAll('[aria-label="Country suggestions"] button')].find(
+      (button) => button.textContent === 'Japan',
+    );
+    if (!(result instanceof HTMLButtonElement)) {
+      throw new Error('Missing Japan search result');
+    }
+    await act(async () => result.click());
+    expect(host.querySelector('[aria-label="Country suggestions"]')).toBeNull();
+    await submit();
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Japan', countryIds: [CountryList.Japan] }),
+    );
+  });
+  it('selects a country using Enter without submitting the trip form', async () => {
+    const onSave = vi.fn();
+    await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));
+    await fill('input[name="destination"]', 'JP');
+    const input = host.querySelector('input[name="destination"]');
+    if (!(input instanceof HTMLInputElement)) {
+      throw new Error('Missing destination search');
+    }
+    await act(async () =>
+      input.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+      ),
+    );
+    expect(input.value).toBe('Japan');
+    expect(onSave).not.toHaveBeenCalled();
+    await submit();
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ countryIds: [CountryList.Japan] }),
+    );
+  });
   it('creates a flexible trip with a country, duration and generated title, without booking records', async () => {
     const onSave = vi.fn();
     await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));
