@@ -15,13 +15,14 @@ interface IUpcomingTripsProps {
   tripSession?: ReturnType<typeof useTrips>;
   mobilePanel?: IMobilePanelState;
   onOpenStudio: (trip: ITrip) => void;
+  fullPage?: boolean;
 }
 export const UpcomingTrips = memo(
-  ({ mobilePanel, onOpenStudio, tripSession }: IUpcomingTripsProps) => {
+  ({ mobilePanel, onOpenStudio, tripSession, fullPage = false }: IUpcomingTripsProps) => {
     const localSession = useTrips(useAccount().trips, !tripSession);
     const { trips, ready, warning, saveTrip } = tripSession ?? localSession;
     const [desktopOpen, setOpen] = useState(false);
-    const open = mobilePanel?.open ?? desktopOpen;
+    const open = fullPage || (mobilePanel?.open ?? desktopOpen);
     const [creating, setCreating] = useState(false);
     return (
       <aside
@@ -30,21 +31,28 @@ export const UpcomingTrips = memo(
         data-mobile={Boolean(mobilePanel)}
         data-expanded={creating}
         data-editing={creating}
+        data-full-page={fullPage}
       >
         <header className={styles.header}>
           <h2>
-            <Button
-              variant={ButtonVariant.Plain}
-              className={styles.heading}
-              aria-expanded={open}
-              aria-controls={tripUi.panelId}
-              onClick={() => (mobilePanel ? mobilePanel.onClose() : setOpen((current) => !current))}
-            >
-              Upcoming trips
-              <span className={styles.collapseIndicator} aria-hidden="true">
-                {open ? '⌄' : '⌃'}
-              </span>
-            </Button>
+            {fullPage ? (
+              'Upcoming trips'
+            ) : (
+              <Button
+                variant={ButtonVariant.Plain}
+                className={styles.heading}
+                aria-expanded={open}
+                aria-controls={tripUi.panelId}
+                onClick={() =>
+                  mobilePanel ? mobilePanel.onClose() : setOpen((current) => !current)
+                }
+              >
+                Upcoming trips
+                <span className={styles.collapseIndicator} aria-hidden="true">
+                  {open ? '⌄' : '⌃'}
+                </span>
+              </Button>
+            )}
           </h2>
           <Button
             icon

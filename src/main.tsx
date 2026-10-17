@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './app';
 import { AccountProvider } from './account/account-provider';
+import { BrowserRouter } from 'react-router';
 import './styles/tokens.css';
 import './style.css';
 
@@ -13,8 +14,10 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <AccountProvider>
-      <App />
-    </AccountProvider>
+    <BrowserRouter>
+      <AccountProvider>
+        <App />
+      </AccountProvider>
+    </BrowserRouter>
   </StrictMode>,
 );

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './app';
 import { startPlayground } from './three/playground';
@@ -32,6 +33,14 @@ const clickText = async (text: string) => {
   }
   await act(async () => button.click());
 };
+const renderApp = async () =>
+  act(async () =>
+    root.render(
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>,
+    ),
+  );
 beforeEach(() => {
   for (const [method, open] of [
     ['show', true],
@@ -46,6 +55,7 @@ beforeEach(() => {
     });
   }
   localStorage.clear();
+  window.history.replaceState({}, '', '/');
   vi.stubGlobal('innerWidth', 1280);
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.mocked(startPlayground).mockReturnValue({ setCountries, dispose });
@@ -63,12 +73,44 @@ afterEach(async () => {
 });
 
 describe('visited world, wishes and trips', () => {
+  it('opens a saved trip directly from its Studio URL', async () => {
+    const trip = { ...emptyTripDetails, id: 'deep-link-trip', name: 'Lisbon' };
+    localStorage.setItem(tripStorage.key, JSON.stringify({ version: 1, trips: [trip] }));
+    window.history.replaceState({}, '', `/trips/${trip.id}`);
+
+    await renderApp();
+
+    expect(host.querySelector('section[aria-label="Trip Studio"] h1')?.textContent).toBe('Lisbon');
+    expect(window.location.pathname).toBe(`/trips/${trip.id}`);
+    await clickText('‹ Back to trips');
+    expect(window.location.pathname).toBe('/');
+    expect(host.textContent).toContain('Upcoming trips');
+  });
+  it('serves the full-page Trip Studio route without starting the WebGL scene', async () => {
+    const trip = { ...emptyTripDetails, id: 'accessible-trip', name: 'Lisbon' };
+    localStorage.setItem(tripStorage.key, JSON.stringify({ version: 1, trips: [trip] }));
+    window.history.replaceState({}, '', '/tripstudio');
+
+    await renderApp();
+
+    expect(startPlayground).not.toHaveBeenCalled();
+    expect(host.querySelector('canvas')).toBeNull();
+    expect(
+      host.querySelector('aside[aria-label="Upcoming trips"][data-full-page="true"]'),
+    ).not.toBe(null);
+    await click('button[aria-label="Open Lisbon"]');
+    expect(window.location.pathname).toBe(`/tripstudio/${trip.id}`);
+    expect(host.querySelector('section[aria-label="Trip Studio"] h1')?.textContent).toBe('Lisbon');
+    expect(startPlayground).not.toHaveBeenCalled();
+    await clickText('‹ Back to trips');
+    expect(window.location.pathname).toBe('/tripstudio');
+  });
   it('keeps legacy visits intact while a wish becomes a minimal trip and restores country context', async () => {
     localStorage.setItem(
       selectionStorage.key,
       JSON.stringify({ version: 1, selectedCountryIds: [CountryList.France] }),
     );
-    await act(async () => root.render(<App />));
+    await renderApp();
     expect(setCountries).toHaveBeenLastCalledWith([CountryList.France], false);
     await act(async () =>
       vi.mocked(startPlayground).mock.calls[0][1]?.onContinentSelect?.(ContinentId.SouthAmerica),
@@ -89,6 +131,8 @@ describe('visited world, wishes and trips', () => {
     expect(setCountries).toHaveBeenCalledOnce();
     const trips = JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips;
     expect(trips[0]).toMatchObject({ countryIds: [CountryList.Peru], startDate: '', endDate: '' });
+    expect(trips[0].id).toMatch(/^[0-9a-f-]{36}$/i);
+    expect(window.location.pathname).toBe(`/trips/${trips[0].id}`);
     await clickText('‹ Back to South America');
     expect(host.querySelector('section[aria-label="Country actions"]')).toBeNull();
     expect(host.querySelector('footer[aria-label="Country actions"]')?.textContent).toContain(
@@ -103,7 +147,7 @@ describe('visited world, wishes and trips', () => {
       wishlistStorage.key,
       JSON.stringify({ version: 1, countryIds: [CountryList.Peru] }),
     );
-    await act(async () => root.render(<App />));
+    await renderApp();
     await act(async () =>
       vi.mocked(startPlayground).mock.calls[0][1]?.onContinentSelect?.(ContinentId.SouthAmerica),
     );
@@ -129,7 +173,7 @@ describe('visited world, wishes and trips', () => {
       wishlistStorage.key,
       JSON.stringify({ version: 1, countryIds: [CountryList.France, CountryList.Peru] }),
     );
-    await act(async () => root.render(<App />));
+    await renderApp();
     await click('button[aria-label="Open Two countries"]');
     await clickText('Mark countries visited');
     await click('dialog[aria-label="Which countries did you visit?"] input');
@@ -154,7 +198,7 @@ describe('visited world, wishes and trips', () => {
     expect(host.textContent).toContain('Your collection is up to date');
   });
   it('opens a jelly country and preserves the same canvas after Studio', async () => {
-    await act(async () => root.render(<App />));
+    await renderApp();
     const canvas = host.querySelector('canvas');
     await act(async () =>
       vi.mocked(startPlayground).mock.calls[0][1]?.onCountrySelect?.(CountryList.Indonesia),
@@ -169,7 +213,7 @@ describe('visited world, wishes and trips', () => {
   });
   it('keeps one mobile sheet active and preserves an existing trip editor draft across tabs', async () => {
     vi.stubGlobal('innerWidth', 390);
-    await act(async () => root.render(<App />));
+    await renderApp();
     const shell = host.querySelector('dialog');
     await click('nav button:nth-child(2)');
     await click('button[aria-label="New trip"]');
@@ -202,14 +246,16 @@ describe('visited world, wishes and trips', () => {
       wishlistStorage.key,
       JSON.stringify({ version: 1, countryIds: [CountryList.Peru] }),
     );
-    await act(async () => root.render(<App />));
+    await renderApp();
     expect(setCountries).toHaveBeenLastCalledWith([], false);
   });
   it('ignores callbacks from the disposed Strict Mode scene', async () => {
     await act(async () =>
       root.render(
         <StrictMode>
-          <App />
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
         </StrictMode>,
       ),
     );
