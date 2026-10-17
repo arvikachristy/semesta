@@ -8,6 +8,20 @@
   overflow-y: auto;
   overscroll-behavior: contain;
 }
+.panel[data-full-page='true'] {
+  position: relative;
+  inset: auto;
+  z-index: auto;
+  width: min(64rem, calc(100vw - 2rem));
+  max-height: none;
+  margin: clamp(1.5rem, 6vh, 5rem) auto;
+}
+.panel[data-full-page='true'] .header {
+  padding: var(--space-5) var(--space-6) var(--space-4);
+}
+.panel[data-full-page='true'] .body {
+  padding: 0 var(--space-6) var(--space-6);
+}
 .header {
   display: flex;
   align-items: center;
@@ -213,6 +227,16 @@
   .panel {
     width: min(24rem, calc(100vw - 2rem));
     max-height: min(65dvh, calc(100dvh - 13rem));
+  }
+  .panel[data-full-page='true'] {
+    width: calc(100vw - 1.5rem);
+    margin: 1.5rem auto;
+  }
+  .panel[data-full-page='true'] .header {
+    padding: var(--space-4);
+  }
+  .panel[data-full-page='true'] .body {
+    padding: 0 var(--space-4) var(--space-4);
   }
 }
 

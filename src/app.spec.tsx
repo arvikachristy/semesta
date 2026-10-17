@@ -86,6 +86,25 @@ describe('visited world, wishes and trips', () => {
     expect(window.location.pathname).toBe('/');
     expect(host.textContent).toContain('Upcoming trips');
   });
+  it('serves the full-page Trip Studio route without starting the WebGL scene', async () => {
+    const trip = { ...emptyTripDetails, id: 'accessible-trip', name: 'Lisbon' };
+    localStorage.setItem(tripStorage.key, JSON.stringify({ version: 1, trips: [trip] }));
+    window.history.replaceState({}, '', '/tripstudio');
+
+    await renderApp();
+
+    expect(startPlayground).not.toHaveBeenCalled();
+    expect(host.querySelector('canvas')).toBeNull();
+    expect(
+      host.querySelector('aside[aria-label="Upcoming trips"][data-full-page="true"]'),
+    ).not.toBe(null);
+    await click('button[aria-label="Open Lisbon"]');
+    expect(window.location.pathname).toBe(`/tripstudio/${trip.id}`);
+    expect(host.querySelector('section[aria-label="Trip Studio"] h1')?.textContent).toBe('Lisbon');
+    expect(startPlayground).not.toHaveBeenCalled();
+    await clickText('‹ Back to trips');
+    expect(window.location.pathname).toBe('/tripstudio');
+  });
   it('keeps legacy visits intact while a wish becomes a minimal trip and restores country context', async () => {
     localStorage.setItem(
       selectionStorage.key,
