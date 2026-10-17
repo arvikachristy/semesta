@@ -3,5 +3,6 @@
   "framework": "vite",
   "installCommand": "npx --yes npm@11.11.1 ci",
   "buildCommand": "npm run lint && npm run typecheck && npm run test && npm run build",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "rewrites": [{ "source": "/trips/:path*", "destination": "/index.html" }]
 }

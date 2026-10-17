@@ -2,6 +2,7 @@ import { useAccount, guestRepositories } from './account/account-context';
 import { FpsToken } from './components/fps-token';
 import type { IFrameReading } from './performance/frame-monitor';
 import { useEffect, useRef, useState } from 'react';
+import { useLocation, useMatch, useNavigate } from 'react-router';
 import { countries } from './data/countries';
 import { useCountrySelection } from './hooks/use-country-selection';
 import { MobilePanels } from './components/mobile/mobile-panels';
@@ -12,6 +13,7 @@ import { MobilePanel } from './types/mobile-panel';
 import type { TMobilePanel } from './types/mobile-panel';
 import { startPlayground } from './three/playground';
 import { TripStudio } from './components/trips/trip-studio';
+import { tripStudioPath, tripStudioRoutePattern } from './components/trips/trip-routes';
 import { initialPlanningCategories } from './components/trips/trip-planning';
 import { useTrips } from './hooks/use-trips';
 import type { ITrip } from './types/trip';
@@ -22,9 +24,12 @@ import type { ICountryBrowserState } from './components/shared/country-picker/co
 import styles from './app.module.css';
 
 export const App = () => {
-  const [studioTripId, setStudioTripId] = useState<string | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const studioMatch = useMatch(tripStudioRoutePattern);
+  const studioTripId = studioMatch?.params.tripId ?? null;
   const [panel, setPanel] = useState<TMobilePanel | null>(null);
-  const [returnPanel, setReturnPanel] = useState<TMobilePanel | null>(null);
+  const [returnPanel, setReturnPanel] = useState<TMobilePanel>(MobilePanel.Trips);
   const [browser, setBrowser] = useState<ICountryBrowserState>(initialCountryBrowser);
   const [sceneMessage, setSceneMessage] = useState('');
   const [frameReading, setFrameReading] = useState<IFrameReading | null>(null);
@@ -34,6 +39,7 @@ export const App = () => {
   const selectionRepositoryRef = useRef(account.countries);
   const tripSession = useTrips(account.trips);
   const studioTrip = tripSession.trips.find((trip) => trip.id === studioTripId) ?? null;
+  const wasInStudio = useRef(Boolean(studioTripId));
   const { showedCountries, ready, onToggle } = useCountrySelection(account.countries);
   const wishlist = useCountrySelection(account.wishlist ?? guestRepositories.wishlist, {
     initialCountries: emptyWishlist,
@@ -41,18 +47,18 @@ export const App = () => {
   });
   const [statuses, setStatuses] = useState<Partial<Record<CountryList, CountryStatus>>>({});
   const openTrips = () => {
-    setStudioTripId(null);
+    navigate('/');
     setPanel(MobilePanel.Trips);
   };
   const browseAll = () => {
-    setStudioTripId(null);
+    navigate('/');
     setBrowser(initialCountryBrowser);
     setPanel(MobilePanel.Countries);
   };
   const openStudio = (trip: ITrip, from: TMobilePanel) => {
     setReturnPanel(from);
     setPanel(null);
-    setStudioTripId(trip.id);
+    navigate(tripStudioPath(trip.id));
   };
   const markVisited = (country: CountryList, visited: boolean) => {
     onToggle(country, visited);
@@ -111,9 +117,32 @@ export const App = () => {
     }
   }, [ready, showedCountries, account.countries]);
 
+  useEffect(() => {
+    if (wasInStudio.current && !studioTripId && panel === null) {
+      setPanel(returnPanel);
+    }
+    wasInStudio.current = Boolean(studioTripId);
+  }, [studioTripId, panel, returnPanel]);
+
+  useEffect(() => {
+    if (location.pathname !== '/' && !studioTripId) {
+      navigate('/', { replace: true });
+      return;
+    }
+    if (
+      studioTripId &&
+      tripSession.ready &&
+      !tripSession.trips.some((trip) => trip.id === studioTripId)
+    ) {
+      setPanel(MobilePanel.Trips);
+      setReturnPanel(MobilePanel.Trips);
+      navigate('/', { replace: true });
+    }
+  }, [location.pathname, navigate, studioTripId, tripSession.ready, tripSession.trips]);
+
   return (
     <main>
-      <div hidden={Boolean(studioTrip)}>
+      <div hidden={Boolean(studioTripId)}>
         {import.meta.env.DEV && <FpsToken reading={frameReading} />}
         <header className={styles.intro}>
           <h1>Your world</h1>
@@ -149,7 +178,7 @@ export const App = () => {
         onPanelChange={setPanel}
         onBrowseAll={browseAll}
         onOpenStudio={(trip) => openStudio(trip, MobilePanel.Trips)}
-        studioOpen={Boolean(studioTrip)}
+        studioOpen={Boolean(studioTripId)}
         onCollection={browseAll}
         onTrips={openTrips}
         countries={{
@@ -207,15 +236,20 @@ export const App = () => {
                 ? `${added.map((country) => countries[country].name).join(', ')} added to Been to. Your world has grown.`
                 : 'Visit confirmed. Your collection is up to date.',
             );
-            setStudioTripId(null);
+            navigate('/', { replace: true });
             setPanel(null);
           }}
           onBack={() => {
-            setStudioTripId(null);
+            navigate('/', { replace: true });
             setPanel(returnPanel);
           }}
           onTrips={openTrips}
         />
+      )}
+      {studioTripId && !studioTrip && !tripSession.ready && (
+        <p role="status" aria-live="polite">
+          Loading trip…
+        </p>
       )}
     </main>
   );
