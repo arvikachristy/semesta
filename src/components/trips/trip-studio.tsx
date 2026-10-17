@@ -8,9 +8,8 @@ import { Button, ButtonVariant } from '../ui/button';
 import { getTripDates } from './trip-presentation';
 import { useAccount } from '../../account/account-context';
 import { useTrips } from '../../hooks/use-trips';
-import { TripPlanning, initialPlanningCategories } from './trip-planning';
-import { TripJourney } from './trip-journey';
-import { TripParticipants } from './trip-participants';
+import { TripPlanning } from './trip-planning';
+import { getDurationDays, getTripStops } from './trip-itinerary';
 import { TripEditor } from './trip-editor';
 import { Overlay } from '../ui/overlay';
 import ui from '../ui/ui.module.css';
@@ -54,12 +53,12 @@ export const TripStudio = ({
             ‹ {backLabel}
           </Button>
           <div>
-            {onTrips && (
+            {onTrips && backLabel !== 'Back to trips' && (
               <Button variant={ButtonVariant.Quiet} onClick={onTrips}>
                 All trips
               </Button>
             )}
-            <span className={styles.eyebrow}>Trip Studio</span>
+            <span className={styles.wordmark}>semesta</span>
             <details ref={menu} className={styles.tripMenu}>
               <summary>More</summary>
               <div className={`${ui.surface} ${ui.raised} ${styles.menuActions}`}>
@@ -93,7 +92,7 @@ export const TripStudio = ({
         </header>
         <div className={styles.introduction}>
           <div>
-            <p className={styles.eyebrow}>Your next chapter</p>
+            <p className={styles.eyebrow}>Your trip</p>
             <h1 ref={heading} tabIndex={-1}>
               {currentTrip.name}
             </h1>
@@ -104,10 +103,13 @@ export const TripStudio = ({
                   {countries[id].name}
                 </span>
               ))}
-              {!currentTrip.countryIds.length && <span>Destinations to decide</span>}
+              {!currentTrip.countryIds.length && !currentTrip.destination && (
+                <span>Destinations to decide</span>
+              )}
             </div>
             <p className={styles.dates}>
-              {getTripDates(currentTrip).range}
+              {getDurationDays(currentTrip)} days ·{' '}
+              {currentTrip.startDate ? getTripDates(currentTrip).range : 'Dates flexible'}
               <Button variant={ButtonVariant.Quiet} onClick={() => setEditing(true)}>
                 {currentTrip.startDate ? 'Edit dates' : 'Add dates'}
               </Button>
@@ -119,53 +121,24 @@ export const TripStudio = ({
               </details>
             )}
           </div>
-          {ready && (
-            <TripParticipants
-              participants={currentTrip.participants ?? []}
-              onChange={(participants) =>
-                saveTrip(currentTrip.id, { ...currentTrip, participants })
-              }
-            />
-          )}
         </div>
         {warning && <p role="status">{warning}</p>}
         {ready ? (
           <TripPlanning
             key={currentTrip.id}
             trip={currentTrip}
-            journey={<TripJourney trip={currentTrip} />}
-            items={currentTrip.planning ?? []}
-            activeCategories={
-              currentTrip.activePlanningCategories ??
-              (currentTrip.planning?.length
-                ? [...new Set(currentTrip.planning.map((item) => item.category))]
-                : initialPlanningCategories)
-            }
-            onChange={(planning, activePlanningCategories) =>
-              saveTrip(currentTrip.id, {
-                ...currentTrip,
-                planning,
-                ...(activePlanningCategories ? { activePlanningCategories } : {}),
-              })
-            }
-            onCategoriesChange={(activePlanningCategories) =>
-              saveTrip(currentTrip.id, { ...currentTrip, activePlanningCategories })
-            }
+            onChange={(updated) => saveTrip(currentTrip.id, updated)}
           />
         ) : (
           <p>Loading trip planning…</p>
         )}
         {onConfirmVisits && currentTrip.countryIds.length > 0 && (
-          <section className={styles.returnJourney} aria-label="After travelling">
-            <div>
-              <span className={styles.eyebrow}>After travelling</span>
-              <h2>Bring your journey back to your world.</h2>
-              <p>Confirm the countries you visited to grow your collection.</p>
-            </div>
+          <details className={styles.morePlans}>
+            <summary>After travelling</summary>
             <Button disabled={!ready} onClick={() => setConfirmingVisits(true)}>
               Mark countries visited
             </Button>
-          </section>
+          </details>
         )}
         {confirmingVisits && onConfirmVisits && (
           <TripVisitConfirmation
@@ -181,21 +154,18 @@ export const TripStudio = ({
               initial={currentTrip}
               onCancel={() => setEditing(false)}
               onSave={(details) => {
-                const { name, countryIds, startDate, endDate, notes } = details;
+                const metadataOnly = currentTrip.stops && currentTrip.stops.length > 1;
                 const id = saveTrip(currentTrip.id, {
                   ...currentTrip,
-                  name,
-                  countryIds,
+                  ...details,
+                  stops: metadataOnly ? getTripStops(currentTrip) : details.stops,
                   ...(currentTrip.visitedCountryIds
                     ? {
                         visitedCountryIds: currentTrip.visitedCountryIds.filter((country) =>
-                          countryIds.includes(country),
+                          details.countryIds.includes(country),
                         ),
                       }
                     : {}),
-                  startDate,
-                  endDate,
-                  notes,
                 });
                 if (id) {
                   setEditing(false);

@@ -3,26 +3,24 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TripStudio } from './trip-studio';
+import { createTripDetails } from './trip-itinerary';
+import { tripStorage, decodeTrips } from '../../storage/trips';
 import { emptyTripDetails } from '../../types/trip';
-import { CountryList } from '../../types/country';
-import { tripStorage } from '../../storage/trips';
+import type { ITrip } from '../../types/trip';
 const host = document.createElement('div');
 let root: ReturnType<typeof createRoot>;
 beforeEach(() => {
-  Object.defineProperties(HTMLDialogElement.prototype, {
-    showModal: {
+  for (const [method, open] of [
+    ['showModal', true],
+    ['close', false],
+  ] as const) {
+    Object.defineProperty(HTMLDialogElement.prototype, method, {
       configurable: true,
       value(this: HTMLDialogElement) {
-        this.open = true;
+        this.open = open;
       },
-    },
-    close: {
-      configurable: true,
-      value(this: HTMLDialogElement) {
-        this.open = false;
-      },
-    },
-  });
+    });
+  }
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   localStorage.clear();
   document.body.append(host);
@@ -35,205 +33,135 @@ afterEach(async () => {
   Reflect.deleteProperty(HTMLDialogElement.prototype, 'showModal');
   Reflect.deleteProperty(HTMLDialogElement.prototype, 'close');
 });
-describe('Trip Studio planning', () => {
-  it('starts with one plan board and no invented readiness or bookings', async () => {
-    const trip = {
-      ...emptyTripDetails,
-      id: 'draft',
-      name: 'Peru trip',
-      countryIds: [CountryList.Peru],
-    };
-    localStorage.setItem(tripStorage.key, JSON.stringify({ version: 1, trips: [trip] }));
-    await act(async () => root.render(<TripStudio trip={trip} onBack={vi.fn()} />));
-    expect(host.querySelector('section[aria-label="Your plans"]')).toBeNull();
-    expect(host.querySelector('section[aria-label="Trip readiness"]')).toBeNull();
-    expect(host.textContent).toContain('Your trip plan');
-    expect(host.textContent).toContain('Things to do');
-    expect(host.textContent).not.toContain('0%');
+const click = async (name: string) => {
+  const button = [...host.querySelectorAll('button')].find(
+    (element) => element.textContent?.trim() === name,
+  );
+  if (!button) {
+    throw new Error('Missing ' + name);
+  }
+  await act(async () => button.click());
+};
+const fill = async (selector: string, value: string) => {
+  const input = host.querySelector(selector);
+  if (!(input instanceof HTMLInputElement)) {
+    throw new Error('Missing ' + selector);
+  }
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(input, value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+};
+const render = async (trip: ITrip, onBack = vi.fn()) => {
+  localStorage.setItem(tripStorage.key, JSON.stringify({ version: 1, trips: [trip] }));
+  await act(async () => root.render(<TripStudio trip={trip} onBack={onBack} />));
+};
+const stored = () => decodeTrips(localStorage.getItem(tripStorage.key))[0];
+describe('minimal Trip Studio', () => {
+  it('starts with two one-click essentials, and saves a name-only booking without duplicate slots', async () => {
+    const trip = { ...createTripDetails('Japan', 10), id: 'trip' };
+    await render(trip);
+    expect(host.querySelectorAll('[aria-label="Your essentials"] > div > button')).toHaveLength(2);
+    expect(host.querySelector('progress')).toBeNull();
     expect(host.querySelector('form')).toBeNull();
-    const add = [...host.querySelectorAll('button')].find(
-      (button) => button.textContent === 'Add activities',
-    );
+    expect(stored().planning).toBeUndefined();
+    const transport = host.querySelector('[aria-label="Your essentials"] button');
+    if (!(transport instanceof HTMLButtonElement)) {
+      throw new Error('Missing transport');
+    }
+    await act(async () => transport.click());
+    expect(host.querySelector('dialog details')?.hasAttribute('open')).toBe(false);
+    await fill('input[name="name"]', 'Flight to Japan');
+    await click('Save plan');
+    expect(stored().planning).toHaveLength(1);
+    expect(stored().planning?.[0]).toMatchObject({
+      id: 'arrival',
+      name: 'Flight to Japan',
+      category: 'transportation',
+      status: 'to-book',
+    });
+    expect(host.querySelectorAll('[aria-label="Your essentials"] > div > button')).toHaveLength(2);
+  });
+  it('splits nights, creates connecting slots and persists route and day plans through reload', async () => {
+    const trip = { ...createTripDetails('Japan', 10), id: 'trip' };
+    await render(trip);
+    await click('＋ Add a stop');
+    await fill('dialog input[placeholder="Country or city"]', 'Kyoto');
+    await fill('dialog input[type="number"]', '4');
+    await click('Update trip');
+    expect(stored().stops?.map((stop) => stop.nights)).toEqual([5, 4]);
+    expect(host.querySelectorAll('[aria-label="Your essentials"] > div > button')).toHaveLength(4);
+    expect(host.textContent).toContain('Japan → Kyoto');
+    const day = host.querySelector('[aria-label="Your itinerary"] details');
+    if (!(day instanceof HTMLDetailsElement)) {
+      throw new Error('Missing day');
+    }
+    day.open = true;
+    const add = day.querySelector('button');
     if (!add) {
-      throw new Error('Missing idea action');
+      throw new Error('Missing day action');
     }
     await act(async () => add.click());
-    const input = host.querySelector('input[name="name"]');
-    if (!(input instanceof HTMLInputElement)) {
-      throw new Error('Missing idea name');
-    }
-    input.value = 'Walk through Cusco';
-    const form = host.querySelector('form');
-    if (!form) {
-      throw new Error('Missing editor');
-    }
-    await act(async () =>
-      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })),
-    );
-    expect(host.querySelectorAll('li[data-confirmed]')).toHaveLength(1);
-    expect(host.querySelector('li[data-confirmed]')?.closest('details')?.open).toBe(true);
-    expect(
-      JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips[0].planning[0],
-    ).toMatchObject({ name: 'Walk through Cusco', category: 'activities', status: 'idea' });
+    await fill('input[name="name"]', 'Food market');
+    await click('Save plan');
+    expect(stored().planning?.[0]).toMatchObject({ dayNumber: 1, name: 'Food market' });
+    await act(async () => root.unmount());
+    root = createRoot(host);
+    await act(async () => root.render(<TripStudio trip={trip} onBack={vi.fn()} />));
+    expect(host.textContent).toContain('Food market');
+    expect(stored().stops?.map((stop) => stop.nights)).toEqual([5, 4]);
+    expect(host.querySelectorAll('[aria-label="Your essentials"] > div > button')).toHaveLength(4);
   });
-  it('edits metadata without replacing bookings, and requires confirmation before deletion', async () => {
-    const trip = {
+  it('keeps legacy bookings, notes, participants and inactive plans while editing metadata', async () => {
+    const trip: ITrip = {
       ...emptyTripDetails,
-      id: 'lisbon',
-      name: 'Lisbon',
-      notes: 'Remember the train',
-      countryIds: [CountryList.Portugal, CountryList.France],
-      visitedCountryIds: [CountryList.Portugal, CountryList.France],
+      id: 'legacy',
+      name: 'Paris',
+      notes: 'Keep notes',
+      participants: [{ id: 'p', name: 'Taylor' }],
+      activePlanningCategories: ['transportation'],
       planning: [
         {
           id: 'train',
           category: 'transportation',
-          name: 'Train',
-          details: 'Keep this',
+          name: 'Night train',
           completed: true,
+          details: 'Window seat',
+          bookingReference: 'REF-123',
+          link: 'https://example.com/train',
         },
+        { id: 'museum', category: 'activities', name: 'Museum', completed: false, details: '' },
       ],
-      participants: [{ id: 'person', name: 'Taylor' }],
     };
-    localStorage.setItem(tripStorage.key, JSON.stringify({ version: 1, trips: [trip] }));
-    const onBack = vi.fn();
-    await act(async () =>
-      root.render(
-        <TripStudio trip={{ ...emptyTripDetails, id: trip.id, name: trip.name }} onBack={onBack} />,
-      ),
-    );
-    const click = async (name: string) => {
-      const button = [...host.querySelectorAll('button')].find(
-        (element) => element.textContent === name,
-      );
-      if (!button) {
-        throw new Error(`Missing ${name}`);
-      }
-      await act(async () => button.click());
-    };
+    await render(trip);
+    expect(host.textContent).toContain('Museum');
     await click('Edit trip');
-    const input = host.querySelector('dialog[aria-label="Edit trip"] input');
-    if (!(input instanceof HTMLInputElement)) {
-      throw new Error('Missing metadata editor');
-    }
-    await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(
-        input,
-        'Lisbon summer',
-      );
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-    });
-    const remove = host.querySelector('button[aria-label="Remove France"]');
-    if (!(remove instanceof HTMLButtonElement)) {
-      throw new Error('Missing destination removal');
-    }
-    await act(async () => remove.click());
+    await fill('input[name="destination"]', 'France');
     await click('Save trip');
-    const saved = JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips[0];
-    expect(saved).toMatchObject({
-      id: 'lisbon',
-      name: 'Lisbon summer',
-      notes: trip.notes,
-      participants: trip.participants,
-      countryIds: [CountryList.Portugal],
-      visitedCountryIds: [CountryList.Portugal],
-    });
-    expect(saved.planning[0]).toMatchObject({
+    expect(stored()).toMatchObject({ notes: trip.notes, participants: trip.participants });
+    expect(stored().planning?.[0]).toMatchObject({
       id: 'train',
-      name: 'Train',
       completed: true,
-      status: 'booked',
+      bookingReference: 'REF-123',
+      link: 'https://example.com/train',
     });
+    expect(stored().planning).toHaveLength(2);
+  });
+  it('requires confirmation before trip deletion', async () => {
+    const onBack = vi.fn();
+    await render({ ...createTripDetails('Japan', 10), id: 'trip' }, onBack);
     await click('Delete trip');
     await click('Keep trip');
-    expect(JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips).toHaveLength(1);
+    expect(stored()).toBeDefined();
     await click('Delete trip');
-    const confirm = [...host.querySelectorAll('dialog[aria-label="Delete trip"] button')].find(
+    const confirm = [...host.querySelectorAll('dialog button')].find(
       (button) => button.textContent === 'Delete trip',
     );
     if (!(confirm instanceof HTMLButtonElement)) {
       throw new Error('Missing confirmation');
     }
     await act(async () => confirm.click());
-    expect(JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips).toEqual([]);
-    expect(onBack).toHaveBeenCalledOnce();
-  });
-  it('uses saved legacy bookings and keeps inactive category items through editing and reload', async () => {
-    const trip = {
-      ...emptyTripDetails,
-      id: 'trip',
-      name: 'Paris with friends',
-      countryIds: [CountryList.France],
-      planning: [
-        {
-          id: 'train',
-          category: 'transportation',
-          name: 'Night train',
-          details: 'Keep this',
-          completed: true,
-        },
-        { id: 'stay', category: 'accommodation', name: 'Hotel', details: '', completed: false },
-      ],
-    };
-    localStorage.setItem(tripStorage.key, JSON.stringify({ version: 1, trips: [trip] }));
-    const onBack = vi.fn();
-    await act(async () =>
-      root.render(
-        <TripStudio
-          trip={{ ...emptyTripDetails, id: 'trip', name: trip.name, countryIds: trip.countryIds }}
-          onBack={onBack}
-        />,
-      ),
-    );
-    expect(host.textContent).toContain('France');
-    expect(host.textContent).toContain('Night train');
-    expect(host.textContent).toContain('50%');
-    expect(host.querySelector('form')).toBeNull();
-    expect(
-      host.querySelectorAll(
-        'section[aria-label="Trip Studio planning"] > div:last-of-type > details[open]',
-      ),
-    ).toHaveLength(2);
-    const choose = [...host.querySelectorAll('button')].find(
-      (button) => button.textContent === 'Choose categories',
-    );
-    if (!choose) {
-      throw new Error('Missing category action');
-    }
-    await act(async () => choose.click());
-    const choices = host.querySelectorAll('dialog input');
-    const accommodation = choices[1];
-    if (!(accommodation instanceof HTMLInputElement)) {
-      throw new Error('Missing accommodation choice');
-    }
-    await act(async () => accommodation.click());
-    expect(host.textContent).toContain('100%');
-    expect(host.querySelector('ul[aria-label="Your stay bookings"]')).toBeNull();
-    const stored = JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips[0];
-    expect(stored.planning).toHaveLength(2);
-    expect(stored.planning[0]).toMatchObject({ id: 'train', status: 'booked', completed: true });
-    await act(async () => accommodation.click());
-    expect(host.querySelector('ul[aria-label="Your stay bookings"]')?.textContent).toContain(
-      'Hotel',
-    );
-    expect(host.textContent).toContain('50%');
-    const select = host.querySelector('select');
-    if (!(select instanceof HTMLSelectElement)) {
-      throw new Error('Missing booking status');
-    }
-    await act(async () => {
-      select.value = 'idea';
-      select.dispatchEvent(new Event('change', { bubbles: true }));
-    });
-    expect(host.textContent).toContain('0%');
-    expect(
-      JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips[0].planning[0],
-    ).toMatchObject({ id: 'train', status: 'idea', completed: false });
-    const back = host.querySelector('button');
-    if (!back) {
-      throw new Error('Missing back action');
-    }
-    await act(async () => back.click());
+    expect(decodeTrips(localStorage.getItem(tripStorage.key))).toEqual([]);
     expect(onBack).toHaveBeenCalledOnce();
   });
 });

@@ -62,6 +62,53 @@
 .editorFields {
   align-content: start;
 }
+.question {
+  display: block;
+  margin-bottom: var(--space-3);
+  color: var(--color-accent);
+  font: 400 clamp(1.5rem, 4vw, 2rem) / 1.2 var(--font-display);
+}
+.duration {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.durationModes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.extraDetails > summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--control-height);
+  cursor: pointer;
+}
+.extraDetails > summary:focus-visible {
+  outline: var(--focus-ring);
+}
+.extraDetails > label {
+  margin-top: var(--space-3);
+}
+.routePreview {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+}
+.routePreview h3 {
+  margin-top: 0;
+  font: 400 var(--text-item) var(--font-display);
+}
+.routePreview ol {
+  padding-left: var(--space-5);
+}
+.routePreview li + li {
+  margin-top: var(--space-2);
+}
 .dates {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

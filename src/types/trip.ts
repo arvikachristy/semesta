@@ -29,7 +29,31 @@ export interface ITrip {
   planning?: ITripPlanningItem[];
   activePlanningCategories?: TPlanningCategory[];
   participants?: ITripParticipant[];
+  destination?: string;
+  durationDays?: number;
+  stops?: ITripStop[];
 }
+
+export interface ITripStop {
+  id: string;
+  name: string;
+  nights: number;
+}
+
+export const isTripStop = (value: unknown): value is ITripStop =>
+  typeof value === 'object' &&
+  value !== null &&
+  'id' in value &&
+  typeof value.id === 'string' &&
+  value.id.length > 0 &&
+  'name' in value &&
+  typeof value.name === 'string' &&
+  value.name.trim().length > 0 &&
+  'nights' in value &&
+  typeof value.nights === 'number' &&
+  Number.isInteger(value.nights) &&
+  value.nights >= 0 &&
+  value.nights <= 364;
 
 export type TTripDetails = Omit<ITrip, 'id'>;
 
