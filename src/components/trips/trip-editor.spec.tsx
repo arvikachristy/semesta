@@ -36,6 +36,33 @@ const submit = async () => {
   );
 };
 describe('two-question trip setup', () => {
+  it('keeps a touched result alive until click when the browser would blur search without focusing the button', async () => {
+    const onSave = vi.fn();
+    await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));
+    const input = host.querySelector('input[name="destination"]');
+    if (!(input instanceof HTMLInputElement)) {
+      throw new Error('Missing destination input');
+    }
+    await act(async () => input.focus());
+    await fill('input[name="destination"]', 'Jap');
+    const result = host.querySelector('[aria-label="Country suggestions"] button');
+    if (!(result instanceof HTMLButtonElement)) {
+      throw new Error('Missing country result');
+    }
+    const pointerDown = new Event('pointerdown', { bubbles: true, cancelable: true });
+    await act(async () => {
+      result.dispatchEvent(pointerDown);
+      if (!pointerDown.defaultPrevented) {
+        // Safari can blur the input to the document instead of focusing a tapped button.
+        input.blur();
+      }
+    });
+    await act(async () => result.click());
+    await submit();
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ destination: 'Japan', countryIds: [CountryList.Japan] }),
+    );
+  });
   it('shows tappable country results for a partial name and saves the selected country', async () => {
     const onSave = vi.fn();
     await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));

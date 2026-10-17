@@ -145,6 +145,11 @@ export const CountryPicker = memo(
                     key={country.code}
                     variant={ButtonVariant.Plain}
                     className={styles.result}
+                    onPointerDown={(event) => {
+                      // Keep search focused until click selects the result. Safari may
+                      // otherwise blur to the document and unmount suggestions first.
+                      event.preventDefault();
+                    }}
                     onClick={() => choose(country.code)}
                     disabled={disabled}
                   >
