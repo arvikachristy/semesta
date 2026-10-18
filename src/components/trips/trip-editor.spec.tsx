@@ -39,11 +39,16 @@ const submit = async () => {
   );
 };
 describe('two-question trip setup', () => {
-  it('enables creation after one start-date tap using the chosen duration', async () => {
+  it('explains that the destination is required even when a complete date range is chosen', async () => {
     const onSave = vi.fn();
     await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));
-    await fill('input[name="destination"]', 'Japan');
-    await fill('input[type="number"]', '10');
+    const destination = host.querySelector('input[name="destination"]');
+    if (!(destination instanceof HTMLInputElement)) {
+      throw new Error('Missing destination');
+    }
+    expect(destination.required).toBe(true);
+    const hintId = destination.getAttribute('aria-describedby');
+    expect(hintId && document.getElementById(hintId)?.textContent).toBe('This field is required');
     const dates = [...host.querySelectorAll('button')].find(
       (button) => button.textContent === 'Dates',
     );
@@ -61,8 +66,16 @@ describe('two-question trip setup', () => {
       throw new Error('Missing start date');
     }
     await act(async () => start.click());
+    expect(create.disabled).toBe(true);
+    const end = host.querySelector('button[aria-label="Monday, 26 October 2026"]');
+    if (!(end instanceof HTMLButtonElement)) {
+      throw new Error('Missing last date');
+    }
+    await act(async () => end.click());
+    expect(create.disabled).toBe(true);
+    await fill('input[name="destination"]', 'Japan');
+    expect(destination.hasAttribute('aria-describedby')).toBe(false);
     expect(create.disabled).toBe(false);
-    expect(host.querySelectorAll('td[aria-selected="true"]')).toHaveLength(10);
     await act(async () => create.click());
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({

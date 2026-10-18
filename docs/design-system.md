@@ -87,8 +87,8 @@ DateRangeCalendar is the deliberate custom-calendar exception to native dates: a
 six-week grid with month navigation, inclusive range highlighting, roving keyboard
 focus, leap-year handling and a selected-range summary. Arrow keys move by day/week,
 Home/End move within the week and PageUp/PageDown change month. Booking date/time
-fields remain native. The first date tap fills the end from the selected duration,
-enabling creation immediately; a second tap can refine the end. Dates flexible is
+fields remain native. Choose both a first and last day to complete a date range.
+The destination shows a required-field hint while empty. Dates flexible is
 an undated status in Days mode, and Keep dates flexible returns from the calendar
 without saving dates. Creation has one primary footer action and cancellation in the header.
 

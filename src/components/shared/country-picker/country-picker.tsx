@@ -1,4 +1,4 @@
-import { memo, useMemo, useRef, useState } from 'react';
+import { memo, useId, useMemo, useRef, useState } from 'react';
 import { CountryStatus } from '../../../types/country-status';
 import type { CountryList } from '../../../types/country';
 import { countryGroups } from '../../../data/countries';
@@ -53,6 +53,8 @@ export const CountryPicker = memo(
     const input = useRef<HTMLInputElement>(null);
     const [suggestionsOpen, setSuggestionsOpen] = useState(false);
     const destinationMode = mode === CountryPickerMode.Destination;
+    const requiredMessageId = useId();
+    const missingDestination = destinationMode && !search.trim();
     const query = normalizeCountryQuery(search);
     const selected = useMemo(() => new Set(selectedCountries), [selectedCountries]);
     const groups = useMemo(
@@ -113,6 +115,7 @@ export const CountryPicker = memo(
               type="search"
               name={destinationMode ? 'destination' : undefined}
               required={destinationMode}
+              aria-describedby={missingDestination ? requiredMessageId : undefined}
               maxLength={destinationMode ? 80 : undefined}
               aria-label={label}
               placeholder={destinationMode ? 'Country or city' : pickerText.search}
@@ -148,6 +151,7 @@ export const CountryPicker = memo(
               </svg>
             )}
           </span>
+          {missingDestination && <small id={requiredMessageId}>This field is required</small>}
         </label>
         {destinationMode ? (
           suggestionsOpen &&

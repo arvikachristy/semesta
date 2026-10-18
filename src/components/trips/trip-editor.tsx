@@ -126,11 +126,11 @@ export const TripEditor = ({ initial, onSave, onCancel }: ITripEditorProps) => {
               start={startDate}
               end={endDate}
               onChange={(start, end) => {
-                const nextEnd =
-                  end || addDays(start, (invalidDuration ? tripDuration.defaultDays : days) - 1);
                 setStartDate(start);
-                setEndDate(nextEnd);
-                setDays(rangeDays(start, nextEnd));
+                setEndDate(end);
+                if (start && end) {
+                  setDays(rangeDays(start, end));
+                }
               }}
             />
           ) : (

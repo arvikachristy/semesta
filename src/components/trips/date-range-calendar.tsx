@@ -21,7 +21,6 @@ const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 export const DateRangeCalendar = ({ start, end, onChange }: IDateRangeCalendarProps) => {
   const [month, setMonth] = useState(() => monthStart(start || todayKey()));
   const [focused, setFocused] = useState(start || todayKey());
-  const [choosingEnd, setChoosingEnd] = useState(Boolean(start && !end));
   const focusRequested = useRef(false);
   const buttons = useRef(new Map<string, HTMLButtonElement>());
   const first = addDays(month, -dateAt(month).getUTCDay());
@@ -37,12 +36,10 @@ export const DateRangeCalendar = ({ start, end, onChange }: IDateRangeCalendarPr
     }
   }, [focused, month]);
   const select = (day: string) => {
-    if (!start || !choosingEnd || day < start) {
+    if (!start || end || day < start) {
       onChange(day, '');
-      setChoosingEnd(true);
     } else if (rangeDays(start, day) <= tripDuration.maxDays) {
       onChange(start, day);
-      setChoosingEnd(false);
     }
     setFocused(day);
     setMonth(monthStart(day));
@@ -77,7 +74,7 @@ export const DateRangeCalendar = ({ start, end, onChange }: IDateRangeCalendarPr
         </Button>
       </header>
       <p className={styles.hint} role="status">
-        {choosingEnd ? 'Adjust your last day, or create your trip' : 'Choose your first day'}
+        {start && !end ? 'Choose your last day' : 'Choose your first day'}
       </p>
       <table className={styles.calendarGrid} role="grid" aria-label={monthLabel}>
         <thead>
@@ -99,10 +96,7 @@ export const DateRangeCalendar = ({ start, end, onChange }: IDateRangeCalendarPr
                 const inRange = Boolean(start && end && day >= start && day <= end);
                 const outside = day.slice(0, 7) !== month.slice(0, 7);
                 const disabled = Boolean(
-                  start &&
-                  choosingEnd &&
-                  day >= start &&
-                  rangeDays(start, day) > tripDuration.maxDays,
+                  start && !end && day >= start && rangeDays(start, day) > tripDuration.maxDays,
                 );
                 const label = new Intl.DateTimeFormat('en-GB', {
                   weekday: 'long',
