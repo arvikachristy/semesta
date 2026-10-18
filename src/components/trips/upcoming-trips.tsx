@@ -85,10 +85,16 @@ export const UpcomingTrips = memo(
             <Button
               data-sheet-close
               variant={ButtonVariant.Quiet}
-              onClick={mobilePanel.onClose}
-              aria-label={mobilePanelText.close}
+              onClick={() => {
+                if (creating) {
+                  setCreating(false);
+                } else {
+                  mobilePanel.onClose();
+                }
+              }}
+              aria-label={creating ? 'Back to trips' : mobilePanelText.close}
             >
-              {creating ? '×' : mobilePanelText.closeLabel}
+              {creating ? '‹ Back to trips' : mobilePanelText.closeLabel}
             </Button>
           )}
         </header>

@@ -32,6 +32,28 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 describe('compact upcoming trip launcher', () => {
+  it('returns from mobile creation to saved trips without closing the Trips tab', async () => {
+    const trip = { ...emptyTripDetails, id: 'saved', name: 'Japan' };
+    localStorage.setItem(
+      tripStorage.key,
+      JSON.stringify({ version: tripStorage.version, trips: [trip] }),
+    );
+    const onClose = vi.fn();
+    const onOpenStudio = vi.fn();
+    await act(async () =>
+      root.render(
+        <UpcomingTrips mobilePanel={{ open: true, onClose }} onOpenStudio={onOpenStudio} />,
+      ),
+    );
+    await click('New trip');
+    expect(host.querySelector('form')).not.toBeNull();
+    await click('Back to trips');
+    expect(host.querySelector('form')).toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips).toEqual([trip]);
+    await click('Open Japan');
+    expect(onOpenStudio).toHaveBeenCalledExactlyOnceWith(trip);
+  });
   it('opens a trip with one click while keeping only the chronological list in the panel', async () => {
     const later = { ...emptyTripDetails, id: 'later', name: 'Autumn', startDate: '2027-10-01' };
     const lisbon = { ...emptyTripDetails, id: 'lisbon', name: 'Lisbon', startDate: '2027-05-01' };
