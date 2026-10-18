@@ -87,8 +87,10 @@ DateRangeCalendar is the deliberate custom-calendar exception to native dates: a
 six-week grid with month navigation, inclusive range highlighting, roving keyboard
 focus, leap-year handling and a selected-range summary. Arrow keys move by day/week,
 Home/End move within the week and PageUp/PageDown change month. Booking date/time
-fields remain native. Only the chosen duration mode is saved; unfinished ranges cannot
-create a trip. Creation has one primary footer action and cancellation in the header.
+fields remain native. The first date tap fills the end from the selected duration,
+enabling creation immediately; a second tap can refine the end. Dates flexible is
+an undated status in Days mode, and Keep dates flexible returns from the calendar
+without saving dates. Creation has one primary footer action and cancellation in the header.
 
 Trip setup and stop editors use the shared CountryPicker destination mode. Typing
 shows up to eight matching country names and flags using the existing country/code/

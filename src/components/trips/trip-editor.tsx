@@ -126,11 +126,11 @@ export const TripEditor = ({ initial, onSave, onCancel }: ITripEditorProps) => {
               start={startDate}
               end={endDate}
               onChange={(start, end) => {
+                const nextEnd =
+                  end || addDays(start, (invalidDuration ? tripDuration.defaultDays : days) - 1);
                 setStartDate(start);
-                setEndDate(end);
-                if (start && end) {
-                  setDays(rangeDays(start, end));
-                }
+                setEndDate(nextEnd);
+                setDays(rangeDays(start, nextEnd));
               }}
             />
           ) : (
@@ -150,12 +150,23 @@ export const TripEditor = ({ initial, onSave, onCancel }: ITripEditorProps) => {
                   }
                 }}
               />
-              <Button className={styles.flexibleDates} onClick={() => setDated(true)}>
+              <p className={styles.flexibleDates}>
                 <span aria-hidden="true">▦</span>
                 <span>Dates flexible</span>
-                <span aria-hidden="true">›</span>
-              </Button>
+              </p>
             </>
+          )}
+          {dated && (
+            <Button
+              className={styles.flexibleDates}
+              onClick={() => {
+                setDated(false);
+                setStartDate('');
+                setEndDate('');
+              }}
+            >
+              Keep dates flexible
+            </Button>
           )}
         </fieldset>
         {allocationChanged && (

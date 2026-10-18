@@ -39,6 +39,80 @@ const submit = async () => {
   );
 };
 describe('two-question trip setup', () => {
+  it('enables creation after one start-date tap using the chosen duration', async () => {
+    const onSave = vi.fn();
+    await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));
+    await fill('input[name="destination"]', 'Japan');
+    await fill('input[type="number"]', '10');
+    const dates = [...host.querySelectorAll('button')].find(
+      (button) => button.textContent === 'Dates',
+    );
+    if (!dates) {
+      throw new Error('Missing dates toggle');
+    }
+    await act(async () => dates.click());
+    const create = host.querySelector('button[type="submit"]');
+    if (!(create instanceof HTMLButtonElement)) {
+      throw new Error('Missing create button');
+    }
+    expect(create.disabled).toBe(true);
+    const start = host.querySelector('button[aria-label="Saturday, 17 October 2026"]');
+    if (!(start instanceof HTMLButtonElement)) {
+      throw new Error('Missing start date');
+    }
+    await act(async () => start.click());
+    expect(create.disabled).toBe(false);
+    expect(host.querySelectorAll('td[aria-selected="true"]')).toHaveLength(10);
+    await act(async () => create.click());
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        startDate: '2026-10-17',
+        endDate: '2026-10-26',
+        durationDays: 10,
+      }),
+    );
+  });
+  it('keeps flexible dates undated and lets a dated trip return to flexible days', async () => {
+    const onSave = vi.fn();
+    await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));
+    await fill('input[name="destination"]', 'Japan');
+    const flexible = [...host.querySelectorAll('p')].find((p) =>
+      p.textContent?.includes('Dates flexible'),
+    );
+    if (!flexible) {
+      throw new Error('Missing flexible status');
+    }
+    await act(async () => flexible.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    expect(host.querySelector('[aria-label="Trip date range"]')).toBeNull();
+    const dates = [...host.querySelectorAll('button')].find(
+      (button) => button.textContent === 'Dates',
+    );
+    if (!dates) {
+      throw new Error('Missing dates toggle');
+    }
+    await act(async () => dates.click());
+    const start = host.querySelector('button[aria-label="Saturday, 17 October 2026"]');
+    if (!(start instanceof HTMLButtonElement)) {
+      throw new Error('Missing start date');
+    }
+    await act(async () => start.click());
+    const keep = [...host.querySelectorAll('button')].find(
+      (button) => button.textContent === 'Keep dates flexible',
+    );
+    if (!keep) {
+      throw new Error('Missing flexible action');
+    }
+    await act(async () => keep.click());
+    expect(host.querySelector('[aria-label="Trip date range"]')).toBeNull();
+    const create = host.querySelector('button[type="submit"]');
+    if (!(create instanceof HTMLButtonElement)) {
+      throw new Error('Missing create button');
+    }
+    await act(async () => create.click());
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ startDate: '', endDate: '', durationDays: 7 }),
+    );
+  });
   it('keeps a touched result alive until click when the browser would blur search without focusing the button', async () => {
     const onSave = vi.fn();
     await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));
