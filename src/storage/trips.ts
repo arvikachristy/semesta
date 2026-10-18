@@ -1,6 +1,6 @@
 import { normalizeCountrySelection } from './country-selection';
 import type { ITrip } from '../types/trip';
-import { isTripDate, isTripParticipant } from '../types/trip';
+import { isTripDate, isTripParticipant, isTripStop } from '../types/trip';
 import {
   isTripPlanningItem,
   isPlanningCategory,
@@ -34,6 +34,17 @@ export const isTripRecord = (value: unknown): value is ITrip => {
     (!value.startDate || !value.endDate || value.startDate <= value.endDate) &&
     'notes' in value &&
     typeof value.notes === 'string' &&
+    (!('destination' in value) ||
+      (typeof value.destination === 'string' && value.destination.trim().length > 0)) &&
+    (!('durationDays' in value) ||
+      (typeof value.durationDays === 'number' &&
+        Number.isInteger(value.durationDays) &&
+        value.durationDays >= 1 &&
+        value.durationDays <= 365)) &&
+    (!('stops' in value) ||
+      (Array.isArray(value.stops) &&
+        value.stops.every(isTripStop) &&
+        new Set(value.stops.map((stop) => stop.id)).size === value.stops.length)) &&
     'countryIds' in value &&
     Array.isArray(value.countryIds) &&
     value.countryIds.every((id: unknown) => normalizeCountrySelection([id]).length === 1) &&

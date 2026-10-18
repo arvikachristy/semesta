@@ -69,12 +69,34 @@ Token naming follows the [Design Tokens Community Group](https://www.w3.org/comm
 ## Mobile sheets
 
 Trip Studio keeps the collection mounted and uses the existing navigation shell for
-Countries, Trips and Account access. Its abstract SVG journey and transparent
-readiness panel lead into a single planning board. Empty plans omit readiness percentages; categories start expanded so newly added ideas remain visible. Category selection, traveller
-management and booking create/edit actions use the shared native Overlay dialog;
-forms are mounted only on request. Escape and Close dismiss overlays, focus returns
-to the opener, and native date/time inputs retain their usual behaviour. All ticket
-content and progress come from the existing planning model and repository.
+Countries, Trips and Account access. Trip creation asks for a destination and days
+or a date range, with a generated title. The studio shows clickable transport and
+stay slots, an optional route and expandable days. Slots do not persist as bookings
+until saved. Extra journeys/stays are tucked into a disclosure. Stop editing and
+booking create/edit use the existing native Overlay; forms mount only on request.
+Booking forms begin with a name-or-link field and collapse optional details. No
+readiness hero, category chooser or traveller editor is shown. Escape and Close
+dismiss overlays and restore focus. Native date/time inputs keep their usual behaviour.
+Use the existing tokens and controls; the MVP adds no image service or new theme.
+
+Trip setup uses DayDial and DateRangeCalendar. The SVG dial handles pointer capture,
+continuous rotation across twelve o'clock, arrow/page/home/end keys, direct numeric
+entry and ± buttons; one turn represents 30 days, bounded to 1–365. Presets use the
+shared Button. This specialised numeric control uses the same focus and colour tokens.
+DateRangeCalendar is the deliberate custom-calendar exception to native dates: a real
+six-week grid with month navigation, inclusive range highlighting, roving keyboard
+focus, leap-year handling and a selected-range summary. Arrow keys move by day/week,
+Home/End move within the week and PageUp/PageDown change month. Booking date/time
+fields remain native. Choose both a first and last day to complete a date range.
+The destination shows a required-field hint while empty. Dates flexible is
+an undated status in Days mode, and Keep dates flexible returns from the calendar
+without saving dates. Creation has one primary footer action and cancellation in the header.
+
+Trip setup and stop editors use the shared CountryPicker destination mode. Typing
+shows up to eight matching country names and flags using the existing country/code/
+alias matcher. Tap a result or press Enter to select it. Escape closes suggestions
+without closing the dialog. Country results replace the native datalist; unmatched
+city names remain usable as free text. Results scroll within a bounded area.
 
 At 600px and below, route the Countries, Trips and Account interfaces through `MobilePanels`. It owns the single active sheet and bottom navigation. Keep feature components mounted so closing a sheet or switching tabs preserves drafts. Desktop keeps its existing floating controls.
 

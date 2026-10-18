@@ -1,7 +1,8 @@
-import { memo, useMemo, useState } from 'react';
+import { memo, useId, useMemo, useRef, useState } from 'react';
 import { CountryStatus } from '../../../types/country-status';
 import type { CountryList } from '../../../types/country';
 import { countryGroups } from '../../../data/countries';
+import { flagAssetPath } from '../../../data/flag-definitions';
 import { Button, ButtonVariant } from '../../ui/button';
 import ui from '../../ui/ui.module.css';
 import styles from './country-picker.module.css';
@@ -10,6 +11,7 @@ import { matchesCountryQuery, normalizeCountryQuery } from './country-search';
 export const CountryPickerMode = {
   Checklist: 'checklist',
   Add: 'add',
+  Destination: 'destination',
 } as const;
 type TCountryPickerMode = (typeof CountryPickerMode)[keyof typeof CountryPickerMode];
 
@@ -28,11 +30,31 @@ export interface ICountryPickerProps {
   statuses?: Partial<Record<CountryList, CountryStatus>>;
   disabled?: boolean;
   onToggle: (country: CountryList, checked: boolean) => void;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  label?: string;
+  labelClassName?: string;
 }
 
 export const CountryPicker = memo(
-  ({ mode, selectedCountries, statuses = {}, disabled = false, onToggle }: ICountryPickerProps) => {
-    const [search, setSearch] = useState('');
+  ({
+    mode,
+    selectedCountries,
+    statuses = {},
+    disabled = false,
+    onToggle,
+    searchValue,
+    onSearchChange,
+    label = pickerText.search,
+    labelClassName,
+  }: ICountryPickerProps) => {
+    const [localSearch, setSearch] = useState('');
+    const search = searchValue ?? localSearch;
+    const input = useRef<HTMLInputElement>(null);
+    const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+    const destinationMode = mode === CountryPickerMode.Destination;
+    const requiredMessageId = useId();
+    const missingDestination = destinationMode && !search.trim();
     const query = normalizeCountryQuery(search);
     const selected = useMemo(() => new Set(selectedCountries), [selectedCountries]);
     const groups = useMemo(
@@ -48,9 +70,7 @@ export const CountryPicker = memo(
               totalCount: group.countries.length,
               countries: group.countries.filter((country) => {
                 const matches = matchesCountryQuery(country, query);
-                return (
-                  matches && (mode === CountryPickerMode.Checklist || !selected.has(country.code))
-                );
+                return matches && (mode !== CountryPickerMode.Add || !selected.has(country.code));
               }),
             };
           })
@@ -62,22 +82,107 @@ export const CountryPicker = memo(
       [mode, query, selected],
     );
     const waitingForSearch = mode === CountryPickerMode.Add && query.length === 0;
+    const suggestions = groups.flatMap((group) => group.countries).slice(0, 8);
+    const choose = (country: CountryList) => {
+      onToggle(country, true);
+      setSuggestionsOpen(false);
+      input.current?.blur();
+    };
 
     return (
-      <div className={styles.picker} data-mode={mode}>
+      <div
+        className={styles.picker}
+        data-mode={mode}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) {
+            setSuggestionsOpen(false);
+          }
+        }}
+      >
         <label className={ui.field}>
-          {pickerText.search}
-          <input
-            className={ui.control}
-            type="search"
-            aria-label={pickerText.search}
-            placeholder={pickerText.search}
-            value={search}
-            disabled={disabled}
-            onChange={(event) => setSearch(event.currentTarget.value)}
-          />
+          <span className={labelClassName}>{label}</span>
+          <span className={destinationMode ? styles.destinationControl : undefined}>
+            {destinationMode && selectedCountries[0] && (
+              <img
+                className={styles.selectedFlag}
+                src={flagAssetPath(selectedCountries[0])}
+                alt=""
+              />
+            )}
+            <input
+              ref={input}
+              className={ui.control}
+              type="search"
+              name={destinationMode ? 'destination' : undefined}
+              required={destinationMode}
+              aria-describedby={missingDestination ? requiredMessageId : undefined}
+              maxLength={destinationMode ? 80 : undefined}
+              aria-label={label}
+              placeholder={destinationMode ? 'Country or city' : pickerText.search}
+              value={search}
+              disabled={disabled}
+              autoComplete={destinationMode ? 'off' : undefined}
+              data-has-flag={destinationMode && Boolean(selectedCountries[0])}
+              onFocus={() => setSuggestionsOpen(true)}
+              onChange={(event) => {
+                setSearch(event.currentTarget.value);
+                onSearchChange?.(event.currentTarget.value);
+                setSuggestionsOpen(true);
+              }}
+              onKeyDown={(event) => {
+                if (!destinationMode) {
+                  return;
+                }
+                if (event.key === 'Escape' && suggestionsOpen) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setSuggestionsOpen(false);
+                }
+                if (event.key === 'Enter' && suggestionsOpen && query && suggestions[0]) {
+                  event.preventDefault();
+                  choose(suggestions[0].code);
+                }
+              }}
+            />
+            {destinationMode && (
+              <svg className={styles.searchIcon} viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="10" cy="10" r="6" />
+                <path d="m15 15 6 6" />
+              </svg>
+            )}
+          </span>
+          {missingDestination && <small id={requiredMessageId}>This field is required</small>}
         </label>
-        {waitingForSearch ? (
+        {destinationMode ? (
+          suggestionsOpen &&
+          query && (
+            <div className={styles.suggestions} role="region" aria-label="Country suggestions">
+              {suggestions.length ? (
+                suggestions.map((country) => (
+                  <Button
+                    key={country.code}
+                    variant={ButtonVariant.Plain}
+                    className={styles.result}
+                    onPointerDown={(event) => {
+                      // Keep search focused until click selects the result. Safari may
+                      // otherwise blur to the document and unmount suggestions first.
+                      event.preventDefault();
+                    }}
+                    onClick={() => choose(country.code)}
+                    disabled={disabled}
+                  >
+                    <img className={styles.flag} src={flagAssetPath(country.code)} alt="" />
+                    {country.name}
+                  </Button>
+                ))
+              ) : (
+                <p className={styles.empty} role="status">
+                  No countries found. You can keep this as a city.
+                </p>
+              )}
+            </div>
+          )
+        ) : waitingForSearch ? (
           <p className={styles.empty}>{pickerText.emptyAdd}</p>
         ) : groups.length === 0 ? (
           <p className={styles.empty}>{pickerText.noResults}</p>

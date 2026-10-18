@@ -1,0 +1,199 @@
+.dialControl {
+  min-width: 0;
+}
+.dialFace {
+  position: relative;
+  width: min(100%, 20rem);
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+.dial {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+  border-radius: var(--radius-round);
+}
+.dial:active {
+  cursor: grabbing;
+}
+.dial:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+.track,
+.arc {
+  fill: none;
+  stroke-width: 5;
+}
+.track {
+  stroke: var(--color-border);
+  opacity: 0.3;
+}
+.arc {
+  stroke: var(--color-accent);
+  stroke-linecap: round;
+}
+.tick,
+.majorTick {
+  stroke: var(--color-border);
+  stroke-width: 0.8;
+}
+.majorTick {
+  stroke: var(--color-accent);
+  stroke-width: 1.2;
+}
+.knob {
+  fill: var(--color-accent);
+  stroke: var(--color-on-accent);
+  stroke-width: 3;
+  filter: drop-shadow(0 2px 3px var(--color-border));
+}
+.dialNumber {
+  position: absolute;
+  top: 32%;
+  left: 25%;
+  width: 50%;
+  text-align: center;
+  color: var(--color-accent);
+  font: 400 var(--text-title) var(--font-display);
+}
+.dialNumber input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 1.1em;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: inherit;
+  text-align: center;
+  font: 400 clamp(3.25rem, 15vw, 5rem) / 1 var(--font-display);
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.dialNumber input::-webkit-inner-spin-button,
+.dialNumber input::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+.dialNumber input:focus-visible {
+  outline: var(--focus-ring);
+}
+.dialSteps {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-5);
+  position: absolute;
+  top: 66%;
+  width: 100%;
+  pointer-events: none;
+}
+.dialSteps > button {
+  pointer-events: auto;
+}
+.hint {
+  margin: var(--space-2) 0 var(--space-3);
+  text-align: center;
+  font-size: var(--text-small);
+  color: var(--color-muted);
+}
+.presets {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+.presets > button {
+  padding-inline: var(--space-2);
+  border-radius: var(--radius-round);
+  font-family: var(--font-display);
+}
+.calendar {
+  min-width: 0;
+  padding: var(--space-3) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-control);
+}
+.calendarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.calendarHeader h3 {
+  margin: 0;
+  font: 400 var(--text-item) var(--font-display);
+}
+.calendarGrid {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0 var(--space-1);
+}
+.calendarGrid th {
+  height: var(--control-height);
+  font-size: var(--text-small);
+  font-weight: 400;
+  color: var(--color-muted);
+}
+.calendarGrid td {
+  position: relative;
+  padding: 0;
+  text-align: center;
+}
+.calendarGrid td[data-range='true'] {
+  background: var(--color-border);
+}
+.calendarGrid td[data-start='true'] {
+  border-radius: var(--radius-round) 0 0 var(--radius-round);
+}
+.calendarGrid td[data-end='true'] {
+  border-radius: 0 var(--radius-round) var(--radius-round) 0;
+}
+.calendarGrid td[data-start='true'][data-end='true'] {
+  border-radius: var(--radius-round);
+}
+.calendarGrid td > button {
+  width: 100%;
+  min-height: var(--control-height);
+  padding: var(--space-1);
+  border-radius: var(--radius-round);
+}
+.calendarGrid td[data-outside='true'] > button {
+  color: var(--color-muted);
+  opacity: 0.55;
+}
+.calendarGrid td[data-start='true'] > button,
+.calendarGrid td[data-end='true'] > button {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  opacity: 1;
+}
+.rangeSummary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  margin: var(--space-3) 0 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  font-size: var(--text-label);
+}
+@media (forced-colors: active) {
+  .arc,
+  .majorTick,
+  .tick {
+    stroke: CanvasText;
+  }
+  .knob {
+    fill: Highlight;
+    stroke: CanvasText;
+  }
+  .calendarGrid td[aria-selected='true'] > button {
+    outline: 2px solid Highlight;
+  }
+}

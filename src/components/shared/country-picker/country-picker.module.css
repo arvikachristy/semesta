@@ -55,3 +55,53 @@
   color: var(--color-muted);
   font-size: var(--text-small);
 }
+.suggestions {
+  max-height: 14rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin-top: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-glass-raised);
+}
+.flag {
+  width: var(--space-5);
+  height: var(--space-4);
+  object-fit: cover;
+}
+.destinationControl {
+  position: relative;
+  display: block;
+}
+.destinationControl > input {
+  padding-right: 3rem;
+  height: 3.25rem;
+}
+.destinationControl > input[data-has-flag='true'] {
+  padding-left: 3.5rem;
+}
+.selectedFlag {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2rem;
+  height: var(--space-5);
+  object-fit: cover;
+  pointer-events: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--space-1);
+}
+.searchIcon {
+  position: absolute;
+  right: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--space-5);
+  height: var(--space-5);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  pointer-events: none;
+}

@@ -22,6 +22,38 @@
 .panel[data-full-page='true'] .body {
   padding: 0 var(--space-6) var(--space-6);
 }
+.panel[data-editing='true'] {
+  width: min(30rem, calc(100vw - 2rem));
+}
+.panel[data-full-page='true'][data-editing='true'] {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - 3rem);
+  max-height: 55rem;
+  margin: var(--space-5) auto;
+}
+.panel[data-full-page='true'][data-editing='true'] .body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.panel[data-full-page='true'][data-editing='true'] .editor {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 0;
+}
+.panel[data-full-page='true'][data-editing='true'] .editorFields {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-1);
+}
+.panel[data-mobile='true'][data-editing='true'] {
+  width: 100%;
+}
 .header {
   display: flex;
   align-items: center;
@@ -33,6 +65,7 @@
   margin: 0;
   min-width: 0;
   font-weight: 400;
+  font-family: var(--font-display);
 }
 .panel .heading {
   display: flex;
@@ -62,57 +95,97 @@
 .editorFields {
   align-content: start;
 }
-.dates {
+.question {
+  display: block;
+  margin-bottom: var(--space-3);
+  color: var(--color-accent);
+  font: 400 clamp(1.5rem, 4vw, 2rem) / 1.2 var(--font-display);
+}
+.destinationQuestion {
+  display: block;
+  margin-bottom: var(--space-2);
+  color: var(--color-accent);
+  font: 400 clamp(2.25rem, 8vw, 3rem) / 1.1 var(--font-display);
+  letter-spacing: -0.04em;
+}
+.duration {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.durationModes {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
+  gap: 0;
+  margin-bottom: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  overflow: hidden;
 }
-.editorActions {
+.durationModes > button {
+  border-color: transparent;
+}
+.flexibleDates {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  justify-content: space-between;
+  width: 100%;
+  margin-top: var(--space-3);
+}
+.flexibleDates > span:nth-child(2) {
+  flex: 1;
+  text-align: left;
+}
+.setupFooter {
+  flex-shrink: 0;
   position: sticky;
   bottom: 0;
   padding-block: var(--space-2);
-  background: var(--color-glass-raised);
-  backdrop-filter: var(--glass-filter);
+  background: var(--color-sheet);
   border-radius: var(--radius-control);
 }
-.destinations {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.tripPreview {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-control);
+  background: var(--color-control);
+  text-align: center;
+  color: var(--color-accent);
+  font: 400 var(--text-item) var(--font-display);
+  overflow-wrap: anywhere;
 }
-.destinations li {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding-left: var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-round);
-}
-.countryPicker {
-  display: grid;
-  gap: var(--space-2);
-}
-.countryPickerTrigger {
+.extraDetails > summary {
   display: flex;
   align-items: center;
-  list-style: none;
+  min-height: var(--control-height);
   cursor: pointer;
 }
-.countryPickerTrigger::-webkit-details-marker {
-  display: none;
+.extraDetails > summary:focus-visible {
+  outline: var(--focus-ring);
 }
-.countryPicker[open] > div {
-  max-height: 14rem;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: var(--space-3);
+.extraDetails > label {
+  margin-top: var(--space-3);
+}
+.routePreview {
+  padding: var(--space-4);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
-  background: var(--color-glass-raised);
 }
+.routePreview h3 {
+  margin-top: 0;
+  font: 400 var(--text-item) var(--font-display);
+}
+.routePreview ol {
+  padding-left: var(--space-5);
+}
+.routePreview li + li {
+  margin-top: var(--space-2);
+}
+
 .dateSummary {
   font-size: var(--text-small);
   color: var(--color-muted);
@@ -124,93 +197,13 @@
 .warning {
   font-size: var(--text-small);
 }
-.planning {
-  display: grid;
-  gap: var(--space-3);
-  margin-block: var(--space-5);
-}
+
 .planningForm {
   display: grid;
   gap: var(--space-4);
   min-width: 0;
 }
-.planning h4 {
-  margin: 0;
-  font: 400 var(--text-item) / 1.3 var(--font-display);
-}
-.planning p {
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-.planningProgress {
-  width: 100%;
-  height: var(--space-3);
-  accent-color: var(--color-accent);
-}
-.planningCategory {
-  min-width: 0;
-  padding-block: var(--space-4);
-  border-top: 1px solid var(--color-border);
-}
-.planningCategory summary {
-  min-height: var(--control-height);
-  cursor: pointer;
-  font-family: var(--font-display);
-  font-size: var(--text-item);
-}
-.planningCategory summary:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: 3px;
-}
-.planningCategory > p {
-  margin-bottom: var(--space-4);
-  color: var(--color-muted);
-}
-.planningItems {
-  display: grid;
-  gap: var(--space-4);
-  margin: 0 0 var(--space-4);
-  padding: 0;
-  list-style: none;
-}
-.planningItem {
-  display: grid;
-  gap: var(--space-2);
-  min-width: 0;
-}
-.planningItem[data-confirmed='true'] {
-  background: var(--color-glass-raised);
-  border-radius: var(--radius-control);
-  box-shadow: var(--shadow-small);
-}
-.bookingSummary {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: var(--control-height);
-  padding: var(--space-3);
-  cursor: pointer;
-  overflow-wrap: anywhere;
-}
-.bookingCategory {
-  padding-inline: var(--space-4);
-}
-.planning summary:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: 3px;
-}
-.bookingSummary small {
-  display: block;
-  color: var(--color-muted);
-}
-.planningItem .planningForm {
-  padding: var(--space-3);
-}
-.planningItem a {
-  color: var(--color-accent);
-  overflow-wrap: anywhere;
-}
+
 .bookingStatus {
   display: flex;
   align-items: center;
@@ -423,9 +416,6 @@
   flex: 1;
   padding: var(--space-1);
 }
-.panel[data-mobile='true'] .editorActions {
-  position: static;
+.panel[data-mobile='true'] .setupFooter {
   flex: 0 0 auto;
-  background: transparent;
-  backdrop-filter: none;
 }

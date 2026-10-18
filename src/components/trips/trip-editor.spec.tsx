@@ -3,20 +3,12 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CountryList } from '../../types/country';
-import type { TTripDetails } from '../../types/trip';
 import { TripEditor } from './trip-editor';
-
 const host = document.createElement('div');
 let root: ReturnType<typeof createRoot>;
-const saved = vi.fn<(details: TTripDetails) => void>();
-const searchFor = async (search: HTMLInputElement, value: string) => {
-  await act(async () => {
-    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(search, value);
-    search.dispatchEvent(new Event('input', { bubbles: true }));
-  });
-};
-
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-10-17T12:00:00Z'));
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   document.body.append(host);
   root = createRoot(host);
@@ -25,43 +17,249 @@ afterEach(async () => {
   await act(async () => root.unmount());
   host.remove();
   vi.unstubAllGlobals();
-  vi.clearAllMocks();
+  vi.useRealTimers();
 });
-
-describe('trip destination country picker', () => {
-  it('uses shared country search to add a destination to the trip', async () => {
-    await act(async () => root.render(<TripEditor onSave={saved} onCancel={vi.fn()} />));
-    const disclosure = host.querySelector('details');
-    if (!(disclosure instanceof HTMLDetailsElement)) {
-      throw new Error('Missing destination picker');
+const fill = async (selector: string, value: string) => {
+  const input = host.querySelector(selector);
+  if (!(input instanceof HTMLInputElement)) {
+    throw new Error(selector);
+  }
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(input, value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+};
+const submit = async () => {
+  const form = host.querySelector('form');
+  if (!form) {
+    throw new Error('Missing form');
+  }
+  await act(async () =>
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })),
+  );
+};
+describe('two-question trip setup', () => {
+  it('explains that the destination is required even when a complete date range is chosen', async () => {
+    const onSave = vi.fn();
+    await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));
+    const destination = host.querySelector('input[name="destination"]');
+    if (!(destination instanceof HTMLInputElement)) {
+      throw new Error('Missing destination');
     }
-    await act(async () => {
-      disclosure.open = true;
-      disclosure.dispatchEvent(new Event('toggle'));
-    });
-    const search = host.querySelector('input[type="search"]');
-    if (!(search instanceof HTMLInputElement)) {
-      throw new Error('Missing shared country search');
-    }
-    await searchFor(search, 'france');
-    const result = [...host.querySelectorAll('button')].find(
-      (button) => button.textContent === 'France',
+    expect(destination.required).toBe(true);
+    const hintId = destination.getAttribute('aria-describedby');
+    expect(hintId && document.getElementById(hintId)?.textContent).toBe('This field is required');
+    const dates = [...host.querySelectorAll('button')].find(
+      (button) => button.textContent === 'Dates',
     );
-    if (!result) {
-      throw new Error('Missing France search result');
+    if (!dates) {
+      throw new Error('Missing dates toggle');
+    }
+    await act(async () => dates.click());
+    const create = host.querySelector('button[type="submit"]');
+    if (!(create instanceof HTMLButtonElement)) {
+      throw new Error('Missing create button');
+    }
+    expect(create.disabled).toBe(true);
+    const start = host.querySelector('button[aria-label="Saturday, 17 October 2026"]');
+    if (!(start instanceof HTMLButtonElement)) {
+      throw new Error('Missing start date');
+    }
+    await act(async () => start.click());
+    expect(create.disabled).toBe(true);
+    const end = host.querySelector('button[aria-label="Monday, 26 October 2026"]');
+    if (!(end instanceof HTMLButtonElement)) {
+      throw new Error('Missing last date');
+    }
+    await act(async () => end.click());
+    expect(create.disabled).toBe(true);
+    await fill('input[name="destination"]', 'Japan');
+    expect(destination.hasAttribute('aria-describedby')).toBe(false);
+    expect(create.disabled).toBe(false);
+    await act(async () => create.click());
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        startDate: '2026-10-17',
+        endDate: '2026-10-26',
+        durationDays: 10,
+      }),
+    );
+  });
+  it('keeps flexible dates undated and lets a dated trip return to flexible days', async () => {
+    const onSave = vi.fn();
+    await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));
+    await fill('input[name="destination"]', 'Japan');
+    const flexible = [...host.querySelectorAll('p')].find((p) =>
+      p.textContent?.includes('Dates flexible'),
+    );
+    if (!flexible) {
+      throw new Error('Missing flexible status');
+    }
+    await act(async () => flexible.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    expect(host.querySelector('[aria-label="Trip date range"]')).toBeNull();
+    const dates = [...host.querySelectorAll('button')].find(
+      (button) => button.textContent === 'Dates',
+    );
+    if (!dates) {
+      throw new Error('Missing dates toggle');
+    }
+    await act(async () => dates.click());
+    const start = host.querySelector('button[aria-label="Saturday, 17 October 2026"]');
+    if (!(start instanceof HTMLButtonElement)) {
+      throw new Error('Missing start date');
+    }
+    await act(async () => start.click());
+    const keep = [...host.querySelectorAll('button')].find(
+      (button) => button.textContent === 'Keep dates flexible',
+    );
+    if (!keep) {
+      throw new Error('Missing flexible action');
+    }
+    await act(async () => keep.click());
+    expect(host.querySelector('[aria-label="Trip date range"]')).toBeNull();
+    const create = host.querySelector('button[type="submit"]');
+    if (!(create instanceof HTMLButtonElement)) {
+      throw new Error('Missing create button');
+    }
+    await act(async () => create.click());
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ startDate: '', endDate: '', durationDays: 7 }),
+    );
+  });
+  it('keeps a touched result alive until click when the browser would blur search without focusing the button', async () => {
+    const onSave = vi.fn();
+    await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));
+    const input = host.querySelector('input[name="destination"]');
+    if (!(input instanceof HTMLInputElement)) {
+      throw new Error('Missing destination input');
+    }
+    await act(async () => input.focus());
+    await fill('input[name="destination"]', 'Jap');
+    const result = host.querySelector('[aria-label="Country suggestions"] button');
+    if (!(result instanceof HTMLButtonElement)) {
+      throw new Error('Missing country result');
+    }
+    const pointerDown = new Event('pointerdown', { bubbles: true, cancelable: true });
+    await act(async () => {
+      result.dispatchEvent(pointerDown);
+      if (!pointerDown.defaultPrevented) {
+        // Safari can blur the input to the document instead of focusing a tapped button.
+        input.blur();
+      }
+    });
+    await act(async () => result.click());
+    await submit();
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ destination: 'Japan', countryIds: [CountryList.Japan] }),
+    );
+  });
+  it('shows tappable country results for a partial name and saves the selected country', async () => {
+    const onSave = vi.fn();
+    await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));
+    await fill('input[name="destination"]', 'Jap');
+    const result = [...host.querySelectorAll('[aria-label="Country suggestions"] button')].find(
+      (button) => button.textContent === 'Japan',
+    );
+    if (!(result instanceof HTMLButtonElement)) {
+      throw new Error('Missing Japan search result');
     }
     await act(async () => result.click());
-    expect(host.querySelector('[aria-label="Trip destinations"]')?.textContent).toContain('France');
-
-    const form = host.querySelector('form');
-    if (!form) {
-      throw new Error('Missing trip editor form');
+    expect(host.querySelector('[aria-label="Country suggestions"]')).toBeNull();
+    await submit();
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Japan', countryIds: [CountryList.Japan] }),
+    );
+  });
+  it('selects a country using Enter without submitting the trip form', async () => {
+    const onSave = vi.fn();
+    await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));
+    await fill('input[name="destination"]', 'JP');
+    const input = host.querySelector('input[name="destination"]');
+    if (!(input instanceof HTMLInputElement)) {
+      throw new Error('Missing destination search');
     }
     await act(async () =>
-      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })),
+      input.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+      ),
     );
-    expect(saved).toHaveBeenCalledWith(
-      expect.objectContaining({ countryIds: [CountryList.France] }),
+    expect(input.value).toBe('Japan');
+    expect(onSave).not.toHaveBeenCalled();
+    await submit();
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ countryIds: [CountryList.Japan] }),
     );
+  });
+  it('creates a flexible trip with a country, duration and generated title, without booking records', async () => {
+    const onSave = vi.fn();
+    await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));
+    expect(host.querySelectorAll('input')).toHaveLength(2);
+    expect(host.querySelector('textarea')).toBeNull();
+    await fill('input[name="destination"]', 'Japan');
+    await fill('input[type="number"]', '10');
+    await submit();
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Japan',
+        destination: 'Japan',
+        countryIds: [CountryList.Japan],
+        durationDays: 10,
+        startDate: '',
+        endDate: '',
+        stops: [expect.objectContaining({ name: 'Japan', nights: 9 })],
+      }),
+    );
+    expect(onSave.mock.calls[0][0].planning).toBeUndefined();
+  });
+  it('accepts a city without fabricating a country and calculates inclusive date duration', async () => {
+    const onSave = vi.fn();
+    await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));
+    await fill('input[name="destination"]', 'Kyoto');
+    const dates = [...host.querySelectorAll('button')].find(
+      (button) => button.textContent === 'Dates',
+    );
+    if (!dates) {
+      throw new Error('Missing dates toggle');
+    }
+    await act(async () => dates.click());
+    const next = host.querySelector('button[aria-label="Next month"]');
+    if (!(next instanceof HTMLButtonElement)) {
+      throw new Error('Missing month navigation');
+    }
+    // The calendar starts in the current month; navigate to December 2026.
+    for (
+      let count = 0;
+      !host.querySelector('button[aria-label="Thursday, 17 December 2026"]') && count < 12;
+      count++
+    ) {
+      await act(async () => next.click());
+    }
+    for (const label of ['Thursday, 17 December 2026', 'Saturday, 26 December 2026']) {
+      const button = host.querySelector(`button[aria-label="${label}"]`);
+      if (!(button instanceof HTMLButtonElement)) {
+        throw new Error('Missing date ' + label);
+      }
+      await act(async () => button.click());
+    }
+    await submit();
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Kyoto',
+        countryIds: [],
+        durationDays: 10,
+        startDate: '2026-12-17',
+        endDate: '2026-12-26',
+      }),
+    );
+  });
+  it('rejects empty, fractional and excessive day counts', async () => {
+    const onSave = vi.fn();
+    await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));
+    await fill('input[name="destination"]', 'Japan');
+    for (const days of ['0', '1.5', '366', '']) {
+      await fill('input[type="number"]', days);
+      await submit();
+    }
+    expect(onSave).not.toHaveBeenCalled();
   });
 });

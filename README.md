@@ -13,10 +13,16 @@ individually. Undo also restores a wish fulfilled by marking a visit. Wishes nev
 add jellies and can include return visits.
 
 **Plan a trip** saves a destination-filled draft and opens Trip Studio immediately.
-Dates, travellers and bookings can come later. One planning board starts with
-**Things to do / Getting there / Your stay**, using the existing booking editors.
-Optional categories remain available; disabling one keeps its saved items. Only
-added items count toward readiness. Back returns to the original country, continent,
+From **New trip**, enter a country or city and either a day count or dates, then
+choose **Create trip**. The day dial supports dragging, keyboard controls, ± buttons,
+direct number entry and presets; Dates opens a keyboard-accessible range calendar.
+The title and itinerary are generated immediately. One
+transport slot and one stay slot start the plan; they are placeholders until saved.
+Tap a card to add a name or booking link. Other details stay collapsed. **Add a stop**
+splits the last stop's nights and adds a stay and connecting journey. Tap a stop to
+rename it or redistribute nights with its neighbour. Existing reservations are
+never rewritten. Day sections hold optional activities; older unscheduled items
+remain under **Saved for this trip**. Back returns to the original country, continent,
 search and filter. Trips opened from the timeline return to Trips instead.
 
 After travelling, **Mark countries visited** asks which destinations were actually
@@ -28,11 +34,14 @@ Local trips and account backups use the same validators and keep storage version
 Legacy completed booleans map to Booked or To book, with every item and ID retained.
 New statuses take precedence and keep the legacy boolean synchronized on save.
 
-Open a trip to plan transportation, accommodation, activities, restaurants and travel
-essentials. Add multiple items with dates, addresses, prices or booking references in
-their details; mark them booked (or ready for essentials) to update the progress bar.
-Only added items count towards progress. Planning is saved with the trip and included
-in account backups; existing trips start with an empty plan.
+The studio reuses the existing booking editor, Overlay and Rose Glass controls.
+There are no category selectors, traveller forms or readiness panels in the studio.
+Previously saved participants, category preferences and bookings remain in account
+backups. Flexible duration, stops and day assignments are optional version-1 fields.
+Country names link to the collection; free-text cities do not infer a country.
+One day has zero overnight stays. A multi-stop trip keeps its existing total duration
+while dates can still be assigned or moved. Booking links are stored as entered;
+this MVP does not fetch link previews, photos or reservation details.
 
 The destination picker has 199 entries: the UK is represented by England, Scotland,
 Wales and Northern Ireland instead of a separate United Kingdom option. Previously

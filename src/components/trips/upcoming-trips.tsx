@@ -35,7 +35,9 @@ export const UpcomingTrips = memo(
       >
         <header className={styles.header}>
           <h2>
-            {fullPage ? (
+            {creating ? (
+              'New trip'
+            ) : fullPage ? (
               'Upcoming trips'
             ) : (
               <Button
@@ -54,18 +56,31 @@ export const UpcomingTrips = memo(
               </Button>
             )}
           </h2>
-          <Button
-            icon
-            aria-label={tripUi.newTrip}
-            title={tripUi.newTrip}
-            disabled={!ready || creating}
-            onClick={() => {
-              setCreating(true);
-              setOpen(true);
-            }}
-          >
-            +
-          </Button>
+          {!creating && (
+            <Button
+              icon
+              aria-label={tripUi.newTrip}
+              title={tripUi.newTrip}
+              disabled={!ready || creating}
+              onClick={() => {
+                setCreating(true);
+                setOpen(true);
+              }}
+            >
+              +
+            </Button>
+          )}
+          {creating && !mobilePanel && (
+            <Button
+              icon
+              aria-label="Cancel"
+              title="Close new trip"
+              variant={ButtonVariant.Quiet}
+              onClick={() => setCreating(false)}
+            >
+              ×
+            </Button>
+          )}
           {mobilePanel && (
             <Button
               data-sheet-close
@@ -73,7 +88,7 @@ export const UpcomingTrips = memo(
               onClick={mobilePanel.onClose}
               aria-label={mobilePanelText.close}
             >
-              {mobilePanelText.closeLabel}
+              {creating ? '×' : mobilePanelText.closeLabel}
             </Button>
           )}
         </header>

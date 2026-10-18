@@ -16,5 +16,7 @@ export const readBookingForm = (form: HTMLFormElement) => {
   ) {
     return null;
   }
-  return { name: name.trim(), details, dateTime, bookingReference, link };
+  const pastedLink =
+    name.trim().startsWith('http') && isBookingLink(name.trim()) ? name.trim() : '';
+  return { name: name.trim(), details, dateTime, bookingReference, link: link || pastedLink };
 };

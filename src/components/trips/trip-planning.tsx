@@ -1,180 +1,281 @@
 import { useState } from 'react';
-import type { ReactNode } from 'react';
 import type { ITrip } from '../../types/trip';
-import {
-  getPlanningProgress,
-  planningCategories,
-  isPlanningCategory,
-  PlanningStatus,
-} from '../../types/trip-planning';
 import type { ITripPlanningItem, TPlanningCategory } from '../../types/trip-planning';
+import { getPlanningStatus, PlanningStatus, planningStatusLabel } from '../../types/trip-planning';
 import { Button, ButtonVariant } from '../ui/button';
-import { Overlay } from '../ui/overlay';
 import { BookingEditor } from './booking-editor';
-import { StudioCategorySection } from './studio-category';
-import ui from '../ui/ui.module.css';
+import { getDestination, getDurationDays, getEssentialSlots, getTripStops } from './trip-itinerary';
+import { TripStopEditor } from './trip-stop-editor';
 import styles from './trip-studio.module.css';
 
 export const initialPlanningCategories: TPlanningCategory[] = [
-  'activities',
   'transportation',
   'accommodation',
+  'activities',
 ];
 interface ITripPlanningProps {
   trip: ITrip;
-  items: readonly ITripPlanningItem[];
-  onChange: (items: ITripPlanningItem[], activeCategories?: TPlanningCategory[]) => void;
-  activeCategories?: readonly TPlanningCategory[];
-  onCategoriesChange?: (categories: TPlanningCategory[]) => void;
-  journey?: ReactNode;
+  onChange: (trip: ITrip) => void;
 }
-export const TripPlanning = ({
-  items,
-  onChange,
-  activeCategories,
-  onCategoriesChange,
-  journey,
-}: ITripPlanningProps) => {
-  const [localCategories, setLocalCategories] = useState<TPlanningCategory[]>(() =>
-    items.length
-      ? [...new Set(items.map((item) => item.category))]
-      : [...initialPlanningCategories],
-  );
-  const active = activeCategories ?? localCategories;
-  const progress = getPlanningProgress(items, active);
+interface IEditingPlan {
+  item: ITripPlanningItem;
+  saved: boolean;
+}
+export const TripPlanning = ({ trip, onChange }: ITripPlanningProps) => {
+  const [editing, setEditing] = useState<IEditingPlan | null>(null);
+  const [addingStop, setAddingStop] = useState(false);
+  const [editingStop, setEditingStop] = useState<string | undefined>();
   const [message, setMessage] = useState('');
-  const [choosing, setChoosing] = useState(false);
-  const [adding, setAdding] = useState<TPlanningCategory | null>(null);
-  const changeCategories = (next: TPlanningCategory[]) => {
-    setLocalCategories(next);
-    onCategoriesChange?.(next);
+  const items = trip.planning ?? [];
+  const slots = getEssentialSlots(trip);
+  const essentials = [
+    ...items.filter(
+      (item) => item.category === 'transportation' || item.category === 'accommodation',
+    ),
+    ...slots,
+  ];
+  const stops = getTripStops(trip);
+  const duration = getDurationDays(trip);
+  const destination = getDestination(trip);
+  const addPlan = (category: TPlanningCategory, dayNumber?: number) => {
+    setEditing({
+      saved: false,
+      item: {
+        id: crypto.randomUUID(),
+        category,
+        name: '',
+        details: '',
+        completed: false,
+        status: PlanningStatus.Idea,
+        ...(dayNumber ? { dayNumber } : {}),
+      },
+    });
   };
   return (
     <section className={styles.planningWorkspace} aria-label="Trip Studio planning">
-      {journey && (
-        <div className={progress.total ? styles.hero : undefined}>
-          {journey}
-          {progress.total > 0 && (
-            <section
-              className={`${ui.surface} ${styles.readiness}`}
-              aria-label="Trip readiness"
-              data-complete={progress.completed === progress.total}
-            >
-              <span className={styles.eyebrow}>Your tracked plans</span>
-              <div className={styles.readinessTitle}>
-                <h2>
-                  {progress.completed === progress.total
-                    ? 'All tracked plans confirmed.'
-                    : 'Coming together.'}
-                </h2>
-                <span>
-                  {progress.percent}
-                  <small>%</small>
+      <section aria-label="Your essentials">
+        <h2>Your essentials</h2>
+        <div className={styles.essentials}>
+          {essentials.map((item) => {
+            const saved = items.some((existing) => existing.id === item.id);
+            const stop = stops.find((candidate) => item.id === `stay-${candidate.id}`);
+            return (
+              <Button
+                key={item.id}
+                className={styles.essential}
+                variant={ButtonVariant.Secondary}
+                onClick={() => setEditing({ item, saved })}
+              >
+                <span className={styles.essentialIcon} aria-hidden="true">
+                  {item.category === 'transportation' ? '↗' : '⌂'}
                 </span>
-              </div>
-              <p role="status">
-                {progress.completed} of {progress.total} items booked or ready
-              </p>
-              <progress
-                className={styles.progress}
-                aria-label="Overall trip planning progress"
-                value={progress.completed}
-                max={progress.total}
-              />
-            </section>
-          )}
-        </div>
-      )}
-      <div className={styles.sectionHeading}>
-        <div>
-          <span className={styles.eyebrow}>
-            {progress.total
-              ? 'Keep your ideas and bookings together'
-              : 'Start with one thing you want to experience'}
-          </span>
-          <h2>Your trip plan</h2>
-        </div>
-        <Button variant={ButtonVariant.Quiet} onClick={() => setChoosing(true)}>
-          Choose categories
-        </Button>
-      </div>
-      <div className={styles.categories}>
-        {active.map((category) => (
-          <StudioCategorySection
-            key={category}
-            category={category}
-            items={items.filter((item) => item.category === category)}
-            onAdd={() => setAdding(category)}
-            onChange={(updated) =>
-              onChange(items.map((item) => (item.id === updated.id ? updated : item)))
-            }
-            onRemove={(id) => {
-              const removed = items.find((item) => item.id === id);
-              onChange(items.filter((item) => item.id !== id));
-              setMessage(`${removed?.name ?? 'Plan'} removed.`);
-            }}
-          />
-        ))}
-      </div>
-      {!active.length && (
-        <p className={styles.empty}>
-          Choose a category to start. Dates and bookings can come later.
-        </p>
-      )}
-      {choosing && (
-        <Overlay title="Choose categories" onDismiss={() => setChoosing(false)}>
-          <p>Turning a category off keeps its items saved. Turn it back on any time.</p>
-          <div className={styles.choices}>
-            {Object.entries(planningCategories).map(
-              ([category, label]) =>
-                isPlanningCategory(category) && (
-                  <label key={category}>
-                    <input
-                      className={ui.checkbox}
-                      type="checkbox"
-                      checked={active.includes(category)}
-                      onChange={(event) =>
-                        changeCategories(
-                          event.currentTarget.checked
-                            ? [...active, category]
-                            : active.filter((id) => id !== category),
-                        )
-                      }
-                    />
-                    {label}
-                  </label>
-                ),
-            )}
-          </div>
-          <Button variant={ButtonVariant.Primary} onClick={() => setChoosing(false)}>
-            Done
-          </Button>
-        </Overlay>
-      )}
-      {adding && (
-        <BookingEditor
-          title={`Add ${planningCategories[adding].toLowerCase()}`}
-          onCancel={() => setAdding(null)}
-          onSave={(fields) => {
-            onChange(
-              [
-                ...items,
-                {
-                  id: crypto.randomUUID(),
-                  category: adding,
-                  ...fields,
-                  completed: false,
-                  status: PlanningStatus.Idea,
-                },
-              ],
-              [...active],
+                <span className={styles.essentialText}>
+                  <span>{item.name}</span>
+                  <small>
+                    {stop ? `${stop.nights} ${stop.nights === 1 ? 'night' : 'nights'} · ` : ''}
+                    {saved
+                      ? planningStatusLabel(getPlanningStatus(item), item.category)
+                      : 'Not added yet'}
+                  </small>
+                </span>
+                <span className={styles.cardAction}>
+                  {saved
+                    ? 'Edit'
+                    : item.category === 'transportation'
+                      ? 'Add transport'
+                      : 'Add stay'}{' '}
+                  <span aria-hidden="true">›</span>
+                </span>
+              </Button>
             );
-            setAdding(null);
-            setMessage(`${fields.name} added.`);
+          })}
+        </div>
+        <details className={styles.morePlans}>
+          <summary>More journeys or stays</summary>
+          <div className={styles.inlineActions}>
+            <Button variant={ButtonVariant.Quiet} onClick={() => addPlan('transportation')}>
+              ＋ Add another journey
+            </Button>
+            <Button variant={ButtonVariant.Quiet} onClick={() => addPlan('accommodation')}>
+              ＋ Add another stay
+            </Button>
+          </div>
+        </details>
+      </section>
+      <section className={styles.routeSection} aria-label="Your route">
+        {stops.length > 0 && (
+          <ol className={styles.stopList}>
+            {stops.map((stop) => (
+              <li key={stop.id}>
+                <Button
+                  variant={ButtonVariant.Quiet}
+                  onClick={() => {
+                    setEditingStop(stop.id);
+                    setAddingStop(true);
+                  }}
+                >
+                  {stop.name}
+                </Button>
+                <small>{stop.nights} nights</small>
+              </li>
+            ))}
+          </ol>
+        )}
+        <Button
+          variant={ButtonVariant.Quiet}
+          onClick={() => {
+            setEditingStop(undefined);
+            setAddingStop(true);
+          }}
+        >
+          ＋ Add a stop
+        </Button>
+      </section>
+      <section aria-label="Your itinerary">
+        <h2>Your itinerary</h2>
+        <div className={styles.dayList}>
+          {Array.from({ length: duration }, (_, index) => {
+            const day = index + 1;
+            let elapsed = 0;
+            const stop =
+              stops.find((candidate) => {
+                elapsed += candidate.nights;
+                return day <= elapsed;
+              }) ?? stops.at(-1);
+            const dayItems = items.filter(
+              (item) =>
+                item.dayNumber === day &&
+                item.category !== 'transportation' &&
+                item.category !== 'accommodation',
+            );
+            return (
+              <details key={day} className={styles.day}>
+                <summary>
+                  <span>Day {day}</span>
+                  <span>
+                    {day === 1
+                      ? `Arrive in ${stop?.name ?? destination}`
+                      : day === duration && duration > 1
+                        ? 'Head home'
+                        : `Explore ${stop?.name ?? destination}`}
+                  </span>
+                  <span aria-hidden="true">⌄</span>
+                </summary>
+                {trip.startDate && (
+                  <p className={styles.muted}>
+                    {new Intl.DateTimeFormat('en-GB', {
+                      weekday: 'short',
+                      day: 'numeric',
+                      month: 'short',
+                      timeZone: 'UTC',
+                    }).format(new Date(Date.parse(trip.startDate) + index * 86400000))}
+                  </p>
+                )}
+                {dayItems.map((item) => (
+                  <Button
+                    key={item.id}
+                    className={styles.planRow}
+                    variant={ButtonVariant.Quiet}
+                    onClick={() => setEditing({ item, saved: true })}
+                  >
+                    {item.name}
+                    <small>{planningStatusLabel(getPlanningStatus(item), item.category)} ›</small>
+                  </Button>
+                ))}
+                <Button variant={ButtonVariant.Quiet} onClick={() => addPlan('activities', day)}>
+                  ＋ Add a plan
+                </Button>
+              </details>
+            );
+          })}
+        </div>
+      </section>
+      {items.some(
+        (item) =>
+          item.category !== 'transportation' &&
+          item.category !== 'accommodation' &&
+          (!item.dayNumber || item.dayNumber > duration),
+      ) && (
+        <details className={styles.morePlans}>
+          <summary>Saved for this trip</summary>
+          {items
+            .filter(
+              (item) =>
+                item.category !== 'transportation' &&
+                item.category !== 'accommodation' &&
+                (!item.dayNumber || item.dayNumber > duration),
+            )
+            .map((item) => (
+              <Button
+                key={item.id}
+                className={styles.planRow}
+                variant={ButtonVariant.Quiet}
+                onClick={() => setEditing({ item, saved: true })}
+              >
+                {item.name}
+                <span>›</span>
+              </Button>
+            ))}
+        </details>
+      )}
+      {editing && (
+        <BookingEditor
+          item={editing.item}
+          title={
+            editing.saved
+              ? 'Edit plan'
+              : editing.item.category === 'transportation'
+                ? 'Add transport'
+                : editing.item.category === 'accommodation'
+                  ? 'Add stay'
+                  : 'Add a plan'
+          }
+          onCancel={() => setEditing(null)}
+          onRemove={
+            editing.saved
+              ? () => {
+                  onChange({
+                    ...trip,
+                    planning: items.filter((item) => item.id !== editing.item.id),
+                  });
+                  setEditing(null);
+                  setMessage('Plan removed.');
+                }
+              : undefined
+          }
+          onSave={(fields) => {
+            const next = { ...editing.item, ...fields };
+            onChange({
+              ...trip,
+              planning: editing.saved
+                ? items.map((item) => (item.id === next.id ? next : item))
+                : [...items, next],
+              activePlanningCategories: [
+                ...new Set([
+                  ...initialPlanningCategories,
+                  ...items.map((item) => item.category),
+                  next.category,
+                ]),
+              ],
+            });
+            setEditing(null);
+            setMessage('Plan saved.');
           }}
         />
       )}
-      <p className={styles.eyebrow} role="status">
+      {addingStop && (
+        <TripStopEditor
+          trip={trip}
+          stopId={editingStop}
+          onCancel={() => setAddingStop(false)}
+          onSave={(next) => {
+            onChange(next);
+            setAddingStop(false);
+            setMessage('Route updated. Review any existing stay dates against your updated route.');
+          }}
+        />
+      )}
+      <p role="status" className={styles.muted}>
         {message}
       </p>
     </section>

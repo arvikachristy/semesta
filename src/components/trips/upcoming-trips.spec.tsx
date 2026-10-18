@@ -147,7 +147,7 @@ describe('compact upcoming trip launcher', () => {
       );
       input.dispatchEvent(new Event('input', { bubbles: true }));
     });
-    await click('Save trip');
+    await click('Create trip →');
     expect(onOpenStudio).toHaveBeenCalledOnce();
     const saved = JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips[0];
     expect(onOpenStudio).toHaveBeenCalledWith(saved);
