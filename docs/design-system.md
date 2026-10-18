@@ -70,7 +70,7 @@ Token naming follows the [Design Tokens Community Group](https://www.w3.org/comm
 
 Trip Studio keeps the collection mounted and uses the existing navigation shell for
 Countries, Trips and Account access. Trip creation asks for a destination and days
-or native dates, with a generated title. The studio shows clickable transport and
+or a date range, with a generated title. The studio shows clickable transport and
 stay slots, an optional route and expandable days. Slots do not persist as bookings
 until saved. Extra journeys/stays are tucked into a disclosure. Stop editing and
 booking create/edit use the existing native Overlay; forms mount only on request.
@@ -78,6 +78,17 @@ Booking forms begin with a name-or-link field and collapse optional details. No
 readiness hero, category chooser or traveller editor is shown. Escape and Close
 dismiss overlays and restore focus. Native date/time inputs keep their usual behaviour.
 Use the existing tokens and controls; the MVP adds no image service or new theme.
+
+Trip setup uses DayDial and DateRangeCalendar. The SVG dial handles pointer capture,
+continuous rotation across twelve o'clock, arrow/page/home/end keys, direct numeric
+entry and ± buttons; one turn represents 30 days, bounded to 1–365. Presets use the
+shared Button. This specialised numeric control uses the same focus and colour tokens.
+DateRangeCalendar is the deliberate custom-calendar exception to native dates: a real
+six-week grid with month navigation, inclusive range highlighting, roving keyboard
+focus, leap-year handling and a selected-range summary. Arrow keys move by day/week,
+Home/End move within the week and PageUp/PageDown change month. Booking date/time
+fields remain native. Only the chosen duration mode is saved; unfinished ranges cannot
+create a trip. Creation has one primary footer action and cancellation in the header.
 
 Trip setup and stop editors use the shared CountryPicker destination mode. Typing
 shows up to eight matching country names and flags using the existing country/code/

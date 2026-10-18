@@ -7,6 +7,8 @@ import { TripEditor } from './trip-editor';
 const host = document.createElement('div');
 let root: ReturnType<typeof createRoot>;
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-10-17T12:00:00Z'));
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   document.body.append(host);
   root = createRoot(host);
@@ -15,6 +17,7 @@ afterEach(async () => {
   await act(async () => root.unmount());
   host.remove();
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 const fill = async (selector: string, value: string) => {
   const input = host.querySelector(selector);
@@ -126,14 +129,31 @@ describe('two-question trip setup', () => {
     await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));
     await fill('input[name="destination"]', 'Kyoto');
     const dates = [...host.querySelectorAll('button')].find(
-      (button) => button.textContent === 'Choose dates',
+      (button) => button.textContent === 'Dates',
     );
     if (!dates) {
       throw new Error('Missing dates toggle');
     }
     await act(async () => dates.click());
-    await fill('input[aria-label="Departure date"]', '2026-12-17');
-    await fill('input[aria-label="Return date"]', '2026-12-26');
+    const next = host.querySelector('button[aria-label="Next month"]');
+    if (!(next instanceof HTMLButtonElement)) {
+      throw new Error('Missing month navigation');
+    }
+    // The calendar starts in the current month; navigate to December 2026.
+    for (
+      let count = 0;
+      !host.querySelector('button[aria-label="Thursday, 17 December 2026"]') && count < 12;
+      count++
+    ) {
+      await act(async () => next.click());
+    }
+    for (const label of ['Thursday, 17 December 2026', 'Saturday, 26 December 2026']) {
+      const button = host.querySelector(`button[aria-label="${label}"]`);
+      if (!(button instanceof HTMLButtonElement)) {
+        throw new Error('Missing date ' + label);
+      }
+      await act(async () => button.click());
+    }
     await submit();
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({

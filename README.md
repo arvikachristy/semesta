@@ -14,7 +14,9 @@ add jellies and can include return visits.
 
 **Plan a trip** saves a destination-filled draft and opens Trip Studio immediately.
 From **New trip**, enter a country or city and either a day count or dates, then
-choose **Create trip**. The title and itinerary are generated immediately. One
+choose **Create trip**. The day dial supports dragging, keyboard controls, ± buttons,
+direct number entry and presets; Dates opens a keyboard-accessible range calendar.
+The title and itinerary are generated immediately. One
 transport slot and one stay slot start the plan; they are placeholders until saved.
 Tap a card to add a name or booking link. Other details stay collapsed. **Add a stop**
 splits the last stop's nights and adds a stay and connecting journey. Tap a stop to

@@ -68,9 +68,7 @@ export const CountryPicker = memo(
               totalCount: group.countries.length,
               countries: group.countries.filter((country) => {
                 const matches = matchesCountryQuery(country, query);
-                return (
-                  matches && (mode === CountryPickerMode.Checklist || !selected.has(country.code))
-                );
+                return matches && (mode !== CountryPickerMode.Add || !selected.has(country.code));
               }),
             };
           })
@@ -101,39 +99,55 @@ export const CountryPicker = memo(
       >
         <label className={ui.field}>
           <span className={labelClassName}>{label}</span>
-          <input
-            ref={input}
-            className={ui.control}
-            type="search"
-            name={destinationMode ? 'destination' : undefined}
-            required={destinationMode}
-            maxLength={destinationMode ? 80 : undefined}
-            aria-label={label}
-            placeholder={destinationMode ? 'Country or city' : pickerText.search}
-            value={search}
-            disabled={disabled}
-            autoComplete={destinationMode ? 'off' : undefined}
-            onFocus={() => setSuggestionsOpen(true)}
-            onChange={(event) => {
-              setSearch(event.currentTarget.value);
-              onSearchChange?.(event.currentTarget.value);
-              setSuggestionsOpen(true);
-            }}
-            onKeyDown={(event) => {
-              if (!destinationMode) {
-                return;
-              }
-              if (event.key === 'Escape' && suggestionsOpen) {
-                event.preventDefault();
-                event.stopPropagation();
-                setSuggestionsOpen(false);
-              }
-              if (event.key === 'Enter' && suggestionsOpen && query && suggestions[0]) {
-                event.preventDefault();
-                choose(suggestions[0].code);
-              }
-            }}
-          />
+          <span className={destinationMode ? styles.destinationControl : undefined}>
+            {destinationMode && selectedCountries[0] && (
+              <img
+                className={styles.selectedFlag}
+                src={flagAssetPath(selectedCountries[0])}
+                alt=""
+              />
+            )}
+            <input
+              ref={input}
+              className={ui.control}
+              type="search"
+              name={destinationMode ? 'destination' : undefined}
+              required={destinationMode}
+              maxLength={destinationMode ? 80 : undefined}
+              aria-label={label}
+              placeholder={destinationMode ? 'Country or city' : pickerText.search}
+              value={search}
+              disabled={disabled}
+              autoComplete={destinationMode ? 'off' : undefined}
+              data-has-flag={destinationMode && Boolean(selectedCountries[0])}
+              onFocus={() => setSuggestionsOpen(true)}
+              onChange={(event) => {
+                setSearch(event.currentTarget.value);
+                onSearchChange?.(event.currentTarget.value);
+                setSuggestionsOpen(true);
+              }}
+              onKeyDown={(event) => {
+                if (!destinationMode) {
+                  return;
+                }
+                if (event.key === 'Escape' && suggestionsOpen) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setSuggestionsOpen(false);
+                }
+                if (event.key === 'Enter' && suggestionsOpen && query && suggestions[0]) {
+                  event.preventDefault();
+                  choose(suggestions[0].code);
+                }
+              }}
+            />
+            {destinationMode && (
+              <svg className={styles.searchIcon} viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="10" cy="10" r="6" />
+                <path d="m15 15 6 6" />
+              </svg>
+            )}
+          </span>
         </label>
         {destinationMode ? (
           suggestionsOpen &&

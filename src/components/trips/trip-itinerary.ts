@@ -4,14 +4,12 @@ import { emptyTripDetails } from '../../types/trip';
 import type { ITripPlanningItem } from '../../types/trip-planning';
 import { PlanningStatus } from '../../types/trip-planning';
 import { normalizeCountryQuery } from '../shared/country-picker/country-search';
+import { rangeDays } from './date-range';
 
 export const tripDuration = { defaultDays: 7, maxDays: 365 };
-const dayMilliseconds = 86400000;
 export const getDurationDays = (trip: TTripDetails) => {
   if (trip.startDate && trip.endDate) {
-    return (
-      Math.round((Date.parse(trip.endDate) - Date.parse(trip.startDate)) / dayMilliseconds) + 1
-    );
+    return rangeDays(trip.startDate, trip.endDate);
   }
   return trip.durationDays ?? tripDuration.defaultDays;
 };

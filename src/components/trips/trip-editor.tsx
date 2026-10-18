@@ -3,7 +3,16 @@ import { countries } from '../../data/countries';
 import { CountryPicker, CountryPickerMode } from '../shared/country-picker/country-picker';
 import type { TTripDetails } from '../../types/trip';
 import { Button, ButtonVariant } from '../ui/button';
-import { createTripDetails, getDestination, getDurationDays, tripDuration } from './trip-itinerary';
+import {
+  createTripDetails,
+  destinationCountries,
+  getDestination,
+  getDurationDays,
+  tripDuration,
+} from './trip-itinerary';
+import { DayDial } from './day-dial';
+import { DateRangeCalendar } from './date-range-calendar';
+import { addDays, rangeDays } from './date-range';
 import ui from '../ui/ui.module.css';
 import styles from './trips.module.css';
 
@@ -82,11 +91,11 @@ export const TripEditor = ({ initial, onSave, onCancel }: ITripEditorProps) => {
       <div className={styles.editorFields}>
         <CountryPicker
           mode={CountryPickerMode.Destination}
-          selectedCountries={[]}
+          selectedCountries={destinationCountries(destination)}
           searchValue={destination}
           onSearchChange={setDestination}
-          label="Where do you want to go?"
-          labelClassName={styles.question}
+          label="Where next?"
+          labelClassName={styles.destinationQuestion}
           onToggle={(country) => setDestination(countries[country].name)}
         />
         <fieldset className={styles.duration}>
@@ -95,7 +104,12 @@ export const TripEditor = ({ initial, onSave, onCancel }: ITripEditorProps) => {
             <Button
               aria-pressed={!dated}
               variant={!dated ? ButtonVariant.Primary : ButtonVariant.Secondary}
-              onClick={() => setDated(false)}
+              onClick={() => {
+                if (startDate && endDate) {
+                  setDays(rangeDays(startDate, endDate));
+                }
+                setDated(false);
+              }}
             >
               Days
             </Button>
@@ -104,49 +118,44 @@ export const TripEditor = ({ initial, onSave, onCancel }: ITripEditorProps) => {
               variant={dated ? ButtonVariant.Primary : ButtonVariant.Secondary}
               onClick={() => setDated(true)}
             >
-              Choose dates
+              Dates
             </Button>
           </div>
           {dated ? (
-            <div className={styles.dates}>
-              <label className={ui.field}>
-                From
-                <input
-                  className={ui.control}
-                  type="date"
-                  required
-                  aria-label="Departure date"
-                  value={startDate}
-                  max={endDate || undefined}
-                  onChange={(event) => setStartDate(event.currentTarget.value)}
-                />
-              </label>
-              <label className={ui.field}>
-                Until
-                <input
-                  className={ui.control}
-                  type="date"
-                  required
-                  aria-label="Return date"
-                  value={endDate}
-                  min={startDate || undefined}
-                  onChange={(event) => setEndDate(event.currentTarget.value)}
-                />
-              </label>
-            </div>
+            <DateRangeCalendar
+              start={startDate}
+              end={endDate}
+              onChange={(start, end) => {
+                setStartDate(start);
+                setEndDate(end);
+                if (start && end) {
+                  setDays(rangeDays(start, end));
+                }
+              }}
+            />
           ) : (
-            <label className={ui.field}>
-              Number of days
-              <input
-                className={ui.control}
-                type="number"
-                min={1}
-                max={tripDuration.maxDays}
-                required
-                value={Number.isNaN(days) ? '' : days}
-                onChange={(event) => setDays(event.currentTarget.valueAsNumber)}
+            <>
+              <DayDial
+                value={days}
+                onChange={(value) => {
+                  setDays(value);
+                  if (
+                    startDate &&
+                    endDate &&
+                    Number.isInteger(value) &&
+                    value >= 1 &&
+                    value <= tripDuration.maxDays
+                  ) {
+                    setEndDate(addDays(startDate, value - 1));
+                  }
+                }}
               />
-            </label>
+              <Button className={styles.flexibleDates} onClick={() => setDated(true)}>
+                <span aria-hidden="true">▦</span>
+                <span>Dates flexible</span>
+                <span aria-hidden="true">›</span>
+              </Button>
+            </>
           )}
         </fieldset>
         {allocationChanged && (
@@ -179,20 +188,26 @@ export const TripEditor = ({ initial, onSave, onCancel }: ITripEditorProps) => {
           </details>
         )}
       </div>
-      <div className={`${ui.actions} ${styles.editorActions}`}>
-        <Button onClick={onCancel}>Cancel</Button>
-        <Button
-          variant={ButtonVariant.Primary}
-          type="submit"
-          disabled={
-            !destination.trim() ||
-            invalidDuration ||
-            allocationChanged ||
-            (dated && (!startDate || !endDate))
-          }
-        >
-          {initial ? 'Save trip' : 'Create trip'}
-        </Button>
+      <div className={styles.setupFooter}>
+        <p className={styles.tripPreview} aria-live="polite">
+          {destination.trim() || 'Your next trip'} ·{' '}
+          {invalidDuration ? 'Choose a duration' : `${duration} ${duration === 1 ? 'day' : 'days'}`}
+        </p>
+        <div className={ui.actions}>
+          {initial && <Button onClick={onCancel}>Cancel</Button>}
+          <Button
+            variant={ButtonVariant.Primary}
+            type="submit"
+            disabled={
+              !destination.trim() ||
+              invalidDuration ||
+              allocationChanged ||
+              (dated && (!startDate || !endDate))
+            }
+          >
+            {initial ? 'Save trip' : 'Create trip →'}
+          </Button>
+        </div>
       </div>
     </form>
   );
