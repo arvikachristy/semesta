@@ -232,10 +232,14 @@ describe('visited world, wishes and trips', () => {
     expect(shell?.getAttribute('data-active')).toBe('countries');
     await click('nav button:nth-child(2)');
     expect(input.value).toBe('Summer plans');
+    await click('button[aria-label="Back to trips"]');
+    expect(shell?.getAttribute('data-active')).toBe('trips');
+    expect(host.querySelector('aside[aria-label="Upcoming trips"] form')).toBeNull();
     await click('button[aria-label="Close sheet"]');
     expect(shell?.getAttribute('data-active')).toBe('');
     await click('nav button:nth-child(2)');
-    expect(host.querySelector('form input')).toBe(input);
+    expect(host.querySelector('aside[aria-label="Upcoming trips"] form')).toBeNull();
+    expect(host.querySelector('button[aria-label="New trip"]')).not.toBeNull();
   });
   it('restores an intentionally empty visited selection without adding wishlist jellies', async () => {
     localStorage.setItem(
