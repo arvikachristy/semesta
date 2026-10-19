@@ -34,6 +34,7 @@ export interface ICountryPickerProps {
   onSearchChange?: (value: string) => void;
   label?: string;
   labelClassName?: string;
+  onSearchActiveChange?: (active: boolean) => void;
 }
 
 export const CountryPicker = memo(
@@ -47,6 +48,7 @@ export const CountryPicker = memo(
     onSearchChange,
     label = pickerText.search,
     labelClassName,
+    onSearchActiveChange,
   }: ICountryPickerProps) => {
     const [localSearch, setSearch] = useState('');
     const search = searchValue ?? localSearch;
@@ -83,22 +85,39 @@ export const CountryPicker = memo(
     );
     const waitingForSearch = mode === CountryPickerMode.Add && query.length === 0;
     const suggestions = groups.flatMap((group) => group.countries).slice(0, 8);
+    const setSearchActive = (active: boolean) => {
+      setSuggestionsOpen(active);
+      if (destinationMode) {
+        onSearchActiveChange?.(active);
+      }
+    };
+    const finishSearch = () => {
+      setSearchActive(false);
+      input.current?.blur();
+    };
     const choose = (country: CountryList) => {
       onToggle(country, true);
-      setSuggestionsOpen(false);
-      input.current?.blur();
+      finishSearch();
     };
 
     return (
       <div
         className={styles.picker}
         data-mode={mode}
+        data-searching={destinationMode && suggestionsOpen}
         onBlur={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget)) {
-            setSuggestionsOpen(false);
+            setSearchActive(false);
           }
         }}
       >
+        {destinationMode && suggestionsOpen && (
+          <div className={styles.searchNavigation}>
+            <Button variant={ButtonVariant.Quiet} aria-label="Back to trip" onClick={finishSearch}>
+              ‹ Back to trip
+            </Button>
+          </div>
+        )}
         <label className={ui.field}>
           <span className={labelClassName}>{label}</span>
           <span className={destinationMode ? styles.destinationControl : undefined}>
@@ -123,11 +142,11 @@ export const CountryPicker = memo(
               disabled={disabled}
               autoComplete={destinationMode ? 'off' : undefined}
               data-has-flag={destinationMode && Boolean(selectedCountries[0])}
-              onFocus={() => setSuggestionsOpen(true)}
+              onFocus={() => setSearchActive(true)}
               onChange={(event) => {
                 setSearch(event.currentTarget.value);
                 onSearchChange?.(event.currentTarget.value);
-                setSuggestionsOpen(true);
+                setSearchActive(true);
               }}
               onKeyDown={(event) => {
                 if (!destinationMode) {
@@ -136,11 +155,14 @@ export const CountryPicker = memo(
                 if (event.key === 'Escape' && suggestionsOpen) {
                   event.preventDefault();
                   event.stopPropagation();
-                  setSuggestionsOpen(false);
+                  finishSearch();
                 }
                 if (event.key === 'Enter' && suggestionsOpen && query && suggestions[0]) {
                   event.preventDefault();
                   choose(suggestions[0].code);
+                } else if (event.key === 'Enter' && suggestionsOpen && query) {
+                  event.preventDefault();
+                  finishSearch();
                 }
               }}
             />
@@ -154,10 +176,11 @@ export const CountryPicker = memo(
           {missingDestination && <small id={requiredMessageId}>This field is required</small>}
         </label>
         {destinationMode ? (
-          suggestionsOpen &&
-          query && (
+          suggestionsOpen && (
             <div className={styles.suggestions} role="region" aria-label="Country suggestions">
-              {suggestions.length ? (
+              {!query ? (
+                <p className={styles.empty}>Type a country or city.</p>
+              ) : suggestions.length ? (
                 suggestions.map((country) => (
                   <Button
                     key={country.code}
@@ -180,6 +203,17 @@ export const CountryPicker = memo(
                   No countries found. You can keep this as a city.
                 </p>
               )}
+              {query &&
+                !suggestions.some((country) => normalizeCountryQuery(country.name) === query) && (
+                  <Button
+                    className={styles.useDestination}
+                    variant={ButtonVariant.Quiet}
+                    onPointerDown={(event) => event.preventDefault()}
+                    onClick={finishSearch}
+                  >
+                    Use “{search.trim()}”
+                  </Button>
+                )}
             </div>
           )
         ) : waitingForSearch ? (

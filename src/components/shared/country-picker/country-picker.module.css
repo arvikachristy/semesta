@@ -1,6 +1,10 @@
 .picker {
   min-width: 0;
 }
+.searchNavigation,
+.useDestination {
+  display: none;
+}
 .groups {
   display: grid;
   gap: var(--space-4);
@@ -104,4 +108,45 @@
   stroke: currentColor;
   stroke-width: 1.5;
   pointer-events: none;
+}
+
+@media (max-width: 600px) {
+  .picker[data-mode='destination'][data-searching='true'] {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .picker[data-searching='true'] > label {
+    flex: 0 0 auto;
+  }
+  .picker[data-searching='true'] > label > span:first-child {
+    margin: 0;
+    font-size: var(--text-title);
+    letter-spacing: normal;
+  }
+  .searchNavigation {
+    display: flex;
+    flex: 0 0 auto;
+    margin-bottom: var(--space-2);
+  }
+  .picker[data-searching='true'] .suggestions {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    padding: var(--space-1) 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    scroll-padding-block: var(--space-2);
+  }
+  .picker[data-searching='true'] .result {
+    min-height: 3rem;
+  }
+  .useDestination {
+    display: flex;
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
