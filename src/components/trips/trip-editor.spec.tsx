@@ -39,6 +39,86 @@ const submit = async () => {
   );
 };
 describe('two-question trip setup', () => {
+  it('keeps the focused search mounted, fits keyboard resize and restores the duration after a country tap', async () => {
+    const viewport = Object.assign(new EventTarget(), { height: 800, offsetTop: 0 });
+    const removeListener = vi.spyOn(viewport, 'removeEventListener');
+    vi.stubGlobal('visualViewport', viewport);
+    const onSave = vi.fn();
+    await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));
+    await fill('input[type="number"]', '10');
+    const input = host.querySelector('input[name="destination"]');
+    const form = host.querySelector('form');
+    if (!(input instanceof HTMLInputElement) || !form) {
+      throw new Error('Missing form');
+    }
+    await act(async () => input.focus());
+    expect(form.dataset.destinationSearch).toBe('true');
+    expect(host.querySelector('[aria-label="Country suggestions"]')?.textContent).toContain(
+      'Type a country',
+    );
+    await act(async () => {
+      viewport.height = 350;
+      viewport.offsetTop = 40;
+      viewport.dispatchEvent(new Event('resize'));
+    });
+    expect(form.style.getPropertyValue('--visible-height')).toBe('350px');
+    await fill('input[name="destination"]', 'Jap');
+    expect(host.querySelector('input[name="destination"]')).toBe(input);
+    expect(document.activeElement).toBe(input);
+    const result = host.querySelector('[aria-label="Country suggestions"] button');
+    if (!(result instanceof HTMLButtonElement)) {
+      throw new Error('Missing result');
+    }
+    await act(async () => result.click());
+    expect(form.dataset.destinationSearch).toBe('false');
+    expect(input.value).toBe('Japan');
+    expect(document.activeElement).not.toBe(input);
+    expect(host.querySelector('input[type="number"]')?.getAttribute('value')).toBe('10');
+    expect(removeListener).toHaveBeenCalledWith('resize', expect.any(Function));
+    await submit();
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ destination: 'Japan', durationDays: 10 }),
+    );
+  });
+  it('returns from search using Back or Escape and accepts a city without submitting', async () => {
+    const onSave = vi.fn();
+    await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));
+    const input = host.querySelector('input[name="destination"]');
+    if (!(input instanceof HTMLInputElement)) {
+      throw new Error('Missing input');
+    }
+    await act(async () => input.focus());
+    const back = host.querySelector('button[aria-label="Back to trip"]');
+    if (!(back instanceof HTMLButtonElement)) {
+      throw new Error('Missing back');
+    }
+    await act(async () => back.click());
+    expect(host.querySelector('form')?.dataset.destinationSearch).toBe('false');
+    expect(onSave).not.toHaveBeenCalled();
+    await act(async () => input.focus());
+    await fill('input[name="destination"]', 'Kyoto');
+    await act(async () =>
+      input.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+      ),
+    );
+    expect(host.querySelector('form')?.dataset.destinationSearch).toBe('false');
+    expect(document.activeElement).not.toBe(input);
+    await act(async () => input.focus());
+    const useCity = [...host.querySelectorAll('button')].find(
+      (button) => button.textContent === 'Use “Kyoto”',
+    );
+    if (!useCity) {
+      throw new Error('Missing city action');
+    }
+    await act(async () => useCity.click());
+    expect(onSave).not.toHaveBeenCalled();
+    expect(host.querySelector('form')?.dataset.destinationSearch).toBe('false');
+    await submit();
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ destination: 'Kyoto', countryIds: [] }),
+    );
+  });
   it('explains that the destination is required even when a complete date range is chosen', async () => {
     const onSave = vi.fn();
     await act(async () => root.render(<TripEditor onSave={onSave} onCancel={vi.fn()} />));

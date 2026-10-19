@@ -105,3 +105,6 @@
 .shell[data-mobile='true'][data-active='countries']:has(input[type='search']:focus) .bar {
   display: none;
 }
+.shell[data-mobile='true'][data-active='trips']:has([data-searching='true']) .bar {
+  display: none;
+}

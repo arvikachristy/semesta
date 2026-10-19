@@ -1,5 +1,6 @@
 import { AccountPanel } from '../account/account-panel';
 import { useAccount } from '../../account/account-context';
+import { useVisualViewport } from '../../hooks/use-visual-viewport';
 import { MobilePanel } from '../../types/mobile-panel';
 import type { TMobilePanel } from '../../types/mobile-panel';
 import { memo, useEffect, useRef, useState } from 'react';
@@ -28,7 +29,6 @@ interface IMobilePanelsProps {
 const panelConfig = {
   breakpoint: 600,
   resizeEvent: 'resize',
-  viewportScrollEvent: 'scroll',
   labels: {
     [MobilePanel.Countries]: 'Countries',
     [MobilePanel.Trips]: 'Trips',
@@ -38,6 +38,7 @@ const panelConfig = {
 
 export const MobilePanels = memo((props: IMobilePanelsProps) => {
   const account = useAccount();
+  const viewportStyle = useVisualViewport();
   const [narrow, setNarrow] = useState(() => window.innerWidth <= panelConfig.breakpoint);
   const mobile = narrow || Boolean(props.studioOpen);
   const active = props.panel;
@@ -91,27 +92,10 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
     previous.current = active;
   }, [mobile, active]);
 
-  useEffect(() => {
-    const viewport = window.visualViewport;
-    const update = () => {
-      const element = dialog.current;
-      if (element && viewport) {
-        element.style.setProperty('--visible-height', `${viewport.height}px`);
-        element.style.setProperty('--visible-top', `${viewport.offsetTop}px`);
-      }
-    };
-    update();
-    viewport?.addEventListener(panelConfig.resizeEvent, update);
-    viewport?.addEventListener(panelConfig.viewportScrollEvent, update);
-    return () => {
-      viewport?.removeEventListener(panelConfig.resizeEvent, update);
-      viewport?.removeEventListener(panelConfig.viewportScrollEvent, update);
-    };
-  }, []);
-
   return (
     <dialog
       ref={dialog}
+      style={viewportStyle}
       className={`${ui.surface} ${styles.shell}`}
       data-mobile={mobile}
       data-studio={Boolean(props.studioOpen)}

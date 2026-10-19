@@ -419,3 +419,28 @@
 .panel[data-mobile='true'] .setupFooter {
   flex: 0 0 auto;
 }
+
+@media (max-width: 600px) {
+  .panel:has(.editor[data-destination-search='true']) > .header {
+    display: none;
+  }
+  .editor[data-destination-search='true'] {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    max-height: max(0px, calc(var(--visible-height, 100dvh) - 4rem));
+    overflow: hidden;
+  }
+  .editor[data-destination-search='true'] .editorFields {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .editor[data-destination-search='true'] .editorFields > :not([data-mode='destination']),
+  .editor[data-destination-search='true'] .setupFooter {
+    display: none;
+  }
+}

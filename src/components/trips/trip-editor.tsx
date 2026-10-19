@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useVisualViewport } from '../../hooks/use-visual-viewport';
 import { countries } from '../../data/countries';
 import { CountryPicker, CountryPickerMode } from '../shared/country-picker/country-picker';
 import type { TTripDetails } from '../../types/trip';
@@ -23,6 +24,8 @@ interface ITripEditorProps {
 }
 
 export const TripEditor = ({ initial, onSave, onCancel }: ITripEditorProps) => {
+  const [searchingDestination, setSearchingDestination] = useState(false);
+  const viewportStyle = useVisualViewport(searchingDestination);
   const [destination, setDestination] = useState(initial ? getDestination(initial) : '');
   const [days, setDays] = useState(initial ? getDurationDays(initial) : tripDuration.defaultDays);
   const [dated, setDated] = useState(Boolean(initial?.startDate && initial.endDate));
@@ -48,6 +51,8 @@ export const TripEditor = ({ initial, onSave, onCancel }: ITripEditorProps) => {
   return (
     <form
       className={styles.editor}
+      data-destination-search={searchingDestination}
+      style={viewportStyle}
       onSubmit={(event) => {
         event.preventDefault();
         if (
@@ -96,6 +101,7 @@ export const TripEditor = ({ initial, onSave, onCancel }: ITripEditorProps) => {
           onSearchChange={setDestination}
           label="Where next?"
           labelClassName={styles.destinationQuestion}
+          onSearchActiveChange={setSearchingDestination}
           onToggle={(country) => setDestination(countries[country].name)}
         />
         <fieldset className={styles.duration}>
