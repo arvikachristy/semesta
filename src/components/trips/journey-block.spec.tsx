@@ -3,6 +3,7 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { JourneyBlock } from './journey-block';
+import interact from 'interactjs';
 import type { IJourneyEntry } from './journey-map-model';
 
 const host = document.createElement('div');
@@ -11,13 +12,14 @@ const change = vi.fn();
 const edit = vi.fn();
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
-  Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', {
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+    new DOMRect(0, 0, 150, 700),
+  );
+  Object.defineProperty(HTMLElement.prototype, 'getClientRects', {
     configurable: true,
-    value: vi.fn(),
-  });
-  Object.defineProperty(HTMLElement.prototype, 'releasePointerCapture', {
-    configurable: true,
-    value: vi.fn(),
+    value(this: HTMLElement) {
+      return [this.getBoundingClientRect()];
+    },
   });
   document.body.append(host);
   root = createRoot(host);
@@ -25,11 +27,14 @@ beforeEach(() => {
   edit.mockClear();
 });
 afterEach(async () => {
+  const block = host.querySelector('[data-dragging]');
+  const unset = block instanceof HTMLElement ? vi.spyOn(interact(block), 'unset') : undefined;
   await act(async () => root.unmount());
+  expect(unset).toHaveBeenCalledOnce();
   host.remove();
   vi.unstubAllGlobals();
-  Reflect.deleteProperty(HTMLElement.prototype, 'setPointerCapture');
-  Reflect.deleteProperty(HTMLElement.prototype, 'releasePointerCapture');
+  vi.restoreAllMocks();
+  Reflect.deleteProperty(HTMLElement.prototype, 'getClientRects');
 });
 const render = async (day = 1, endDay = 8) => {
   const entry: IJourneyEntry = {
@@ -51,13 +56,24 @@ const render = async (day = 1, endDay = 8) => {
     ),
   );
 };
-const pointer = async (label: string, type: string, clientY: number) => {
+const pointer = async (label: string, type: string, clientY: number, pointerType = 'mouse') => {
   const target = host.querySelector(`[aria-label="${label}"]`);
   if (!target) {
     throw new Error('Missing handle');
   }
   await act(async () =>
-    target.dispatchEvent(new MouseEvent(type, { clientY, button: 0, bubbles: true })),
+    (type === 'pointerdown' ? target : document).dispatchEvent(
+      new PointerEvent(type, {
+        pointerId: 1,
+        pointerType,
+        isPrimary: true,
+        clientX: 60,
+        clientY,
+        button: 0,
+        buttons: type === 'pointerup' ? 0 : 1,
+        bubbles: true,
+      }),
+    ),
   );
 };
 it('previews a resize then commits once on pointer release without opening the editor', async () => {
@@ -82,10 +98,22 @@ it('discards an interrupted gesture and Escape without persisting a preview', as
   await render();
   await pointer('Resize end of Hotel', 'pointerdown', 680);
   await pointer('Resize end of Hotel', 'pointermove', 380);
-  await pointer('Resize end of Hotel', 'pointercancel', 380);
+  await act(async () => window.dispatchEvent(new Event('touchcancel')));
   expect(host.textContent).toContain('Day 1–8');
   await pointer('Resize end of Hotel', 'pointerdown', 680);
   await act(async () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })));
   await pointer('Resize end of Hotel', 'pointerup', 380);
   expect(change).not.toHaveBeenCalled();
+});
+it('moves from a touch grip without starting a gesture from booking content', async () => {
+  await render(2, 4);
+  await pointer('Edit Hotel', 'pointerdown', 120, 'touch');
+  await pointer('Edit Hotel', 'pointermove', 420, 'touch');
+  await pointer('Edit Hotel', 'pointerup', 420, 'touch');
+  expect(change).not.toHaveBeenCalled();
+  await pointer('Move Hotel', 'pointerdown', 120, 'touch');
+  await pointer('Move Hotel', 'pointermove', 420, 'touch');
+  expect(host.textContent).toContain('Day 5–7');
+  await pointer('Move Hotel', 'pointerup', 420, 'touch');
+  expect(change).toHaveBeenCalledExactlyOnceWith(5, 7);
 });

@@ -16,13 +16,16 @@ add jellies and can include return visits.
 From **New trip**, enter a country or city and either a day count or dates, then
 choose **Create trip**. The day dial supports dragging, keyboard controls, ± buttons,
 direct number entry and presets; Dates opens a keyboard-accessible range calendar.
-The title and itinerary are generated immediately. One
-transport slot and one stay slot start the plan; they are placeholders until saved.
-Tap a card to add a name or booking link. Other details stay collapsed. **Add a stop**
-splits the last stop's nights and adds a stay and connecting journey. Tap a stop to
-rename it or redistribute nights with its neighbour. Existing reservations are
-never rewritten. Day sections hold optional activities; older unscheduled items
-remain under **Saved for this trip**. Back returns to the original country, continent,
+The title and itinerary are generated immediately. A journey map places arrival,
+departure and planned stays on a shared day axis. Interact.js powers mouse/touch
+dragging and resizing from the custom block handles, with whole-day snapping and
+edge auto-scroll. Arrow keys also adjust timing. **Stay +** fills a gap or splits
+the longest stay; **Travel +** immediately adds a journey. Tap a block for booking
+details. Moves and resizes save on release; Escape or an interrupted gesture cancels.
+The summary highlights unfinished bookings, and uncovered nights remain visible.
+Timing changes update this plan, not reservations with providers. Other activities
+and the stop editor remain under **Other plans**, with unplaced bookings below the map.
+Back returns to the original country, continent,
 search and filter. Trips opened from the timeline return to Trips instead.
 
 After travelling, **Mark countries visited** asks which destinations were actually

@@ -77,8 +77,11 @@ adding or changing a calendar block persists its planned range, never a booked s
 The summary toggles a focus view for unfinished bookings while keeping booked
 items readable and editable. Stay + immediately fills a gap or splits the longest
 stay; Travel + immediately adds a journey on Day 1. Stay blocks fill their entire
-planned night range, with a move grip and start/end resize handles. Pointer capture
-supports mouse and touch; Arrow Up/Down on a handle changes one day. Changes preview
+planned night range, with a move grip and start/end resize handles. Interact.js
+owns mouse/touch drag and resize gestures, restricted to the handles so booking
+content stays scrollable and tappable. It auto-scrolls the studio near its edges;
+inertia is disabled. The React adapter converts movement into day ranges using
+the actual row boundaries, including during scrolling. Arrow Up/Down on a handle changes one day. Changes preview
 while dragging and save on release; Escape or pointer cancellation discards them.
 Resizing can trim a neighbouring stay but cannot silently erase one. Uncovered
 nights are counted above the map. Booking dates take precedence
