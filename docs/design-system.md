@@ -70,9 +70,15 @@ Token naming follows the [Design Tokens Community Group](https://www.w3.org/comm
 
 Trip Studio keeps the collection mounted and uses the existing navigation shell for
 Countries, Trips and Account access. Trip creation asks for a destination and days
-or a date range, with a generated title. The studio shows clickable transport and
-stay slots, an optional route and expandable days. Slots do not persist as bookings
-until saved. Extra journeys/stays are tucked into a disclosure. Stop editing and
+or a date range, with a generated title. The studio shows a day-aligned journey map with green Stay and terracotta Travel
+lanes. Stay ranges represent planned route nights; arrival, transfers and departure
+open the existing booking editor in one tap. Slots do not persist until saved.
+The summary toggles a focus view for unfinished bookings while keeping booked
+items readable and editable. Stay + splits the route through the stop editor;
+Travel + adds a journey with an optional trip day. Booking dates take precedence
+for travel on dated trips. Extra unallocated stays and out-of-range bookings remain
+visible below the map; other categories remain under Other plans. Lane colours
+identify categories, while existing semantic badges communicate booking status. Stop editing and
 booking create/edit use the existing native Overlay; forms mount only on request.
 Booking forms begin with a name-or-link field and collapse optional details. No
 readiness hero, category chooser or traveller editor is shown. Escape and Close

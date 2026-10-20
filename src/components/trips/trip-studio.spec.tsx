@@ -35,7 +35,8 @@ afterEach(async () => {
 });
 const click = async (name: string) => {
   const button = [...host.querySelectorAll('button')].find(
-    (element) => element.textContent?.trim() === name,
+    (element) =>
+      element.textContent?.trim() === name || element.getAttribute('aria-label') === name,
   );
   if (!button) {
     throw new Error('Missing ' + name);
@@ -58,14 +59,14 @@ const render = async (trip: ITrip, onBack = vi.fn()) => {
 };
 const stored = () => decodeTrips(localStorage.getItem(tripStorage.key))[0];
 describe('minimal Trip Studio', () => {
-  it('starts with two one-click essentials, and saves a name-only booking without duplicate slots', async () => {
+  it('starts with arrival, stay and departure, and saves a name-only booking without duplicate slots', async () => {
     const trip = { ...createTripDetails('Japan', 10), id: 'trip' };
     await render(trip);
-    expect(host.querySelectorAll('[aria-label="Your essentials"] > div > button')).toHaveLength(2);
+    expect(host.querySelectorAll('[data-journey-item]')).toHaveLength(3);
     expect(host.querySelector('progress')).toBeNull();
     expect(host.querySelector('form')).toBeNull();
     expect(stored().planning).toBeUndefined();
-    const transport = host.querySelector('[aria-label="Your essentials"] button');
+    const transport = host.querySelector('[aria-label="Add Transport to Japan"]');
     if (!(transport instanceof HTMLButtonElement)) {
       throw new Error('Missing transport');
     }
@@ -80,28 +81,19 @@ describe('minimal Trip Studio', () => {
       category: 'transportation',
       status: 'to-book',
     });
-    expect(host.querySelectorAll('[aria-label="Your essentials"] > div > button')).toHaveLength(2);
+    expect(host.querySelectorAll('[data-journey-item]')).toHaveLength(3);
   });
   it('splits nights, creates connecting slots and persists route and day plans through reload', async () => {
     const trip = { ...createTripDetails('Japan', 10), id: 'trip' };
     await render(trip);
-    await click('＋ Add a stop');
+    await click('Add a stop');
     await fill('dialog input[placeholder="Country or city"]', 'Kyoto');
     await fill('dialog input[type="number"]', '4');
     await click('Update trip');
     expect(stored().stops?.map((stop) => stop.nights)).toEqual([5, 4]);
-    expect(host.querySelectorAll('[aria-label="Your essentials"] > div > button')).toHaveLength(4);
+    expect(host.querySelectorAll('[data-journey-item]')).toHaveLength(5);
     expect(host.textContent).toContain('Japan → Kyoto');
-    const day = host.querySelector('[aria-label="Your itinerary"] details');
-    if (!(day instanceof HTMLDetailsElement)) {
-      throw new Error('Missing day');
-    }
-    day.open = true;
-    const add = day.querySelector('button');
-    if (!add) {
-      throw new Error('Missing day action');
-    }
-    await act(async () => add.click());
+    await click('＋ Add a plan');
     await fill('input[name="name"]', 'Food market');
     await click('Save plan');
     expect(stored().planning?.[0]).toMatchObject({ dayNumber: 1, name: 'Food market' });
@@ -110,7 +102,7 @@ describe('minimal Trip Studio', () => {
     await act(async () => root.render(<TripStudio trip={trip} onBack={vi.fn()} />));
     expect(host.textContent).toContain('Food market');
     expect(stored().stops?.map((stop) => stop.nights)).toEqual([5, 4]);
-    expect(host.querySelectorAll('[aria-label="Your essentials"] > div > button')).toHaveLength(4);
+    expect(host.querySelectorAll('[data-journey-item]')).toHaveLength(5);
   });
   it('keeps legacy bookings, notes, participants and inactive plans while editing metadata', async () => {
     const trip: ITrip = {
@@ -146,6 +138,46 @@ describe('minimal Trip Studio', () => {
       link: 'https://example.com/train',
     });
     expect(stored().planning).toHaveLength(2);
+  });
+  it('focuses unfinished bookings and keeps editing and removal available', async () => {
+    const trip = { ...createTripDetails('Japan', 7), id: 'trip' };
+    await render(trip);
+    await click('Add Transport to Japan');
+    const checkbox = host.querySelector('dialog input[type="checkbox"]');
+    if (!(checkbox instanceof HTMLInputElement)) {
+      throw new Error('Missing booked toggle');
+    }
+    await act(async () => checkbox.click());
+    await click('Save plan');
+    const focus = host.querySelector('[aria-pressed="false"]');
+    if (!(focus instanceof HTMLButtonElement)) {
+      throw new Error('Missing booking focus');
+    }
+    await act(async () => focus.click());
+    expect(host.querySelectorAll('[data-muted="true"]')).toHaveLength(1);
+    expect(host.textContent).toContain('1 stay · 1 journey');
+    await click('Edit Transport to Japan');
+    await click('Remove plan');
+    expect(stored().planning).toHaveLength(0);
+    expect(host.querySelector('[aria-label="Add Transport to Japan"]')).not.toBeNull();
+  });
+  it('saves an extra travel day and preserves it on reload', async () => {
+    const trip = { ...createTripDetails('Japan', 7), id: 'trip' };
+    await render(trip);
+    await click('Add travel');
+    await fill('input[name="name"]', 'Airport transfer');
+    const day = host.querySelector('select[name="dayNumber"]');
+    if (!(day instanceof HTMLSelectElement)) {
+      throw new Error('Missing trip day');
+    }
+    day.value = '4';
+    await click('Save plan');
+    expect(stored().planning?.[0]).toMatchObject({ dayNumber: 4, name: 'Airport transfer' });
+    await render(stored());
+    expect(host.querySelector('[aria-label="Edit Airport transfer"]')?.textContent).toContain(
+      'Day 4',
+    );
+    expect(host.querySelector('[aria-label="Add Transport to Japan"]')).not.toBeNull();
   });
   it('requires confirmation before trip deletion', async () => {
     const onBack = vi.fn();
