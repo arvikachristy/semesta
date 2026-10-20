@@ -165,6 +165,9 @@ describe('minimal Trip Studio', () => {
     const trip = { ...createTripDetails('Japan', 7), id: 'trip' };
     await render(trip);
     await click('Add travel');
+    expect(host.querySelector('dialog')).toBeNull();
+    expect(stored().planning?.[0].name).toBe('New journey');
+    await click('Edit New journey');
     await fill('input[name="name"]', 'Airport transfer');
     const day = host.querySelector('select[name="dayNumber"]');
     if (!(day instanceof HTMLSelectElement)) {
@@ -178,6 +181,36 @@ describe('minimal Trip Studio', () => {
       'Day 4',
     );
     expect(host.querySelector('[aria-label="Add Transport to Japan"]')).not.toBeNull();
+  });
+  it('drops a stay immediately and saves resizing across reload', async () => {
+    await render({ ...createTripDetails('Japan', 8), id: 'trip' });
+    await click('Add stay');
+    expect(host.querySelector('dialog')).toBeNull();
+    expect(
+      stored()
+        .planning?.filter((item) => item.category === 'accommodation')
+        .map((item) => [item.dayNumber, item.endDayNumber]),
+    ).toEqual([
+      [1, 5],
+      [5, 8],
+    ]);
+    const resize = host.querySelector('[aria-label="Resize end of Stay in Japan"]');
+    if (!(resize instanceof HTMLButtonElement)) {
+      throw new Error('Missing resize handle');
+    }
+    await act(async () =>
+      resize.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })),
+    );
+    expect(
+      stored()
+        .planning?.filter((item) => item.category === 'accommodation')
+        .map((item) => [item.dayNumber, item.endDayNumber]),
+    ).toEqual([
+      [1, 6],
+      [6, 8],
+    ]);
+    await render(stored());
+    expect(host.querySelector('[aria-label="Edit New stay"]')?.textContent).toContain('Day 6–8');
   });
   it('requires confirmation before trip deletion', async () => {
     const onBack = vi.fn();

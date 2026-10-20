@@ -72,10 +72,16 @@ Trip Studio keeps the collection mounted and uses the existing navigation shell 
 Countries, Trips and Account access. Trip creation asks for a destination and days
 or a date range, with a generated title. The studio shows a day-aligned journey map with green Stay and terracotta Travel
 lanes. Stay ranges represent planned route nights; arrival, transfers and departure
-open the existing booking editor in one tap. Slots do not persist until saved.
+open the existing booking editor in one tap. Initial slots are presentation defaults;
+adding or changing a calendar block persists its planned range, never a booked status.
 The summary toggles a focus view for unfinished bookings while keeping booked
-items readable and editable. Stay + splits the route through the stop editor;
-Travel + adds a journey with an optional trip day. Booking dates take precedence
+items readable and editable. Stay + immediately fills a gap or splits the longest
+stay; Travel + immediately adds a journey on Day 1. Stay blocks fill their entire
+planned night range, with a move grip and start/end resize handles. Pointer capture
+supports mouse and touch; Arrow Up/Down on a handle changes one day. Changes preview
+while dragging and save on release; Escape or pointer cancellation discards them.
+Resizing can trim a neighbouring stay but cannot silently erase one. Uncovered
+nights are counted above the map. Booking dates take precedence
 for travel on dated trips. Extra unallocated stays and out-of-range bookings remain
 visible below the map; other categories remain under Other plans. Lane colours
 identify categories, while existing semantic badges communicate booking status. Stop editing and

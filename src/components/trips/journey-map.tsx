@@ -1,8 +1,9 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useRef, useState } from 'react';
 import type { ITrip } from '../../types/trip';
 import { getPlanningStatus, PlanningStatus, planningStatusLabel } from '../../types/trip-planning';
 import { Button, ButtonVariant } from '../ui/button';
-import { getDurationDays, getTripStops } from './trip-itinerary';
+import { getDurationDays } from './trip-itinerary';
+import { JourneyBlock } from './journey-block';
 import { getJourneyMap } from './journey-map-model';
 import type { IJourneyEntry } from './journey-map-model';
 import { JourneyIcon } from './journey-icon';
@@ -14,6 +15,7 @@ interface IJourneyMapProps {
   onAddTravel: () => void;
   onAddStop: () => void;
   onEditStop: (id: string) => void;
+  onMove: (entry: IJourneyEntry, start: number, end: number) => void;
 }
 
 export const JourneyMap = ({
@@ -22,8 +24,10 @@ export const JourneyMap = ({
   onAddTravel,
   onAddStop,
   onEditStop,
+  onMove,
 }: IJourneyMapProps) => {
   const [focusPending, setFocusPending] = useState(false);
+  const grid = useRef<HTMLDivElement>(null);
   const entries = getJourneyMap(trip);
   const duration = getDurationDays(trip);
   const pending = entries.filter(
@@ -31,6 +35,35 @@ export const JourneyMap = ({
   );
   const stays = pending.filter((entry) => entry.item.category === 'accommodation').length;
   const travel = pending.length - stays;
+  const uncovered = Array.from({ length: duration - 1 }, (_, index) => index + 1).filter(
+    (day) =>
+      !entries.some(
+        (entry) =>
+          entry.item.category === 'accommodation' &&
+          day >= (entry.day ?? Infinity) &&
+          day < (entry.endDay ?? 0),
+      ),
+  );
+  const block = (entry: IJourneyEntry) => (
+    <div
+      key={entry.item.id}
+      className={styles.event}
+      data-muted={focusPending && getPlanningStatus(entry.item) === PlanningStatus.Booked}
+    >
+      <JourneyBlock
+        entry={entry}
+        duration={duration}
+        getBoundaries={() => {
+          const rows = [...(grid.current?.querySelectorAll('[data-trip-day]') ?? [])].map((row) =>
+            row.getBoundingClientRect(),
+          );
+          return [...rows.map((row) => row.top), rows.at(-1)?.bottom ?? 0];
+        }}
+        onEdit={() => onEdit(entry)}
+        onChange={(start, end) => onMove(entry, start, end)}
+      />
+    </div>
+  );
   const card = (entry: IJourneyEntry) => (
     <div
       key={entry.item.id}
@@ -101,15 +134,20 @@ export const JourneyMap = ({
           {focusPending ? 'Show all' : 'Focus'} <span aria-hidden="true">›</span>
         </span>
       </Button>
-      <p className={styles.hint}>Tap a stay or journey to add booking details.</p>
-      <div className={styles.grid}>
+      <p className={styles.hint}>Drag ⠿ to move. Pull the edges to resize. Tap a block to edit.</p>
+      {uncovered.length > 0 && (
+        <p role="status" className={styles.hint}>
+          {uncovered.length} {uncovered.length === 1 ? 'night needs' : 'nights need'} a stay.
+        </p>
+      )}
+      <div className={styles.grid} ref={grid}>
         <span className={styles.dayHeading}>Day</span>
         <div className={styles.laneHeading} data-lane="stay">
           <span>
             <JourneyIcon kind="stay" /> Stay
           </span>
-          {(getTripStops(trip).at(-1)?.nights ?? 0) > 1 && (
-            <Button variant={ButtonVariant.Quiet} icon aria-label="Add a stop" onClick={onAddStop}>
+          {duration > 1 && (
+            <Button variant={ButtonVariant.Quiet} icon aria-label="Add stay" onClick={onAddStop}>
               +
             </Button>
           )}
@@ -126,7 +164,11 @@ export const JourneyMap = ({
           const day = index + 1;
           return (
             <Fragment key={day}>
-              <div className={styles.day} style={{ gridRow: day + 1, gridColumn: 1 }}>
+              <div
+                className={styles.day}
+                data-trip-day={day}
+                style={{ gridRow: day + 1, gridColumn: 1 }}
+              >
                 <strong>{String(day).padStart(2, '0')}</strong>
                 {trip.startDate && (
                   <small>
@@ -145,7 +187,7 @@ export const JourneyMap = ({
               >
                 {entries
                   .filter((entry) => entry.item.category === 'transportation' && entry.day === day)
-                  .map(card)}
+                  .map(block)}
               </div>
               <div className={styles.stayDay} style={{ gridRow: day + 1, gridColumn: 2 }} />
             </Fragment>
@@ -159,7 +201,9 @@ export const JourneyMap = ({
         {entries
           .filter(
             (entry) =>
-              entry.item.category === 'accommodation' && entry.day !== undefined && entry.stopId,
+              entry.item.category === 'accommodation' &&
+              entry.day !== undefined &&
+              entry.endDay !== undefined,
           )
           .map((entry) => (
             <div
@@ -171,13 +215,13 @@ export const JourneyMap = ({
                 gridRow: `${(entry.day ?? 1) + 1} / ${Math.min(duration + 2, Math.max((entry.day ?? 1) + 2, (entry.endDay ?? entry.day ?? 1) + 1))}`,
               }}
             >
-              {card(entry)}
+              {block(entry)}
             </div>
           ))}
       </div>
       {entries.some(
         (entry) =>
-          entry.day === undefined || (entry.item.category === 'accommodation' && !entry.stopId),
+          entry.day === undefined || (entry.item.category === 'accommodation' && !entry.endDay),
       ) && (
         <div className={styles.unscheduled}>
           <h3>Other bookings</h3>
@@ -188,7 +232,7 @@ export const JourneyMap = ({
             .filter(
               (entry) =>
                 entry.day === undefined ||
-                (entry.item.category === 'accommodation' && !entry.stopId),
+                (entry.item.category === 'accommodation' && !entry.endDay),
             )
             .map(card)}
         </div>

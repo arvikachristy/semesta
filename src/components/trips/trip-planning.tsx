@@ -6,7 +6,9 @@ import { Button, ButtonVariant } from '../ui/button';
 import { BookingEditor } from './booking-editor';
 import { getDurationDays } from './trip-itinerary';
 import { JourneyMap } from './journey-map';
+import { addJourneyBlock, moveJourneyBlock } from './journey-blocks';
 import { TripStopEditor } from './trip-stop-editor';
+import { getJourneyMap } from './journey-map-model';
 import styles from './trip-studio.module.css';
 
 export const initialPlanningCategories: TPlanningCategory[] = [
@@ -48,10 +50,27 @@ export const TripPlanning = ({ trip, onChange }: ITripPlanningProps) => {
       <JourneyMap
         trip={trip}
         onEdit={(entry) => setEditing({ item: entry.item, saved: entry.saved })}
-        onAddTravel={() => addPlan('transportation', 1)}
+        onAddTravel={() => {
+          onChange(addJourneyBlock(trip, 'transportation'));
+          setMessage('Journey added. Drag to move or tap to edit.');
+        }}
         onAddStop={() => {
-          setEditingStop(undefined);
-          setAddingStop(true);
+          const next = addJourneyBlock(trip, 'accommodation');
+          onChange(next);
+          setMessage(
+            next === trip
+              ? 'Every night already has its own stay. Resize an existing block first.'
+              : 'Stay added. Drag to move or pull an edge to resize.',
+          );
+        }}
+        onMove={(entry, start, end) => {
+          const next = moveJourneyBlock(trip, entry, start, end);
+          onChange(next);
+          setMessage(
+            next === trip
+              ? 'That would cover an entire stay. Shorten or move the other stay first.'
+              : 'Timing updated. Check any existing reservations against your new plan.',
+          );
         }}
         onEditStop={(id) => {
           setEditingStop(id);
@@ -60,6 +79,15 @@ export const TripPlanning = ({ trip, onChange }: ITripPlanningProps) => {
       />
       <details className={styles.morePlans}>
         <summary>Other plans</summary>
+        <Button
+          variant={ButtonVariant.Quiet}
+          onClick={() => {
+            setEditingStop(undefined);
+            setAddingStop(true);
+          }}
+        >
+          Add a stop
+        </Button>
         {items
           .filter((item) => item.category !== 'transportation' && item.category !== 'accommodation')
           .map((item) => (
@@ -98,12 +126,35 @@ export const TripPlanning = ({ trip, onChange }: ITripPlanningProps) => {
           onRemove={
             editing.saved
               ? () => {
+                  const entry = getJourneyMap(trip).find(
+                    (candidate) => candidate.item.id === editing.item.id,
+                  );
+                  const keepRange = entry?.stopId && editing.item.endDayNumber;
                   onChange({
                     ...trip,
-                    planning: items.filter((item) => item.id !== editing.item.id),
+                    planning: keepRange
+                      ? items.map((item) =>
+                          item.id === editing.item.id
+                            ? {
+                                id: editing.item.id,
+                                category: 'accommodation',
+                                name: 'Stay to plan',
+                                details: '',
+                                completed: false,
+                                status: PlanningStatus.ToBook,
+                                dayNumber: entry.day,
+                                endDayNumber: entry.endDay,
+                              }
+                            : item,
+                        )
+                      : items.filter((item) => item.id !== editing.item.id),
                   });
                   setEditing(null);
-                  setMessage('Plan removed.');
+                  setMessage(
+                    keepRange
+                      ? 'Booking removed. Your planned stay range is kept.'
+                      : 'Plan removed.',
+                  );
                 }
               : undefined
           }

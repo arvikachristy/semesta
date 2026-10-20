@@ -18,7 +18,8 @@
 .grid {
   display: grid;
   grid-template-columns: 3rem minmax(0, 1fr) minmax(0, 1fr);
-  grid-auto-rows: minmax(5rem, auto);
+  grid-auto-rows: minmax(12rem, auto);
+  grid-template-rows: 4rem;
   isolation: isolate;
 }
 .dayHeading,
@@ -82,6 +83,52 @@
   border-left: 4px solid var(--lane-color);
   min-width: 0;
   z-index: 1;
+}
+.stayRange > .event {
+  height: 100%;
+  margin: 0;
+}
+.calendarBlock {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--lane-color);
+  border-radius: var(--radius-control);
+  background: var(--color-solid);
+  position: relative;
+}
+.calendarBlock[data-dragging='true'] {
+  box-shadow: var(--shadow-glass);
+  outline: var(--focus-ring);
+  z-index: 5;
+}
+.blockHandles {
+  display: flex;
+  justify-content: space-between;
+}
+.dragHandle {
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+  min-width: var(--control-height);
+}
+.dragHandle:active {
+  cursor: grabbing;
+}
+.blockBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: var(--space-2);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.event[data-muted='true'] .calendarBlock {
+  border-style: dashed;
+  background: var(--color-control);
 }
 .event {
   min-width: 0;

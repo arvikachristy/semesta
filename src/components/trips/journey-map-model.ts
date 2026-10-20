@@ -64,6 +64,7 @@ export const getJourneyMap = (trip: ITrip): IJourneyEntry[] => {
             ) + 1
           : undefined;
       const candidate =
+        (item.endDayNumber ? item.dayNumber : undefined) ??
         stay?.start ??
         datedDay ??
         item.dayNumber ??
@@ -74,7 +75,7 @@ export const getJourneyMap = (trip: ITrip): IJourneyEntry[] => {
       return {
         item,
         day: entryDay,
-        endDay: stay?.end,
+        endDay: item.endDayNumber ?? stay?.end,
         stopId: stay?.id,
         label: stay
           ? `${stay.name} · ${stay.nights} ${stay.nights === 1 ? 'night' : 'nights'}`

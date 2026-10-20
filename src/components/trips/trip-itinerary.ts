@@ -54,7 +54,8 @@ export const getFirstRouteBooking = (trip: ITrip, category: ITripPlanningItem['c
       !item.id.startsWith('stay-') &&
       item.id !== 'departure' &&
       item.templateId !== BookingTemplateId.ReturnFlight &&
-      (item.id === 'arrival' ||
+      ((category === 'accommodation' && item.endDayNumber !== undefined) ||
+        item.id === 'arrival' ||
         item.templateId === BookingTemplateId.OutboundFlight ||
         (item.dateTime && trip.startDate
           ? item.dateTime.slice(0, 10) === trip.startDate
