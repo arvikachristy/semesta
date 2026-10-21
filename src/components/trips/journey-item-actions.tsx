@@ -12,6 +12,7 @@ export const JourneyItemActions = ({ name, onEdit, onDelete }: IJourneyItemActio
       icon
       aria-label={`Edit details for ${name}`}
       title="Edit details"
+      data-block-action="edit"
       onClick={onEdit}
     >
       <svg
@@ -31,6 +32,7 @@ export const JourneyItemActions = ({ name, onEdit, onDelete }: IJourneyItemActio
       icon
       aria-label={`Delete ${name}`}
       title="Delete block"
+      data-block-action="delete"
       onClick={onDelete}
     >
       <svg

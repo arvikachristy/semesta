@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import interact from 'interactjs';
-import type { DragEvent, ResizeEvent } from '@interactjs/types';
+import type { ActionProps, DragEvent, Interaction, ResizeEvent } from '@interactjs/types';
 import { blockRange } from './journey-blocks';
 import type { TBlockAction } from './journey-blocks';
 
@@ -34,6 +34,7 @@ export const useJourneyInteraction = ({
 }: IInteractionOptions) => {
   const ref = useRef<HTMLDivElement>(null);
   const abort = useRef<() => void>(() => {});
+  const suppressClick = useRef(false);
   const [preview, setPreview] = useState<IBlockPreview | null>(null);
   useEffect(() => {
     const element = ref.current;
@@ -86,6 +87,7 @@ export const useJourneyInteraction = ({
     };
     // Read the original rendered height once; preview resizing must not change its inset.
     const begin = (event: DragEvent | ResizeEvent, action: TBlockAction) => {
+      suppressClick.current = true;
       const boundaries = getBoundaries();
       initialInset = Math.max(
         0,
@@ -123,7 +125,7 @@ export const useJourneyInteraction = ({
     const target = interact(element)
       .styleCursor(false)
       .draggable({
-        allowFrom: '[data-block-handle="move"]',
+        ignoreFrom: '[data-block-action], [data-block-handle="start"], [data-block-handle="end"]',
         lockAxis: 'y',
         inertia: false,
         autoScroll: { enabled: true, ...(container ? { container } : {}), margin: 48, speed: 600 },
@@ -145,7 +147,35 @@ export const useJourneyInteraction = ({
           move,
           end: finish,
         },
-      });
+      })
+      .actionChecker(
+        (
+          _pointer: unknown,
+          _event: unknown,
+          action: ActionProps | null,
+          interactable: ReturnType<typeof interact>,
+          _element: Element,
+          interaction: Interaction,
+        ) => {
+          // Interact's hold timer cancels when a finger moves before the hold completes.
+          interactable.draggable({ hold: interaction.pointerType === 'touch' ? 350 : 0 });
+          return action;
+        },
+      );
+    const pointerDown = () => {
+      suppressClick.current = false;
+    };
+    const touchMove = (event: TouchEvent) => {
+      // Preserve native scrolling before activation; prevent native pan after the hold.
+      if (active && event.cancelable) {
+        event.preventDefault();
+      }
+    };
+    const contextMenu = (event: Event) => {
+      if (active) {
+        event.preventDefault();
+      }
+    };
     const escape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && active) {
         event.preventDefault();
@@ -158,6 +188,10 @@ export const useJourneyInteraction = ({
       }
     };
     window.addEventListener('keydown', escape);
+    element.addEventListener('pointerdown', pointerDown, true);
+    element.addEventListener('touchstart', pointerDown, true);
+    element.addEventListener('contextmenu', contextMenu);
+    element.addEventListener('touchmove', touchMove, { passive: false });
     window.addEventListener('pointercancel', cancel, true);
     window.addEventListener('touchcancel', cancel, true);
     window.addEventListener('blur', cancel);
@@ -169,11 +203,15 @@ export const useJourneyInteraction = ({
       target.unset();
       abort.current = () => {};
       window.removeEventListener('keydown', escape);
+      element.removeEventListener('pointerdown', pointerDown, true);
+      element.removeEventListener('touchstart', pointerDown, true);
+      element.removeEventListener('contextmenu', contextMenu);
+      element.removeEventListener('touchmove', touchMove);
       window.removeEventListener('pointercancel', cancel, true);
       window.removeEventListener('touchcancel', cancel, true);
       window.removeEventListener('blur', cancel);
       container?.removeEventListener('scroll', scroll);
     };
   }, [start, end, duration, stay, getBoundaries, onChange]);
-  return { ref, preview, cancel: () => abort.current() };
+  return { ref, preview, suppressClick, cancel: () => abort.current() };
 };

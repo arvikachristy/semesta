@@ -26,7 +26,7 @@ export const JourneyBlock = ({
   const start = entry.day ?? 1;
   const end = entry.endDay ?? start;
   const stay = entry.item.category === 'accommodation';
-  const { ref, preview, cancel } = useJourneyInteraction({
+  const { ref, preview, suppressClick, cancel } = useJourneyInteraction({
     start,
     end,
     duration,
@@ -69,6 +69,12 @@ export const JourneyBlock = ({
       className={styles.calendarBlock}
       data-dragging={preview !== null}
       style={blockStyle}
+      onClickCapture={(event) => {
+        if (suppressClick.current && event.detail > 0) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }}
     >
       {stay && handle('start', 'Resize start of', '↑')}
       <div className={styles.blockHandles}>

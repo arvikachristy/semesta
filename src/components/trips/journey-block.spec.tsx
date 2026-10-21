@@ -10,6 +10,7 @@ const host = document.createElement('div');
 let root: ReturnType<typeof createRoot>;
 const change = vi.fn();
 const edit = vi.fn();
+const remove = vi.fn();
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
@@ -25,6 +26,7 @@ beforeEach(() => {
   root = createRoot(host);
   change.mockClear();
   edit.mockClear();
+  remove.mockClear();
 });
 afterEach(async () => {
   const block = host.querySelector('[data-dragging]');
@@ -35,6 +37,7 @@ afterEach(async () => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   Reflect.deleteProperty(HTMLElement.prototype, 'getClientRects');
+  vi.useRealTimers();
 });
 const render = async (day = 1, endDay = 8) => {
   const entry: IJourneyEntry = {
@@ -52,7 +55,7 @@ const render = async (day = 1, endDay = 8) => {
         getBoundaries={() => [0, 100, 200, 300, 400, 500, 600, 700, 800]}
         onChange={change}
         onEdit={edit}
-        onDelete={vi.fn()}
+        onDelete={remove}
       />,
     ),
   );
@@ -89,11 +92,13 @@ it('previews a resize then commits once on pointer release without opening the e
 });
 it('moves the entire range and preserves its length', async () => {
   await render(2, 4);
-  await pointer('Move Hotel', 'pointerdown', 120);
-  await pointer('Move Hotel', 'pointermove', 420);
+  await pointer('Edit Hotel', 'pointerdown', 120);
+  await pointer('Edit Hotel', 'pointermove', 420);
   expect(host.textContent).toContain('Day 5–7');
-  await pointer('Move Hotel', 'pointerup', 420);
+  await pointer('Edit Hotel', 'pointerup', 420);
   expect(change).toHaveBeenCalledExactlyOnceWith(5, 7);
+  await click('Edit Hotel');
+  expect(edit).not.toHaveBeenCalled();
 });
 it('discards an interrupted gesture and Escape without persisting a preview', async () => {
   await render();
@@ -106,15 +111,62 @@ it('discards an interrupted gesture and Escape without persisting a preview', as
   await pointer('Resize end of Hotel', 'pointerup', 380);
   expect(change).not.toHaveBeenCalled();
 });
-it('moves from a touch grip without starting a gesture from booking content', async () => {
+const click = async (label: string) => {
+  await act(async () =>
+    host
+      .querySelector(`[aria-label="${label}"]`)
+      ?.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 })),
+  );
+};
+it('scrolls before a touch hold, then moves from the body after a hold', async () => {
+  vi.useFakeTimers();
   await render(2, 4);
   await pointer('Edit Hotel', 'pointerdown', 120, 'touch');
+  const swipe = new Event('touchmove', { bubbles: true, cancelable: true });
+  await act(async () => host.querySelector('[data-dragging]')?.dispatchEvent(swipe));
+  expect(swipe.defaultPrevented).toBe(false);
   await pointer('Edit Hotel', 'pointermove', 420, 'touch');
   await pointer('Edit Hotel', 'pointerup', 420, 'touch');
+  await act(async () => vi.advanceTimersByTime(400));
   expect(change).not.toHaveBeenCalled();
-  await pointer('Move Hotel', 'pointerdown', 120, 'touch');
-  await pointer('Move Hotel', 'pointermove', 420, 'touch');
+  await pointer('Edit Hotel', 'pointerdown', 120, 'touch');
+  await act(async () => vi.advanceTimersByTime(350));
+  const touchMove = new Event('touchmove', { bubbles: true, cancelable: true });
+  await act(async () => host.querySelector('[data-dragging]')?.dispatchEvent(touchMove));
+  expect(touchMove.defaultPrevented).toBe(true);
+  await pointer('Edit Hotel', 'pointermove', 420, 'touch');
   expect(host.textContent).toContain('Day 5–7');
-  await pointer('Move Hotel', 'pointerup', 420, 'touch');
+  await pointer('Edit Hotel', 'pointerup', 420, 'touch');
   expect(change).toHaveBeenCalledExactlyOnceWith(5, 7);
+  await click('Edit Hotel');
+  expect(edit).not.toHaveBeenCalled();
+  await pointer('Edit Hotel', 'pointerdown', 120, 'touch');
+  await pointer('Edit Hotel', 'pointerup', 120, 'touch');
+  await click('Edit Hotel');
+  expect(edit).toHaveBeenCalledOnce();
+});
+it('keeps taps and Edit/Delete independent of dragging', async () => {
+  await render(2, 4);
+  await pointer('Edit Hotel', 'pointerdown', 120);
+  await pointer('Edit Hotel', 'pointerup', 120);
+  await click('Edit Hotel');
+  expect(edit).toHaveBeenCalledOnce();
+  for (const label of ['Edit details for Hotel', 'Delete Hotel']) {
+    await pointer(label, 'pointerdown', 120);
+    await pointer(label, 'pointermove', 420);
+    await pointer(label, 'pointerup', 420);
+    await click(label);
+  }
+  expect(change).not.toHaveBeenCalled();
+  expect(edit).toHaveBeenCalledTimes(2);
+  expect(remove).toHaveBeenCalledOnce();
+});
+it('does not activate a touch hold after cancellation', async () => {
+  vi.useFakeTimers();
+  await render(2, 4);
+  await pointer('Edit Hotel', 'pointerdown', 120, 'touch');
+  await pointer('Edit Hotel', 'pointercancel', 120, 'touch');
+  await act(async () => vi.advanceTimersByTime(400));
+  expect(host.querySelector('[data-dragging="true"]')).toBeNull();
+  expect(change).not.toHaveBeenCalled();
 });

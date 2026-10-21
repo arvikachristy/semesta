@@ -78,8 +78,11 @@ The summary toggles a focus view for unfinished bookings while keeping booked
 items readable and editable. Stay + immediately fills a gap or splits the longest
 stay; Travel + immediately adds a journey on Day 1. Stay blocks fill their entire
 planned night range, with a move grip and start/end resize handles. Interact.js
-owns mouse/touch drag and resize gestures, restricted to the handles so booking
-content stays scrollable and tappable. It auto-scrolls the studio near its edges;
+owns mouse/touch drag and resize gestures. Desktop dragging starts anywhere on a
+block except Edit/Delete and the resize edges. Touch movement starts after a 350ms
+hold; swiping before activation keeps native scrolling. The grip remains a keyboard
+alternative. Taps edit; the click following a drag is suppressed. Resize edges stay
+immediate touch targets. It auto-scrolls the studio near its edges;
 inertia is disabled. The React adapter converts movement into day ranges using
 the actual row boundaries, including during scrolling. Arrow Up/Down on a handle changes one day. Changes preview
 while dragging and save on release; Escape or pointer cancellation discards them.

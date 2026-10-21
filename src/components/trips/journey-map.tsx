@@ -145,7 +145,9 @@ export const JourneyMap = ({
           {focusPending ? 'Show all' : 'Focus'} <span aria-hidden="true">›</span>
         </span>
       </Button>
-      <p className={styles.hint}>Drag ⠿ to move. Pull the edges to resize. Tap a block to edit.</p>
+      <p className={styles.hint}>
+        Drag a block to move · on touch, hold first. Pull the edges to resize. Tap to edit.
+      </p>
       {uncovered.length > 0 && (
         <p role="status" className={styles.hint}>
           {uncovered.length} {uncovered.length === 1 ? 'night needs' : 'nights need'} a stay.
