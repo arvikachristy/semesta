@@ -4,6 +4,7 @@ import { PlanningStatus } from '../../types/trip-planning';
 import { getDurationDays } from './trip-itinerary';
 import { getJourneyMap } from './journey-map-model';
 import type { IJourneyEntry } from './journey-map-model';
+import { savePlanningItems } from '../../storage/trip-planning';
 
 export type TBlockAction = 'move' | 'start' | 'end';
 export const blockRange = (
@@ -22,13 +23,6 @@ export const blockRange = (
   const next = Math.max(1, Math.min(duration - (end - start), start + delta));
   return { start: next, end: next + end - start };
 };
-const saveItems = (trip: ITrip, items: ITripPlanningItem[]): ITrip => ({
-  ...trip,
-  planning: [
-    ...(trip.planning ?? []).filter((item) => !items.some((next) => next.id === item.id)),
-    ...items,
-  ],
-});
 export const moveJourneyBlock = (
   trip: ITrip,
   entry: IJourneyEntry,
@@ -75,7 +69,7 @@ export const moveJourneyBlock = (
       }
     }
   }
-  return saveItems(trip, updates);
+  return savePlanningItems(trip, updates);
 };
 export const addJourneyBlock = (
   trip: ITrip,
@@ -135,5 +129,5 @@ export const addJourneyBlock = (
     dayNumber: category === 'accommodation' ? start : 1,
     ...(category === 'accommodation' ? { endDayNumber: end } : {}),
   });
-  return saveItems(trip, updates);
+  return savePlanningItems(trip, updates);
 };

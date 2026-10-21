@@ -52,6 +52,7 @@ const render = async (day = 1, endDay = 8) => {
         getBoundaries={() => [0, 100, 200, 300, 400, 500, 600, 700, 800]}
         onChange={change}
         onEdit={edit}
+        onDelete={vi.fn()}
       />,
     ),
   );

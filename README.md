@@ -23,7 +23,11 @@ edge auto-scroll. Arrow keys also adjust timing. **Stay +** fills a gap or split
 the longest stay; **Travel +** immediately adds a journey. Tap a block for booking
 details. Moves and resizes save on release; Escape or an interrupted gesture cancels.
 The summary highlights unfinished bookings, and uncovered nights remain visible.
-Timing changes update this plan, not reservations with providers. Other activities
+Each block has Edit and Delete controls. The editor supports stay check-in/out
+days as well as booking details; Delete offers Undo and stays deleted after reload.
+IDs and CRUD mutations share the existing trip store/repository, including a record
+of dismissed default slots so they do not reappear. Timing changes update this plan,
+not reservations with providers. Other activities
 and the stop editor remain under **Other plans**, with unplaced bookings below the map.
 Back returns to the original country, continent,
 search and filter. Trips opened from the timeline return to Trips instead.

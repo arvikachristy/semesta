@@ -19,6 +19,14 @@
 - Keep selection persistence behind `ICountrySelectionRepository`; components and Three.js must not access browser or account storage directly. Persist country IDs only.
 - Keep performance controls in `jelly-performance.ts`, and benchmark large catalogue changes with `npm run benchmark`. Do not claim GPU timings from render submission time or assume that sleeping jellies stop costing GPU work.
 
+## User-owned data and CRUD
+
+- For every user-created or editable entity, explicitly consider Create, Read, Update and Delete before shipping. Provide discoverable controls for applicable operations; document intentional read-only or unsupported operations. Dragging/resizing alone is not a complete editing flow.
+- Assign a stable ID when an entity is created. Use IDs for keys, selection, updates and deletion; never array indices, display names or newly generated render-time IDs.
+- Keep canonical entity state and CRUD actions in the existing feature store/domain layer, persisted through its repository. Components may hold transient form/gesture state but must not create competing persistent copies or access storage directly. Reuse the existing store before adding a state library.
+- Deleting an item must remove it from the UI and persisted state, including after reload. Generated defaults must respect deletions instead of silently recreating the item. Offer Undo or a suitable confirmation when data could be lost.
+- Verify the full create → read → edit → delete flow, including cancellation, stable IDs, persistence/reload, generated defaults and related items affected by deletion. Do not infer CRUD completeness from drag tests or successful rendering.
+
 ## UI design system
 
 - Before creating or changing DOM UI, read `docs/design-system.md` (Rose Glass), `src/styles/tokens.css` and `src/components/ui/ui.module.css`.

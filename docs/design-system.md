@@ -89,6 +89,13 @@ for travel on dated trips. Extra unallocated stays and out-of-range bookings rem
 visible below the map; other categories remain under Other plans. Lane colours
 identify categories, while existing semantic badges communicate booking status. Stop editing and
 booking create/edit use the existing native Overlay; forms mount only on request.
+Every journey block, including generated defaults and unplaced bookings, exposes
+Edit and Delete actions with 44px targets. The editor includes stay check-in/out
+days as an alternative to dragging. Deletion removes the block, offers Undo and
+persists dismissed default IDs so the item does not regenerate after reload.
+CRUD actions share the trip-planning domain store, persisted through useTrips and
+the existing repository; editors select by stable ID rather than copying records.
+Single-stop metadata edits preserve the stop ID and associated booking identity.
 Booking forms begin with a name-or-link field and collapse optional details. No
 readiness hero, category chooser or traveller editor is shown. Escape and Close
 dismiss overlays and restore focus. Native date/time inputs keep their usual behaviour.

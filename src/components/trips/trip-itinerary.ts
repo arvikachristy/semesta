@@ -47,20 +47,24 @@ export const createTripDetails = (
 // Legacy bookings have no route ID. Only an undated/first-day item can fill
 // the first route slot; later bookings must not hide arrival or the first stay.
 export const getFirstRouteBooking = (trip: ITrip, category: ITripPlanningItem['category']) =>
-  (trip.planning ?? []).find(
-    (item) =>
-      item.category === category &&
-      !item.id.startsWith('journey-') &&
-      !item.id.startsWith('stay-') &&
-      item.id !== 'departure' &&
-      item.templateId !== BookingTemplateId.ReturnFlight &&
-      ((category === 'accommodation' && item.endDayNumber !== undefined) ||
-        item.id === 'arrival' ||
-        item.templateId === BookingTemplateId.OutboundFlight ||
-        (item.dateTime && trip.startDate
-          ? item.dateTime.slice(0, 10) === trip.startDate
-          : !item.dayNumber || item.dayNumber === 1)),
-  );
+  trip.dismissedPlanningIds?.includes(
+    category === 'accommodation' ? `stay-${getTripStops(trip)[0].id}` : 'arrival',
+  )
+    ? undefined
+    : (trip.planning ?? []).find(
+        (item) =>
+          item.category === category &&
+          !item.id.startsWith('journey-') &&
+          !item.id.startsWith('stay-') &&
+          item.id !== 'departure' &&
+          item.templateId !== BookingTemplateId.ReturnFlight &&
+          ((category === 'accommodation' && item.endDayNumber !== undefined) ||
+            item.id === 'arrival' ||
+            item.templateId === BookingTemplateId.OutboundFlight ||
+            (item.dateTime && trip.startDate
+              ? item.dateTime.slice(0, 10) === trip.startDate
+              : !item.dayNumber || item.dayNumber === 1)),
+      );
 
 // Slots are presentation defaults, never invented reservations in persisted data.
 export const getEssentialSlots = (trip: ITrip): ITripPlanningItem[] => {
@@ -99,7 +103,7 @@ export const getEssentialSlots = (trip: ITrip): ITripPlanningItem[] => {
       slots.push(slot(journeyId, 'transportation', `${stops[index - 1].name} → ${stop.name}`));
     }
   });
-  return slots;
+  return slots.filter((item) => !trip.dismissedPlanningIds?.includes(item.id));
 };
 
 export const splitLastStop = (trip: ITrip, name: string, nights: number): ITripStop[] | null => {

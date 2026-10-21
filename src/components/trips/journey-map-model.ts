@@ -15,6 +15,7 @@ export interface IJourneyEntry {
   label: string;
   stopId?: string;
   saved: boolean;
+  slotId?: string;
 }
 
 export const getJourneyMap = (trip: ITrip): IJourneyEntry[] => {
@@ -22,6 +23,7 @@ export const getJourneyMap = (trip: ITrip): IJourneyEntry[] => {
   const saved = trip.planning ?? [];
   const items = [...saved, ...getEssentialSlots(trip)];
   if (
+    !trip.dismissedPlanningIds?.includes('departure') &&
     !items.some(
       (item) => item.id === 'departure' || item.templateId === BookingTemplateId.ReturnFlight,
     )
@@ -77,6 +79,15 @@ export const getJourneyMap = (trip: ITrip): IJourneyEntry[] => {
         day: entryDay,
         endDay: item.endDayNumber ?? stay?.end,
         stopId: stay?.id,
+        slotId: stay
+          ? `stay-${stay.id}`
+          : transfer
+            ? `journey-${transfer.id}`
+            : departure
+              ? 'departure'
+              : arrival
+                ? 'arrival'
+                : undefined,
         label: stay
           ? `${stay.name} · ${stay.nights} ${stay.nights === 1 ? 'night' : 'nights'}`
           : transfer

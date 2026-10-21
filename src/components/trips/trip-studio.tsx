@@ -158,7 +158,12 @@ export const TripStudio = ({
                 const id = saveTrip(currentTrip.id, {
                   ...currentTrip,
                   ...details,
-                  stops: metadataOnly ? getTripStops(currentTrip) : details.stops,
+                  stops: metadataOnly
+                    ? getTripStops(currentTrip)
+                    : details.stops?.map((stop) => ({
+                        ...stop,
+                        id: getTripStops(currentTrip)[0].id,
+                      })),
                   ...(currentTrip.visitedCountryIds
                     ? {
                         visitedCountryIds: currentTrip.visitedCountryIds.filter((country) =>

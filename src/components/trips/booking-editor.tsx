@@ -13,8 +13,8 @@ interface IBookingEditorProps {
   title: string;
   onSave: (
     fields: NonNullable<ReturnType<typeof readBookingForm>> &
-      Pick<ITripPlanningItem, 'status' | 'completed' | 'dayNumber'>,
-  ) => void;
+      Pick<ITripPlanningItem, 'status' | 'completed' | 'dayNumber' | 'endDayNumber'>,
+  ) => boolean | void;
   onCancel: () => void;
   onRemove?: () => void;
   tripDays?: number;
@@ -44,8 +44,24 @@ export const BookingEditor = ({
             setError('Check the date/time and use an http or https booking link.');
             return;
           }
-          onSave({
+          const data = new FormData(event.currentTarget);
+          const stay = item?.category === 'accommodation' && tripDays && tripDays > 1;
+          const start = Number(data.get('dayNumber'));
+          const end = Number(data.get('endDayNumber'));
+          if (
+            stay &&
+            (!Number.isInteger(start) ||
+              !Number.isInteger(end) ||
+              start < 1 ||
+              end <= start ||
+              end > tripDays)
+          ) {
+            setError('Choose a check-out day after check-in, within this trip.');
+            return;
+          }
+          const saved = onSave({
             ...fields,
+            ...(stay ? { dayNumber: start, endDayNumber: end } : {}),
             ...(allowDaySelection
               ? {
                   dayNumber:
@@ -59,9 +75,40 @@ export const BookingEditor = ({
                 ? PlanningStatus.Idea
                 : PlanningStatus.ToBook,
           });
+          if (saved === false) {
+            setError('These dates would cover another whole stay. Adjust that block first.');
+          }
         }}
       >
         <TripPlanningFields item={item} />
+        {item?.category === 'accommodation' && tripDays && tripDays > 1 && (
+          <div className={ui.actions}>
+            <label className={ui.field}>
+              Check-in day
+              <input
+                className={ui.control}
+                name="dayNumber"
+                type="number"
+                min={1}
+                max={tripDays - 1}
+                required
+                defaultValue={item.dayNumber ?? 1}
+              />
+            </label>
+            <label className={ui.field}>
+              Check-out day
+              <input
+                className={ui.control}
+                name="endDayNumber"
+                type="number"
+                min={2}
+                max={tripDays}
+                required
+                defaultValue={item.endDayNumber ?? tripDays}
+              />
+            </label>
+          </div>
+        )}
         {allowDaySelection && tripDays && (
           <label className={ui.field}>
             Trip day
@@ -94,7 +141,7 @@ export const BookingEditor = ({
         </div>
         {onRemove && (
           <Button variant={ButtonVariant.Quiet} onClick={onRemove}>
-            Remove plan
+            Delete block
           </Button>
         )}
       </form>

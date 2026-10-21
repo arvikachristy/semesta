@@ -8,7 +8,8 @@ import { getDurationDays } from './trip-itinerary';
 import { JourneyMap } from './journey-map';
 import { addJourneyBlock, moveJourneyBlock } from './journey-blocks';
 import { TripStopEditor } from './trip-stop-editor';
-import { getJourneyMap } from './journey-map-model';
+import type { IJourneyEntry } from './journey-map-model';
+import { useTripPlanningStore } from './use-trip-planning-store';
 import styles from './trip-studio.module.css';
 
 export const initialPlanningCategories: TPlanningCategory[] = [
@@ -20,36 +21,40 @@ interface ITripPlanningProps {
   trip: ITrip;
   onChange: (trip: ITrip) => void;
 }
-interface IEditingPlan {
-  item: ITripPlanningItem;
-  saved: boolean;
-}
 export const TripPlanning = ({ trip, onChange }: ITripPlanningProps) => {
-  const [editing, setEditing] = useState<IEditingPlan | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleted, setDeleted] = useState<IJourneyEntry | null>(null);
+  const store = useTripPlanningStore(trip, onChange);
+  const editing = editingId ? store.byId.get(editingId) : undefined;
+  const deleteEntry = (entry: IJourneyEntry) => {
+    store.remove(entry);
+    setDeleted(entry);
+    setMessage(`${entry.item.name} deleted.`);
+  };
   const [addingStop, setAddingStop] = useState(false);
   const [editingStop, setEditingStop] = useState<string | undefined>();
   const [message, setMessage] = useState('');
   const items = trip.planning ?? [];
   const duration = getDurationDays(trip);
   const addPlan = (category: TPlanningCategory, dayNumber?: number) => {
-    setEditing({
-      saved: false,
-      item: {
-        id: crypto.randomUUID(),
-        category,
-        name: '',
-        details: '',
-        completed: false,
-        status: PlanningStatus.Idea,
-        ...(dayNumber ? { dayNumber } : {}),
-      },
-    });
+    const item: ITripPlanningItem = {
+      id: crypto.randomUUID(),
+      category,
+      name: 'New plan',
+      details: '',
+      completed: false,
+      status: PlanningStatus.Idea,
+      ...(dayNumber ? { dayNumber } : {}),
+    };
+    store.save(item);
+    setEditingId(item.id);
   };
   return (
     <section className={styles.planningWorkspace} aria-label="Trip Studio planning">
       <JourneyMap
         trip={trip}
-        onEdit={(entry) => setEditing({ item: entry.item, saved: entry.saved })}
+        onEdit={(entry) => setEditingId(entry.item.id)}
+        onDelete={deleteEntry}
         onAddTravel={() => {
           onChange(addJourneyBlock(trip, 'transportation'));
           setMessage('Journey added. Drag to move or tap to edit.');
@@ -95,7 +100,7 @@ export const TripPlanning = ({ trip, onChange }: ITripPlanningProps) => {
               key={item.id}
               className={styles.planRow}
               variant={ButtonVariant.Quiet}
-              onClick={() => setEditing({ item, saved: true })}
+              onClick={() => setEditingId(item.id)}
             >
               <span>
                 {item.name}
@@ -110,71 +115,29 @@ export const TripPlanning = ({ trip, onChange }: ITripPlanningProps) => {
       </details>
       {editing && (
         <BookingEditor
-          item={editing.item}
+          key={editing.id}
+          item={editing}
           tripDays={duration}
-          allowDaySelection={editing.item.category !== 'accommodation'}
+          allowDaySelection={editing.category !== 'accommodation'}
           title={
-            editing.saved
-              ? 'Edit plan'
-              : editing.item.category === 'transportation'
-                ? 'Add transport'
-                : editing.item.category === 'accommodation'
-                  ? 'Add stay'
-                  : 'Add a plan'
+            editing.category === 'accommodation'
+              ? 'Edit stay'
+              : editing.category === 'transportation'
+                ? 'Edit journey'
+                : 'Edit plan'
           }
-          onCancel={() => setEditing(null)}
-          onRemove={
-            editing.saved
-              ? () => {
-                  const entry = getJourneyMap(trip).find(
-                    (candidate) => candidate.item.id === editing.item.id,
-                  );
-                  const keepRange = entry?.stopId && editing.item.endDayNumber;
-                  onChange({
-                    ...trip,
-                    planning: keepRange
-                      ? items.map((item) =>
-                          item.id === editing.item.id
-                            ? {
-                                id: editing.item.id,
-                                category: 'accommodation',
-                                name: 'Stay to plan',
-                                details: '',
-                                completed: false,
-                                status: PlanningStatus.ToBook,
-                                dayNumber: entry.day,
-                                endDayNumber: entry.endDay,
-                              }
-                            : item,
-                        )
-                      : items.filter((item) => item.id !== editing.item.id),
-                  });
-                  setEditing(null);
-                  setMessage(
-                    keepRange
-                      ? 'Booking removed. Your planned stay range is kept.'
-                      : 'Plan removed.',
-                  );
-                }
-              : undefined
-          }
+          onCancel={() => setEditingId(null)}
+          onRemove={() => {
+            deleteEntry(store.entry(editing.id) ?? { item: editing, saved: true, label: 'Plan' });
+            setEditingId(null);
+          }}
           onSave={(fields) => {
-            const next = { ...editing.item, ...fields };
-            onChange({
-              ...trip,
-              planning: editing.saved
-                ? items.map((item) => (item.id === next.id ? next : item))
-                : [...items, next],
-              activePlanningCategories: [
-                ...new Set([
-                  ...initialPlanningCategories,
-                  ...items.map((item) => item.category),
-                  next.category,
-                ]),
-              ],
-            });
-            setEditing(null);
+            if (!store.save({ ...editing, ...fields })) {
+              return false;
+            }
+            setEditingId(null);
             setMessage('Plan saved.');
+            return true;
           }}
         />
       )}
@@ -190,9 +153,21 @@ export const TripPlanning = ({ trip, onChange }: ITripPlanningProps) => {
           }}
         />
       )}
-      <p role="status" className={styles.muted}>
-        {message}
-      </p>
+      <div role="status" className={styles.muted}>
+        <p>{message}</p>
+        {deleted && (
+          <Button
+            variant={ButtonVariant.Quiet}
+            onClick={() => {
+              store.restore(deleted);
+              setDeleted(null);
+              setMessage('Block restored.');
+            }}
+          >
+            Undo delete
+          </Button>
+        )}
+      </div>
     </section>
   );
 };

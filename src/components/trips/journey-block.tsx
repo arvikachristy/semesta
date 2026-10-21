@@ -4,6 +4,7 @@ import type { IJourneyEntry } from './journey-map-model';
 import { blockRange } from './journey-blocks';
 import type { TBlockAction } from './journey-blocks';
 import { useJourneyInteraction } from './use-journey-interaction';
+import { JourneyItemActions } from './journey-item-actions';
 import styles from './journey-map.module.css';
 
 interface IJourneyBlockProps {
@@ -12,6 +13,7 @@ interface IJourneyBlockProps {
   getBoundaries: () => number[];
   onChange: (start: number, end: number) => void;
   onEdit: () => void;
+  onDelete: () => void;
 }
 export const JourneyBlock = ({
   entry,
@@ -19,6 +21,7 @@ export const JourneyBlock = ({
   getBoundaries,
   onChange,
   onEdit,
+  onDelete,
 }: IJourneyBlockProps) => {
   const start = entry.day ?? 1;
   const end = entry.endDay ?? start;
@@ -67,9 +70,10 @@ export const JourneyBlock = ({
       data-dragging={preview !== null}
       style={blockStyle}
     >
+      {stay && handle('start', 'Resize start of', '↑')}
       <div className={styles.blockHandles}>
-        {stay && handle('start', 'Resize start of', '↑')}
         {handle('move', 'Move', '⠿')}
+        <JourneyItemActions name={entry.item.name} onEdit={onEdit} onDelete={onDelete} />
       </div>
       <Button
         variant={ButtonVariant.Plain}

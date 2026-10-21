@@ -27,6 +27,7 @@ export interface ITrip {
   endDate: string;
   notes: string;
   planning?: ITripPlanningItem[];
+  dismissedPlanningIds?: string[];
   activePlanningCategories?: TPlanningCategory[];
   participants?: ITripParticipant[];
   destination?: string;

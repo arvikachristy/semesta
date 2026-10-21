@@ -4,6 +4,7 @@ import { getPlanningStatus, PlanningStatus, planningStatusLabel } from '../../ty
 import { Button, ButtonVariant } from '../ui/button';
 import { getDurationDays } from './trip-itinerary';
 import { JourneyBlock } from './journey-block';
+import { JourneyItemActions } from './journey-item-actions';
 import { getJourneyMap } from './journey-map-model';
 import type { IJourneyEntry } from './journey-map-model';
 import { JourneyIcon } from './journey-icon';
@@ -16,6 +17,7 @@ interface IJourneyMapProps {
   onAddStop: () => void;
   onEditStop: (id: string) => void;
   onMove: (entry: IJourneyEntry, start: number, end: number) => void;
+  onDelete: (entry: IJourneyEntry) => void;
 }
 
 export const JourneyMap = ({
@@ -25,6 +27,7 @@ export const JourneyMap = ({
   onAddStop,
   onEditStop,
   onMove,
+  onDelete,
 }: IJourneyMapProps) => {
   const [focusPending, setFocusPending] = useState(false);
   const grid = useRef<HTMLDivElement>(null);
@@ -60,6 +63,7 @@ export const JourneyMap = ({
           return [...rows.map((row) => row.top), rows.at(-1)?.bottom ?? 0];
         }}
         onEdit={() => onEdit(entry)}
+        onDelete={() => onDelete(entry)}
         onChange={(start, end) => onMove(entry, start, end)}
       />
     </div>
@@ -102,6 +106,13 @@ export const JourneyMap = ({
         </span>
         {!entry.saved && <small>Tap to add</small>}
       </Button>
+      <div className={styles.blockHandles}>
+        <JourneyItemActions
+          name={entry.item.name}
+          onEdit={() => onEdit(entry)}
+          onDelete={() => onDelete(entry)}
+        />
+      </div>
       {entry.stopId && (
         <Button
           variant={ButtonVariant.Quiet}
