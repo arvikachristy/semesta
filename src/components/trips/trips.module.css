@@ -8,6 +8,16 @@
   overflow-y: auto;
   overscroll-behavior: contain;
 }
+.panel[hidden] {
+  display: none;
+}
+.panel[data-sidebar='true'] {
+  position: fixed;
+  top: var(--space-4);
+  left: calc(var(--space-4) * 2 + var(--control-height) + var(--space-4));
+  right: auto;
+  max-height: calc(100dvh - var(--space-6));
+}
 .panel[data-full-page='true'] {
   position: relative;
   inset: auto;

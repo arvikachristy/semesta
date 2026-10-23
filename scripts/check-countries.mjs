@@ -37,15 +37,13 @@ for (const [name, viewport] of [
     }
   });
   await page.goto(url);
-  await page
-    .getByRole('button', { name: name !== 'desktop' ? 'Countries' : /All countries/ })
-    .waitFor();
+  await page.getByRole('button', { name: 'Countries', exact: true }).waitFor();
   await page.waitForTimeout(1500);
   await page.screenshot({ path: `${output}/${name}-world.png` });
   await page
     .getByRole('button', {
-      name: name !== 'desktop' ? 'Countries' : /All countries/,
-      exact: name !== 'desktop',
+      name: 'Countries',
+      exact: true,
     })
     .click();
   await page.screenshot({ path: `${output}/${name}-opened.png` });

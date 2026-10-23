@@ -3,7 +3,7 @@ import { mobilePanelText } from '../../types/mobile-panel';
 import type { IMobilePanelState } from '../../types/mobile-panel';
 import { Button, ButtonVariant } from '../ui/button';
 import ui from '../ui/ui.module.css';
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { useTrips } from '../../hooks/use-trips';
 import { TripEditor } from './trip-editor';
 import { TripList } from './trip-list';
@@ -14,15 +14,34 @@ const tripUi = { panelId: 'upcoming-trips-panel', newTrip: 'New trip' };
 interface IUpcomingTripsProps {
   tripSession?: ReturnType<typeof useTrips>;
   mobilePanel?: IMobilePanelState;
+  desktopPanel?: IMobilePanelState;
   onOpenStudio: (trip: ITrip) => void;
   fullPage?: boolean;
 }
 export const UpcomingTrips = memo(
-  ({ mobilePanel, onOpenStudio, tripSession, fullPage = false }: IUpcomingTripsProps) => {
+  ({
+    mobilePanel,
+    desktopPanel,
+    onOpenStudio,
+    tripSession,
+    fullPage = false,
+  }: IUpcomingTripsProps) => {
     const localSession = useTrips(useAccount().trips, !tripSession);
     const { trips, ready, warning, saveTrip } = tripSession ?? localSession;
     const [desktopOpen, setOpen] = useState(false);
-    const open = fullPage || (mobilePanel?.open ?? desktopOpen);
+    const open = fullPage || (mobilePanel?.open ?? desktopPanel?.open ?? desktopOpen);
+    const sidebarOpen = Boolean(desktopPanel?.open);
+    useEffect(() => {
+      if (!sidebarOpen) {
+        return;
+      }
+      const previous = document.activeElement;
+      return () => {
+        if (previous instanceof HTMLElement && previous.isConnected) {
+          previous.focus();
+        }
+      };
+    }, [sidebarOpen]);
     const [creating, setCreating] = useState(false);
     return (
       <aside
@@ -32,6 +51,13 @@ export const UpcomingTrips = memo(
         data-expanded={creating}
         data-editing={creating}
         data-full-page={fullPage}
+        data-sidebar={Boolean(desktopPanel)}
+        hidden={Boolean(desktopPanel) && !open}
+        onKeyDown={(event) => {
+          if (desktopPanel && event.key === 'Escape') {
+            desktopPanel.onClose();
+          }
+        }}
       >
         <header className={styles.header}>
           <h2>
@@ -46,7 +72,11 @@ export const UpcomingTrips = memo(
                 aria-expanded={open}
                 aria-controls={tripUi.panelId}
                 onClick={() =>
-                  mobilePanel ? mobilePanel.onClose() : setOpen((current) => !current)
+                  mobilePanel
+                    ? mobilePanel.onClose()
+                    : desktopPanel
+                      ? desktopPanel.onClose()
+                      : setOpen((current) => !current)
                 }
               >
                 Upcoming trips
@@ -95,6 +125,16 @@ export const UpcomingTrips = memo(
               aria-label={creating ? 'Back to trips' : mobilePanelText.close}
             >
               {creating ? '‹ Back to trips' : mobilePanelText.closeLabel}
+            </Button>
+          )}
+          {desktopPanel && !creating && (
+            <Button
+              icon
+              variant={ButtonVariant.Quiet}
+              aria-label="Close trips"
+              onClick={desktopPanel.onClose}
+            >
+              ×
             </Button>
           )}
         </header>

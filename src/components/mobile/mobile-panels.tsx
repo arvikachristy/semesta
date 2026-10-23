@@ -8,6 +8,8 @@ import { CountrySelector } from '../country-selector';
 import type { ICountryBrowserProps } from '../shared/country-picker/country-browser';
 import { UpcomingTrips } from '../trips/upcoming-trips';
 import { Button, ButtonVariant } from '../ui/button';
+import { TooltipButton } from '../ui/tooltip-button';
+import { PanelIcon } from './panel-icon';
 import ui from '../ui/ui.module.css';
 import styles from './mobile-panels.module.css';
 import type { ITrip } from '../../types/trip';
@@ -130,6 +132,7 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
             open={active === MobilePanel.Countries}
             onOpen={props.onBrowseAll}
             onClose={dismiss}
+            hideLauncher={!mobile}
             mobilePanel={
               mobile ? { open: active === MobilePanel.Countries, onClose: dismiss } : undefined
             }
@@ -150,17 +153,48 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
               mobilePanel={
                 mobile ? { open: active === MobilePanel.Trips, onClose: dismiss } : undefined
               }
+              desktopPanel={
+                !mobile ? { open: active === MobilePanel.Trips, onClose: dismiss } : undefined
+              }
             />
           )}
         </div>
         <div className={styles.feature} hidden={mobile && active !== MobilePanel.Account}>
           <AccountPanel
+            desktopPanel={
+              !mobile ? { open: active === MobilePanel.Account, onClose: dismiss } : undefined
+            }
             mobilePanel={
               mobile ? { open: active === MobilePanel.Account, onClose: dismiss } : undefined
             }
           />
         </div>
       </div>
+      {!mobile && (
+        <nav className={`${ui.surface} ${styles.rail}`} aria-label="Desktop navigation">
+          {Object.values(MobilePanel)
+            .filter((panel) => props.tripStudioEnabled || panel !== MobilePanel.Trips)
+            .map((panel) => (
+              <TooltipButton
+                key={panel}
+                label={panelConfig.labels[panel]}
+                variant={active === panel ? ButtonVariant.Primary : ButtonVariant.Quiet}
+                aria-haspopup={panel === MobilePanel.Trips ? undefined : 'dialog'}
+                aria-expanded={active === panel}
+                disabled={panel === MobilePanel.Countries && props.countries.disabled}
+                onClick={() => {
+                  if (panel === MobilePanel.Countries && active !== panel) {
+                    props.onBrowseAll();
+                  } else {
+                    setActive(active === panel ? null : panel);
+                  }
+                }}
+              >
+                <PanelIcon panel={panel} />
+              </TooltipButton>
+            ))}
+        </nav>
+      )}
       <nav className={styles.bar} aria-label="Explore and plan" hidden={!mobile}>
         {Object.values(MobilePanel)
           .filter((panel) => props.tripStudioEnabled || panel !== MobilePanel.Trips)

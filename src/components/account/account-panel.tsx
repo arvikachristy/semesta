@@ -8,20 +8,36 @@ import { AccountContent } from './account-content';
 import ui from '../ui/ui.module.css';
 import styles from './account.module.css';
 
-export const AccountPanel = ({ mobilePanel }: { mobilePanel?: IMobilePanelState }) => {
+interface IAccountPanelProps {
+  mobilePanel?: IMobilePanelState;
+  desktopPanel?: IMobilePanelState;
+}
+
+export const AccountPanel = ({ mobilePanel, desktopPanel }: IAccountPanelProps) => {
   const account = useAccount();
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(backupInvitation.isDismissed);
   const dialog = useRef<HTMLDialogElement>(null);
-  const close = () => setOpen(false);
+  const isMobile = Boolean(mobilePanel);
+  const close = desktopPanel?.onClose ?? (() => setOpen(false));
+  const isOpen = desktopPanel?.open ?? open;
   useEffect(() => {
     const element = dialog.current;
-    if (open && !element?.open) {
+    const previous = document.activeElement;
+    if (isOpen && !element?.open) {
       element?.showModal();
-    } else if (!open && element?.open) {
+    } else if (!isOpen && element?.open) {
       element.close();
     }
-  }, [open, mobilePanel]);
+    return () => {
+      if (isOpen) {
+        element?.close();
+        if (previous instanceof HTMLElement && previous.isConnected) {
+          previous.focus();
+        }
+      }
+    };
+  }, [isOpen, isMobile]);
   const invitation =
     account.configured &&
     account.userId === accountConfig.guestId &&
@@ -47,7 +63,7 @@ export const AccountPanel = ({ mobilePanel }: { mobilePanel?: IMobilePanelState 
   }
   return (
     <>
-      <div className={styles.launcher}>
+      <div className={styles.launcher} hidden={Boolean(desktopPanel)}>
         <Button className={ui.surface} onClick={() => setOpen(true)}>
           {' '}
           {account.userId === accountConfig.guestId ? 'Save my plans' : 'My account'}{' '}
