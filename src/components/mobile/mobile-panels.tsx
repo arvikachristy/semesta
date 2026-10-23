@@ -19,6 +19,7 @@ interface IMobilePanelsProps {
   onPanelChange: (panel: TMobilePanel | null) => void;
   onBrowseAll: () => void;
   studioOpen?: boolean;
+  tripStudioEnabled: boolean;
   onCollection?: () => void;
   onTrips?: () => void;
 
@@ -134,18 +135,23 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
             }
           />
         </div>
-        <div className={styles.feature} hidden={mobile && active !== MobilePanel.Trips}>
-          <UpcomingTrips
-            tripSession={props.tripSession}
-            key={account.userId}
-            onOpenStudio={(trip) => {
-              dismiss();
-              props.onOpenStudio(trip);
-            }}
-            mobilePanel={
-              mobile ? { open: active === MobilePanel.Trips, onClose: dismiss } : undefined
-            }
-          />
+        <div
+          className={styles.feature}
+          hidden={!props.tripStudioEnabled || (mobile && active !== MobilePanel.Trips)}
+        >
+          {props.tripStudioEnabled && (
+            <UpcomingTrips
+              tripSession={props.tripSession}
+              key={account.userId}
+              onOpenStudio={(trip) => {
+                dismiss();
+                props.onOpenStudio(trip);
+              }}
+              mobilePanel={
+                mobile ? { open: active === MobilePanel.Trips, onClose: dismiss } : undefined
+              }
+            />
+          )}
         </div>
         <div className={styles.feature} hidden={mobile && active !== MobilePanel.Account}>
           <AccountPanel
@@ -156,34 +162,36 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
         </div>
       </div>
       <nav className={styles.bar} aria-label="Explore and plan" hidden={!mobile}>
-        {Object.values(MobilePanel).map((panel) => (
-          <Button
-            key={panel}
-            ref={(element) => {
-              triggers.current[panel] = element;
-            }}
-            variant={active === panel ? ButtonVariant.Primary : ButtonVariant.Quiet}
-            aria-expanded={active === panel}
-            disabled={panel === MobilePanel.Countries && props.countries.disabled}
-            onClick={() => {
-              if (props.studioOpen && panel === MobilePanel.Countries) {
-                setActive(MobilePanel.Countries);
-                props.onCollection?.();
-              } else if (props.studioOpen && panel === MobilePanel.Trips) {
-                setActive(MobilePanel.Trips);
-                props.onTrips?.();
-              } else if (panel === MobilePanel.Countries && active !== panel) {
-                props.onBrowseAll();
-              } else {
-                setActive(active === panel ? null : panel);
-              }
-            }}
-          >
-            {panel === MobilePanel.Account && account.hasTrips && account.email === null
-              ? 'Save plans'
-              : panelConfig.labels[panel]}
-          </Button>
-        ))}
+        {Object.values(MobilePanel)
+          .filter((panel) => props.tripStudioEnabled || panel !== MobilePanel.Trips)
+          .map((panel) => (
+            <Button
+              key={panel}
+              ref={(element) => {
+                triggers.current[panel] = element;
+              }}
+              variant={active === panel ? ButtonVariant.Primary : ButtonVariant.Quiet}
+              aria-expanded={active === panel}
+              disabled={panel === MobilePanel.Countries && props.countries.disabled}
+              onClick={() => {
+                if (props.studioOpen && panel === MobilePanel.Countries) {
+                  setActive(MobilePanel.Countries);
+                  props.onCollection?.();
+                } else if (props.studioOpen && panel === MobilePanel.Trips) {
+                  setActive(MobilePanel.Trips);
+                  props.onTrips?.();
+                } else if (panel === MobilePanel.Countries && active !== panel) {
+                  props.onBrowseAll();
+                } else {
+                  setActive(active === panel ? null : panel);
+                }
+              }}
+            >
+              {panel === MobilePanel.Account && account.hasTrips && account.email === null
+                ? 'Save plans'
+                : panelConfig.labels[panel]}
+            </Button>
+          ))}
       </nav>
     </dialog>
   );

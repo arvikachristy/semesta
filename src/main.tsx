@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { App } from './app';
 import { AccountProvider } from './account/account-provider';
 import { BrowserRouter } from 'react-router';
+import { Provider } from 'react-redux';
+import { store } from './app/store';
 import './styles/tokens.css';
 import './style.css';
 
@@ -14,10 +16,12 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <BrowserRouter>
-      <AccountProvider>
-        <App />
-      </AccountProvider>
-    </BrowserRouter>
+    <Provider store={store}>
+      <BrowserRouter>
+        <AccountProvider>
+          <App />
+        </AccountProvider>
+      </BrowserRouter>
+    </Provider>
   </StrictMode>,
 );
