@@ -2,11 +2,10 @@ import { useAccount, guestRepositories } from './account/account-context';
 import { FpsToken } from './components/fps-token';
 import type { IFrameReading } from './performance/frame-monitor';
 import { useEffect, useRef, useState } from 'react';
-import { useAppDispatch } from './app/hooks';
 import { CanaryIDs } from './features/canary/canary-registry';
 import { CanaryLabs } from './features/canary/canary-labs';
-import { setDevMode } from './features/canary/canary-slice';
 import { useCanary } from './features/canary/use-canary';
+import { useDevMode } from './features/canary/use-dev-mode';
 import { useLocation, useMatch, useNavigate } from 'react-router';
 import { countries } from './data/countries';
 import { useCountrySelection } from './hooks/use-country-selection';
@@ -38,7 +37,8 @@ import styles from './app.module.css';
 export const App = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
+  const devMode = useDevMode();
+  const withDevMode = (path: string) => (devMode ? `${path}?devmode=true` : path);
   const tripStudioEnabled = useCanary(CanaryIDs.TRIP_STUDIO);
   const studioMatch = useMatch(tripStudioRoutePattern);
   const standaloneLandingMatch = useMatch(tripStudioLandingPath);
@@ -71,15 +71,15 @@ export const App = () => {
       return;
     }
     if (standaloneStudio) {
-      navigate(tripStudioLandingPath);
+      navigate(withDevMode(tripStudioLandingPath));
       setPanel(null);
     } else {
-      navigate('/');
+      navigate(withDevMode('/'));
       setPanel(MobilePanel.Trips);
     }
   };
   const browseAll = () => {
-    navigate('/');
+    navigate(withDevMode('/'));
     setBrowser(initialCountryBrowser);
     setPanel(MobilePanel.Countries);
   };
@@ -89,7 +89,7 @@ export const App = () => {
     }
     setReturnPanel(from);
     setPanel(null);
-    navigate(standalone ? standaloneTripStudioPath(trip.id) : tripStudioPath(trip.id));
+    navigate(withDevMode(standalone ? standaloneTripStudioPath(trip.id) : tripStudioPath(trip.id)));
   };
   const markVisited = (country: CountryList, visited: boolean) => {
     onToggle(country, visited);
@@ -97,13 +97,6 @@ export const App = () => {
       wishlist.onToggle(country, false);
     }
   };
-
-  useEffect(() => {
-    const requested = new URLSearchParams(location.search).get('devmode');
-    if (requested !== null) {
-      dispatch(setDevMode(requested === 'true'));
-    }
-  }, [dispatch, location.search]);
 
   useEffect(() => {
     if (!tripStudioEnabled && panel === MobilePanel.Trips) {
@@ -174,7 +167,7 @@ export const App = () => {
   useEffect(() => {
     if (!tripStudioEnabled && (studioMatch || standaloneLandingMatch || standaloneStudioMatch)) {
       setPanel(null);
-      navigate('/', { replace: true });
+      navigate(withDevMode('/'), { replace: true });
       return;
     }
     if (location.pathname !== '/' && !studioTripId && location.pathname !== tripStudioLandingPath) {
@@ -188,10 +181,11 @@ export const App = () => {
     ) {
       setPanel(MobilePanel.Trips);
       setReturnPanel(MobilePanel.Trips);
-      navigate(standaloneStudioMatch ? tripStudioLandingPath : '/', { replace: true });
+      navigate(withDevMode(standaloneStudioMatch ? tripStudioLandingPath : '/'), { replace: true });
     }
   }, [
     location.pathname,
+    location.search,
     navigate,
     studioTripId,
     studioMatch,
@@ -319,7 +313,7 @@ export const App = () => {
           }}
           onBack={() => {
             if (standaloneStudioMatch) {
-              navigate(tripStudioLandingPath, { replace: true });
+              navigate(withDevMode(tripStudioLandingPath), { replace: true });
               setPanel(null);
             } else {
               navigate('/', { replace: true });

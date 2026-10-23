@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import { Provider } from 'react-redux';
 import { createAppStore } from './app/store';
-import { setCanary, setDevMode } from './features/canary/canary-slice';
+import { setCanary } from './features/canary/canary-slice';
 import { CanaryIDs } from './features/canary/canary-registry';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './app';
@@ -63,9 +63,8 @@ beforeEach(() => {
   }
   localStorage.clear();
   sessionStorage.clear();
-  window.history.replaceState({}, '', '/');
+  window.history.replaceState({}, '', '/?devmode=true');
   store = createAppStore();
-  store.dispatch(setDevMode(true));
   store.dispatch(setCanary({ id: CanaryIDs.TRIP_STUDIO, enabled: true }));
   vi.stubGlobal('innerWidth', 1280);
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
@@ -87,7 +86,7 @@ describe('visited world, wishes and trips', () => {
   it('opens a saved trip directly from its Studio URL', async () => {
     const trip = { ...emptyTripDetails, id: 'deep-link-trip', name: 'Lisbon' };
     localStorage.setItem(tripStorage.key, JSON.stringify({ version: 1, trips: [trip] }));
-    window.history.replaceState({}, '', `/trips/${trip.id}`);
+    window.history.replaceState({}, '', `/trips/${trip.id}?devmode=true`);
 
     await renderApp();
 
@@ -100,7 +99,7 @@ describe('visited world, wishes and trips', () => {
   it('serves the full-page Trip Studio route without starting the WebGL scene', async () => {
     const trip = { ...emptyTripDetails, id: 'accessible-trip', name: 'Lisbon' };
     localStorage.setItem(tripStorage.key, JSON.stringify({ version: 1, trips: [trip] }));
-    window.history.replaceState({}, '', '/tripstudio');
+    window.history.replaceState({}, '', '/tripstudio?devmode=true');
 
     await renderApp();
 
@@ -292,7 +291,7 @@ describe('visited world, wishes and trips', () => {
 
 describe('Canary route and navigation protection', () => {
   it('hides Trip Studio navigation, country actions and Lab controls for visitors', async () => {
-    store.dispatch(setDevMode(false));
+    window.history.replaceState({}, '', '/');
     await renderApp();
     expect(host.querySelector('button[aria-label="Open Canary features"]')).toBeNull();
     expect(host.textContent).not.toContain('Upcoming trips');
@@ -302,10 +301,30 @@ describe('Canary route and navigation protection', () => {
     expect(host.textContent).not.toContain('Plan trip');
   });
 
+  it('does not expose Labs when a previous developer session exists without the URL flag', async () => {
+    sessionStorage.setItem('semesta.devmode', 'true');
+    store.dispatch(setCanary({ id: CanaryIDs.TRIP_STUDIO, enabled: true }));
+    window.history.replaceState({}, '', '/');
+    await renderApp();
+    expect(host.querySelector('button[aria-label="Open Canary features"]')).toBeNull();
+    expect(host.textContent).not.toContain('Upcoming trips');
+  });
+
+  it('removes Labs and Trip Studio when the developer query is removed within the app', async () => {
+    await renderApp();
+    expect(host.querySelector('button[aria-label="Open Canary features"]')).not.toBeNull();
+    expect(host.textContent).toContain('Upcoming trips');
+    await act(async () => {
+      window.history.pushState({}, '', '/');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    expect(host.querySelector('button[aria-label="Open Canary features"]')).toBeNull();
+    expect(host.textContent).not.toContain('Upcoming trips');
+  });
+
   it('redirects a direct Trip Studio URL while disabled without losing saved trips', async () => {
     const trip = { ...emptyTripDetails, id: 'protected-trip', name: 'Saved itinerary' };
     localStorage.setItem(tripStorage.key, JSON.stringify({ version: 1, trips: [trip] }));
-    store.dispatch(setDevMode(false));
     window.history.replaceState({}, '', '/tripstudio/protected-trip');
     await renderApp();
     expect(window.location.pathname).toBe('/');
