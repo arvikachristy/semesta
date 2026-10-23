@@ -27,7 +27,6 @@ const Harness = ({ initialVisited = defaultCountries }: ICountrySelectorHarnessP
       trips={[]}
       statuses={{}}
       disabled={false}
-      allowPlanning
       onVisited={(id, checked) =>
         setVisited((current) => toggleCountry(current, id, checked, Infinity))
       }
@@ -53,6 +52,7 @@ const click = async (label: string) => {
 beforeEach(async () => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   for (const [method, open] of [
+    ['show', true],
     ['showModal', true],
     ['close', false],
   ] as const) {
@@ -79,6 +79,7 @@ afterEach(async () => {
   vi.unstubAllGlobals();
   vi.clearAllMocks();
   Reflect.deleteProperty(HTMLDialogElement.prototype, 'showModal');
+  Reflect.deleteProperty(HTMLDialogElement.prototype, 'show');
   Reflect.deleteProperty(HTMLDialogElement.prototype, 'close');
 });
 describe('visual country modal', () => {
@@ -296,12 +297,16 @@ describe('visual country modal', () => {
     expect(host.querySelector('button[aria-label="Remove Indonesia from bucket list"]')).toBeNull();
     expect(host.querySelector('[aria-label="Country actions"]')).toBeNull();
   });
-  it('dismisses the native modal and restores the opener focus', async () => {
+  it('keeps the country panel non-modal and restores the opener on Escape', async () => {
     const dialog = host.querySelector('dialog');
     if (!dialog) {
       throw new Error('Missing modal');
     }
-    await act(async () => dialog.dispatchEvent(new Event('cancel', { cancelable: true })));
+    expect(dialog.getAttribute('aria-modal')).toBeNull();
+    expect(dialog.querySelector('[data-country-sidebar]')).not.toBeNull();
+    await act(async () =>
+      dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })),
+    );
     expect(host.querySelector('dialog')).toBeNull();
     expect(document.activeElement).toBe(host.querySelector('.country-trigger'));
   });

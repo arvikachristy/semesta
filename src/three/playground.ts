@@ -61,7 +61,7 @@ export const startPlayground = (
     },
   });
   const onResize = () => {
-    resize(renderer, camera, quality.getScale());
+    resize(renderer, camera, quality.getScale(), canvas);
     fitViewport();
   };
   const onWheel = (event: WheelEvent) => {
@@ -69,13 +69,16 @@ export const startPlayground = (
     zoomBy(getWheelZoomFactor(event, canvas.clientHeight));
   };
   window.addEventListener('resize', onResize);
+  const resizeObserver = new ResizeObserver(onResize);
+  resizeObserver.observe(canvas);
+  onResize();
   canvas.addEventListener('wheel', onWheel, { passive: false });
 
   // The render loop keeps the camera, hover, and composition rotation in sync.
   const frameMonitor = createFrameMonitor((reading) => {
     const ratio = getRenderPixelRatio(
       window.devicePixelRatio,
-      window.innerWidth * window.innerHeight,
+      (canvas.clientWidth || window.innerWidth) * (canvas.clientHeight || window.innerHeight),
       quality.sample(reading.fps),
     );
     if (renderer.getPixelRatio() !== ratio) {
@@ -136,6 +139,7 @@ export const startPlayground = (
     cancelAnimationFrame(frameId);
     document.removeEventListener(visibilityEvent, frameMonitor.reset);
     window.removeEventListener('resize', onResize);
+    resizeObserver.disconnect();
     canvas.removeEventListener('wheel', onWheel);
     input?.unbind();
     collection.dispose();

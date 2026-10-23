@@ -43,11 +43,10 @@ canvas {
 
 .country-selector {
   position: absolute;
-  bottom: max(1rem, env(safe-area-inset-bottom));
-  left: 50%;
+  top: var(--space-4);
+  right: var(--space-4);
   z-index: 1;
   width: min(24rem, calc(100vw - 2rem));
-  transform: translateX(-50%);
   color: var(--color-ink);
 }
 .country-trigger {

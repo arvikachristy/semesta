@@ -26,6 +26,12 @@
   max-height: none;
   margin: clamp(1.5rem, 6vh, 5rem) auto;
 }
+@media (min-width: 601px) {
+  .panel[data-mobile='false'][data-full-page='false'] {
+    inset: auto auto var(--space-4) var(--space-4);
+    max-height: calc(100dvh - 6rem);
+  }
+}
 .panel[data-full-page='true'] .header {
   padding: var(--space-5) var(--space-6) var(--space-4);
 }

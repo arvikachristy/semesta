@@ -48,7 +48,9 @@ export const App = () => {
   const studioTripId = tripStudioEnabled
     ? (studioMatch?.params.tripId ?? standaloneStudioMatch?.params.tripId ?? null)
     : null;
-  const [panel, setPanel] = useState<TMobilePanel | null>(null);
+  const [panel, setPanel] = useState<TMobilePanel | null>(() =>
+    window.innerWidth > 600 && !studioTripId && !standaloneStudio ? MobilePanel.Countries : null,
+  );
   const [returnPanel, setReturnPanel] = useState<TMobilePanel>(MobilePanel.Trips);
   const [browser, setBrowser] = useState<ICountryBrowserState>(initialCountryBrowser);
   const [sceneMessage, setSceneMessage] = useState('');
@@ -200,7 +202,11 @@ export const App = () => {
     <main>
       <CanaryLabs />
       {!standaloneStudio && (
-        <div hidden={Boolean(studioTripId)}>
+        <div
+          className={styles.scene}
+          data-country-open={panel === MobilePanel.Countries}
+          hidden={Boolean(studioTripId)}
+        >
           {import.meta.env.DEV && <FpsToken reading={frameReading} />}
           <ul className="visually-hidden" id="continent-descriptions">
             {continentDefinitions.map((continent) => (
