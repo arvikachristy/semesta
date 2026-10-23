@@ -317,7 +317,9 @@ describe('Canary route and navigation protection', () => {
     store.dispatch(setCanary({ id: CanaryIDs.TRIP_STUDIO, enabled: false }));
     await renderApp();
     await click('button[aria-label="Open Canary features"]');
-    const checkbox = host.querySelector('aside[aria-label="Canary features"] input[type="checkbox"]');
+    const checkbox = host.querySelector(
+      'aside[aria-label="Canary features"] input[type="checkbox"]',
+    );
     expect(checkbox).not.toBeNull();
     if (!(checkbox instanceof HTMLInputElement)) {
       throw new Error('Missing Canary feature checkbox');

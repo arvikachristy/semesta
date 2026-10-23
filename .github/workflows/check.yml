@@ -25,14 +25,6 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npm run format
-      - name: Print formatted Canary sources
-        run: |
-          for file in README.md src/app.spec.tsx src/app.tsx src/components/mobile/mobile-panels.tsx; do
-            echo "BEGIN_PRETTIER:$file"
-            cat "$file"
-            echo "END_PRETTIER:$file"
-          done
       - run: npm run check
       - run: npm run build
       - uses: actions/upload-artifact@v7.0.2

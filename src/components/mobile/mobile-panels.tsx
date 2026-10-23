@@ -141,15 +141,15 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
         >
           {props.tripStudioEnabled && (
             <UpcomingTrips
-            tripSession={props.tripSession}
-            key={account.userId}
-            onOpenStudio={(trip) => {
-              dismiss();
-              props.onOpenStudio(trip);
-            }}
-            mobilePanel={
-              mobile ? { open: active === MobilePanel.Trips, onClose: dismiss } : undefined
-            }
+              tripSession={props.tripSession}
+              key={account.userId}
+              onOpenStudio={(trip) => {
+                dismiss();
+                props.onOpenStudio(trip);
+              }}
+              mobilePanel={
+                mobile ? { open: active === MobilePanel.Trips, onClose: dismiss } : undefined
+              }
             />
           )}
         </div>
@@ -165,33 +165,33 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
         {Object.values(MobilePanel)
           .filter((panel) => props.tripStudioEnabled || panel !== MobilePanel.Trips)
           .map((panel) => (
-          <Button
-            key={panel}
-            ref={(element) => {
-              triggers.current[panel] = element;
-            }}
-            variant={active === panel ? ButtonVariant.Primary : ButtonVariant.Quiet}
-            aria-expanded={active === panel}
-            disabled={panel === MobilePanel.Countries && props.countries.disabled}
-            onClick={() => {
-              if (props.studioOpen && panel === MobilePanel.Countries) {
-                setActive(MobilePanel.Countries);
-                props.onCollection?.();
-              } else if (props.studioOpen && panel === MobilePanel.Trips) {
-                setActive(MobilePanel.Trips);
-                props.onTrips?.();
-              } else if (panel === MobilePanel.Countries && active !== panel) {
-                props.onBrowseAll();
-              } else {
-                setActive(active === panel ? null : panel);
-              }
-            }}
-          >
-            {panel === MobilePanel.Account && account.hasTrips && account.email === null
-              ? 'Save plans'
-              : panelConfig.labels[panel]}
-          </Button>
-        ))}
+            <Button
+              key={panel}
+              ref={(element) => {
+                triggers.current[panel] = element;
+              }}
+              variant={active === panel ? ButtonVariant.Primary : ButtonVariant.Quiet}
+              aria-expanded={active === panel}
+              disabled={panel === MobilePanel.Countries && props.countries.disabled}
+              onClick={() => {
+                if (props.studioOpen && panel === MobilePanel.Countries) {
+                  setActive(MobilePanel.Countries);
+                  props.onCollection?.();
+                } else if (props.studioOpen && panel === MobilePanel.Trips) {
+                  setActive(MobilePanel.Trips);
+                  props.onTrips?.();
+                } else if (panel === MobilePanel.Countries && active !== panel) {
+                  props.onBrowseAll();
+                } else {
+                  setActive(active === panel ? null : panel);
+                }
+              }}
+            >
+              {panel === MobilePanel.Account && account.hasTrips && account.email === null
+                ? 'Save plans'
+                : panelConfig.labels[panel]}
+            </Button>
+          ))}
       </nav>
     </dialog>
   );

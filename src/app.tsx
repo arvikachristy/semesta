@@ -172,10 +172,7 @@ export const App = () => {
   }, [studioTripId, panel, returnPanel, standaloneStudio]);
 
   useEffect(() => {
-    if (
-      !tripStudioEnabled &&
-      (studioMatch || standaloneLandingMatch || standaloneStudioMatch)
-    ) {
+    if (!tripStudioEnabled && (studioMatch || standaloneLandingMatch || standaloneStudioMatch)) {
       setPanel(null);
       navigate('/', { replace: true });
       return;

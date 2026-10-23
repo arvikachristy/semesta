@@ -24,6 +24,7 @@ const Harness = () => {
       trips={[]}
       statuses={{}}
       disabled={false}
+      allowPlanning
       onVisited={(id, checked) =>
         setVisited((current) => toggleCountry(current, id, checked, Infinity))
       }
