@@ -35,3 +35,11 @@
 - Shared components must use the existing design-system primitives and tokens for controls, surfaces, typography, spacing, and states. Feature-specific wrappers may change layout and presentation without duplicating the shared interaction logic.
 - Preserve native date/select behaviour. Their OS/browser popups are an explicit exception to visual theming; a custom calendar needs a deliberate accessible component, not ad hoc CSS or a fake input.
 - Verify UI alongside the country picker and trip editor at desktop and mobile widths, including focus, disabled states, field alignment and scrolling. Update the design guide when intentionally changing a shared pattern.
+
+## Canary feature releases
+
+- Register every unfinished feature in `src/features/canary/canary-registry.ts`, defaulting to disabled for public visitors.
+- Gate discovery surfaces, UI actions and direct URL entry points through `useCanary`; hiding a navigation button is insufficient.
+- Store Canary overrides in Redux Toolkit with versioned browser persistence; temporary UI state stays local.
+- Keep domain persistence in existing repositories, not a second Redux copy. Disabling a feature must never delete user data.
+- Test public/Canary modes, route guards and existing flows before promoting a default to enabled.

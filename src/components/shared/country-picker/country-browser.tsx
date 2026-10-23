@@ -24,6 +24,7 @@ export interface ICountryBrowserProps {
   onVisited: (country: CountryList, visited: boolean) => void;
   onWishlist: (country: CountryList, saved: boolean) => void;
   onPlan: (country: CountryList) => void;
+  allowPlanning: boolean;
   onOpenTrip: (trip: ITrip) => void;
   onClose: () => void;
 }
@@ -261,18 +262,20 @@ export const CountryBrowser = (props: ICountryBrowserProps) => {
                 Undo
               </Button>
             )}
-            <Button
-              variant={ButtonVariant.Primary}
-              disabled={props.disabled}
-              onClick={() => props.onPlan(selected.code)}
-            >
-              {selectedTrips.length ? 'Plan a new trip' : 'Plan trip'}
-            </Button>
+            {props.allowPlanning && (
+              <Button
+                variant={ButtonVariant.Primary}
+                disabled={props.disabled}
+                onClick={() => props.onPlan(selected.code)}
+              >
+                {selectedTrips.length ? 'Plan a new trip' : 'Plan trip'}
+              </Button>
+            )}
           </div>
           {statuses[selected.code] === CountryStatus.Error && (
             <p role="alert">The flag could not load. Remove the visit and add it again to retry.</p>
           )}
-          {selectedTrips.length > 0 && (
+          {props.allowPlanning && selectedTrips.length > 0 && (
             <details className={styles.savedTrips}>
               <summary>Trips ({selectedTrips.length})</summary>
               {selectedTrips.map((trip) => (
