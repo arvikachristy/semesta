@@ -3,35 +3,10 @@ import type { CanaryID } from './canary-registry';
 
 export const canaryStorage = {
   key: 'semesta.canary.v1',
-  sessionKey: 'semesta.devmode',
   version: 1,
 } as const;
 
 export type TCanaryOverrides = Partial<Record<CanaryID, boolean>>;
-
-export const readDevMode = () => {
-  const query = new URLSearchParams(window.location.search).get('devmode');
-  if (query !== null) {
-    return query === 'true';
-  }
-  try {
-    return sessionStorage.getItem(canaryStorage.sessionKey) === 'true';
-  } catch {
-    return false;
-  }
-};
-
-export const saveDevMode = (enabled: boolean) => {
-  try {
-    if (enabled) {
-      sessionStorage.setItem(canaryStorage.sessionKey, 'true');
-    } else {
-      sessionStorage.removeItem(canaryStorage.sessionKey);
-    }
-  } catch {
-    // Feature visibility remains safe even when storage is unavailable.
-  }
-};
 
 export const readCanaryOverrides = (): TCanaryOverrides => {
   try {
