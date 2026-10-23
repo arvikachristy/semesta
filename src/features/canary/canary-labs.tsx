@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { Button, ButtonVariant } from '../../components/ui/button';
 import { canary_registry } from './canary-registry';
-import { selectDevMode } from './canary-selectors';
+import { useDevMode } from './use-dev-mode';
 import { setCanary } from './canary-slice';
 import styles from './canary-labs.module.css';
 
 export const CanaryLabs = () => {
   const dispatch = useAppDispatch();
-  const devMode = useAppSelector(selectDevMode);
+  const devMode = useDevMode();
   const overrides = useAppSelector((state) => state.canary.overrides);
   const [open, setOpen] = useState(false);
 

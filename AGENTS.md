@@ -40,6 +40,6 @@
 
 - Register every unfinished feature in `src/features/canary/canary-registry.ts`, defaulting to disabled for public visitors.
 - Gate discovery surfaces, UI actions and direct URL entry points through `useCanary`; hiding a navigation button is insufficient.
-- Store Canary overrides in Redux Toolkit with versioned browser persistence; temporary UI state stays local.
+- Keep the developer gate URL-only (exact `?devmode=true` on the current route); never persist developer-mode authorization in local/session storage. Redux Toolkit stores only feature overrides. Preserve the URL switch across in-app navigation while developer mode is active.
 - Keep domain persistence in existing repositories, not a second Redux copy. Disabling a feature must never delete user data.
 - Test public/Canary modes, route guards and existing flows before promoting a default to enabled.
