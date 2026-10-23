@@ -144,13 +144,15 @@ Account backup uses the same controls and surfaces. Desktop opens a native modal
 Desktop wraps `CountryBrowser` in the shared native Overlay; mobile places its content
 inside the existing MobilePanels dialog. Never nest another country dialog. The
 header shows the continent and visited progress, followed by native search/select
-controls and Been to / Bucket list editing modes. Both modes show the searchable
-catalogue in stable order. A tile toggles membership in the active mode in one tap;
+controls and Been to / Bucket list editing modes. Been to shows the full searchable
+catalogue; Bucket list offers only countries not yet visited. Both preserve catalogue
+order and apply the search and continent filters. A tile toggles membership in the active mode in one tap;
 its pressed state reflects membership, not focus or selection. Show a short mode
 instruction and compact confirmation with Undo and Plan trip. Undo restores a wish
 fulfilled by marking a visit. Existing trips expand from a native details control.
 Use shared Button variants and field recipes. Wishes use a distinct diamond marker;
-visited flags use a check. Both states can coexist for return visits. Trip return
+visited flags use a check. Previously saved repeat-visit wishes are retained in storage
+but hidden from Bucket list while that country is visited. Trip return
 restores browser state; confirming visits explicitly returns to the scene.
 
 Mobile uses three compact country tiles per row, with names wrapping and full
