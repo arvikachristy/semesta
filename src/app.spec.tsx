@@ -2,6 +2,10 @@
 import { act, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
+import { Provider } from 'react-redux';
+import { createAppStore } from './app/store';
+import { setCanary, setDevMode } from './features/canary/canary-slice';
+import { CanaryIDs } from './features/canary/canary-registry';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './app';
 import { startPlayground } from './three/playground';
@@ -15,6 +19,7 @@ import { emptyTripDetails } from './types/trip';
 vi.mock('./three/playground', () => ({ startPlayground: vi.fn() }));
 const host = document.createElement('div');
 let root: ReturnType<typeof createRoot>;
+let store: ReturnType<typeof createAppStore>;
 const setCountries = vi.fn(async () => {});
 const dispose = vi.fn();
 const click = async (selector: string) => {
@@ -36,9 +41,11 @@ const clickText = async (text: string) => {
 const renderApp = async () =>
   act(async () =>
     root.render(
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>,
+      <Provider store={store}>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </Provider>,
     ),
   );
 beforeEach(() => {
@@ -55,7 +62,11 @@ beforeEach(() => {
     });
   }
   localStorage.clear();
+  sessionStorage.clear();
   window.history.replaceState({}, '', '/');
+  store = createAppStore();
+  store.dispatch(setDevMode(true));
+  store.dispatch(setCanary({ id: CanaryIDs.TRIP_STUDIO, enabled: true }));
   vi.stubGlobal('innerWidth', 1280);
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.mocked(startPlayground).mockReturnValue({ setCountries, dispose });
@@ -257,9 +268,11 @@ describe('visited world, wishes and trips', () => {
     await act(async () =>
       root.render(
         <StrictMode>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
+          <Provider store={store}>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </Provider>
         </StrictMode>,
       ),
     );
@@ -274,5 +287,43 @@ describe('visited world, wishes and trips', () => {
       vi.mocked(startPlayground).mock.calls[0][1]?.onContinentSelect?.(ContinentId.Asia),
     );
     expect(host.querySelector('section[aria-label="Country collection"]')).toBeNull();
+  });
+});
+
+describe('Canary route and navigation protection', () => {
+  it('hides Trip Studio navigation, country actions and Lab controls for visitors', async () => {
+    store.dispatch(setDevMode(false));
+    await renderApp();
+    expect(host.querySelector('button[aria-label="Open Canary features"]')).toBeNull();
+    expect(host.textContent).not.toContain('Upcoming trips');
+    await act(async () =>
+      vi.mocked(startPlayground).mock.calls[0][1]?.onCountrySelect?.(CountryList.Indonesia),
+    );
+    expect(host.textContent).not.toContain('Plan trip');
+  });
+
+  it('redirects a direct Trip Studio URL while disabled without losing saved trips', async () => {
+    const trip = { ...emptyTripDetails, id: 'protected-trip', name: 'Saved itinerary' };
+    localStorage.setItem(tripStorage.key, JSON.stringify({ version: 1, trips: [trip] }));
+    store.dispatch(setDevMode(false));
+    window.history.replaceState({}, '', '/tripstudio/protected-trip');
+    await renderApp();
+    expect(window.location.pathname).toBe('/');
+    expect(host.querySelector('section[aria-label="Trip Studio"]')).toBeNull();
+    expect(JSON.parse(localStorage.getItem(tripStorage.key) ?? '{}').trips[0].id).toBe(trip.id);
+  });
+
+  it('shows the Labs control in developer mode and enables the Studio only when checked', async () => {
+    store.dispatch(setCanary({ id: CanaryIDs.TRIP_STUDIO, enabled: false }));
+    await renderApp();
+    await click('button[aria-label="Open Canary features"]');
+    const checkbox = host.querySelector('aside[aria-label="Canary features"] input[type="checkbox"]');
+    expect(checkbox).not.toBeNull();
+    if (!(checkbox instanceof HTMLInputElement)) {
+      throw new Error('Missing Canary feature checkbox');
+    }
+    await act(async () => checkbox.click());
+    expect(host.textContent).toContain('Upcoming trips');
+    expect(checkbox.checked).toBe(true);
   });
 });

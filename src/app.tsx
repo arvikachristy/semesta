@@ -2,6 +2,11 @@ import { useAccount, guestRepositories } from './account/account-context';
 import { FpsToken } from './components/fps-token';
 import type { IFrameReading } from './performance/frame-monitor';
 import { useEffect, useRef, useState } from 'react';
+import { useAppDispatch } from './app/hooks';
+import { CanaryIDs } from './features/canary/canary-registry';
+import { CanaryLabs } from './features/canary/canary-labs';
+import { setDevMode } from './features/canary/canary-slice';
+import { useCanary } from './features/canary/use-canary';
 import { useLocation, useMatch, useNavigate } from 'react-router';
 import { countries } from './data/countries';
 import { useCountrySelection } from './hooks/use-country-selection';
@@ -33,11 +38,16 @@ import styles from './app.module.css';
 export const App = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const tripStudioEnabled = useCanary(CanaryIDs.TRIP_STUDIO);
   const studioMatch = useMatch(tripStudioRoutePattern);
   const standaloneLandingMatch = useMatch(tripStudioLandingPath);
   const standaloneStudioMatch = useMatch(standaloneTripStudioRoutePattern);
-  const standaloneStudio = Boolean(standaloneLandingMatch || standaloneStudioMatch);
-  const studioTripId = studioMatch?.params.tripId ?? standaloneStudioMatch?.params.tripId ?? null;
+  const standaloneStudio =
+    tripStudioEnabled && Boolean(standaloneLandingMatch || standaloneStudioMatch);
+  const studioTripId = tripStudioEnabled
+    ? (studioMatch?.params.tripId ?? standaloneStudioMatch?.params.tripId ?? null)
+    : null;
   const [panel, setPanel] = useState<TMobilePanel | null>(null);
   const [returnPanel, setReturnPanel] = useState<TMobilePanel>(MobilePanel.Trips);
   const [browser, setBrowser] = useState<ICountryBrowserState>(initialCountryBrowser);
@@ -57,6 +67,9 @@ export const App = () => {
   });
   const [statuses, setStatuses] = useState<Partial<Record<CountryList, CountryStatus>>>({});
   const openTrips = () => {
+    if (!tripStudioEnabled) {
+      return;
+    }
     if (standaloneStudio) {
       navigate(tripStudioLandingPath);
       setPanel(null);
@@ -71,6 +84,9 @@ export const App = () => {
     setPanel(MobilePanel.Countries);
   };
   const openStudio = (trip: ITrip, from: TMobilePanel, standalone = false) => {
+    if (!tripStudioEnabled) {
+      return;
+    }
     setReturnPanel(from);
     setPanel(null);
     navigate(standalone ? standaloneTripStudioPath(trip.id) : tripStudioPath(trip.id));
@@ -81,6 +97,19 @@ export const App = () => {
       wishlist.onToggle(country, false);
     }
   };
+
+  useEffect(() => {
+    const requested = new URLSearchParams(location.search).get('devmode');
+    if (requested !== null) {
+      dispatch(setDevMode(requested === 'true'));
+    }
+  }, [dispatch, location.search]);
+
+  useEffect(() => {
+    if (!tripStudioEnabled && panel === MobilePanel.Trips) {
+      setPanel(null);
+    }
+  }, [tripStudioEnabled, panel]);
 
   useEffect(() => {
     if (standaloneStudio) {
@@ -143,6 +172,14 @@ export const App = () => {
   }, [studioTripId, panel, returnPanel, standaloneStudio]);
 
   useEffect(() => {
+    if (
+      !tripStudioEnabled &&
+      (studioMatch || standaloneLandingMatch || standaloneStudioMatch)
+    ) {
+      setPanel(null);
+      navigate('/', { replace: true });
+      return;
+    }
     if (location.pathname !== '/' && !studioTripId && location.pathname !== tripStudioLandingPath) {
       navigate('/', { replace: true });
       return;
@@ -156,10 +193,21 @@ export const App = () => {
       setReturnPanel(MobilePanel.Trips);
       navigate(standaloneStudioMatch ? tripStudioLandingPath : '/', { replace: true });
     }
-  }, [location.pathname, navigate, studioTripId, tripSession.ready, tripSession.trips]);
+  }, [
+    location.pathname,
+    navigate,
+    studioTripId,
+    studioMatch,
+    standaloneLandingMatch,
+    standaloneStudioMatch,
+    tripStudioEnabled,
+    tripSession.ready,
+    tripSession.trips,
+  ]);
 
   return (
     <main>
+      <CanaryLabs />
       {!standaloneStudio && (
         <div hidden={Boolean(studioTripId)}>
           {import.meta.env.DEV && <FpsToken reading={frameReading} />}
@@ -194,6 +242,7 @@ export const App = () => {
       )}
       {!standaloneStudio && (
         <MobilePanels
+          tripStudioEnabled={tripStudioEnabled}
           tripSession={tripSession}
           panel={panel}
           onPanelChange={setPanel}
@@ -214,7 +263,11 @@ export const App = () => {
             onWishlist: wishlist.onToggle,
             onClose: () => setPanel(null),
             onOpenTrip: (trip) => openStudio(trip, MobilePanel.Countries),
+            allowPlanning: tripStudioEnabled,
             onPlan: (country) => {
+              if (!tripStudioEnabled) {
+                return;
+              }
               const details = {
                 ...emptyTripDetails,
                 name: `${countries[country].name} trip`,
@@ -239,14 +292,14 @@ export const App = () => {
           }}
         />
       )}
-      {standaloneLandingMatch && (
+      {tripStudioEnabled && standaloneLandingMatch && (
         <UpcomingTrips
           fullPage
           tripSession={tripSession}
           onOpenStudio={(trip) => openStudio(trip, MobilePanel.Trips, true)}
         />
       )}
-      {studioTrip && (
+      {tripStudioEnabled && studioTrip && (
         <TripStudio
           key={studioTrip.id}
           trip={studioTrip}

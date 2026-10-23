@@ -19,6 +19,7 @@ interface IMobilePanelsProps {
   onPanelChange: (panel: TMobilePanel | null) => void;
   onBrowseAll: () => void;
   studioOpen?: boolean;
+  tripStudioEnabled: boolean;
   onCollection?: () => void;
   onTrips?: () => void;
 
@@ -134,8 +135,12 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
             }
           />
         </div>
-        <div className={styles.feature} hidden={mobile && active !== MobilePanel.Trips}>
-          <UpcomingTrips
+        <div
+          className={styles.feature}
+          hidden={!props.tripStudioEnabled || (mobile && active !== MobilePanel.Trips)}
+        >
+          {props.tripStudioEnabled && (
+            <UpcomingTrips
             tripSession={props.tripSession}
             key={account.userId}
             onOpenStudio={(trip) => {
@@ -145,7 +150,8 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
             mobilePanel={
               mobile ? { open: active === MobilePanel.Trips, onClose: dismiss } : undefined
             }
-          />
+            />
+          )}
         </div>
         <div className={styles.feature} hidden={mobile && active !== MobilePanel.Account}>
           <AccountPanel
@@ -156,7 +162,9 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
         </div>
       </div>
       <nav className={styles.bar} aria-label="Explore and plan" hidden={!mobile}>
-        {Object.values(MobilePanel).map((panel) => (
+        {Object.values(MobilePanel)
+          .filter((panel) => props.tripStudioEnabled || panel !== MobilePanel.Trips)
+          .map((panel) => (
           <Button
             key={panel}
             ref={(element) => {
