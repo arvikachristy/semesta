@@ -59,6 +59,12 @@ export const isTripRecord = (value: unknown): value is ITrip => {
       (Array.isArray(value.planning) &&
         value.planning.every(isTripPlanningItem) &&
         new Set(value.planning.map((item) => item.id)).size === value.planning.length)) &&
+    (!('dismissedPlanningIds' in value) ||
+      (Array.isArray(value.dismissedPlanningIds) &&
+        value.dismissedPlanningIds.every(
+          (id: unknown) => typeof id === 'string' && id.length > 0,
+        ) &&
+        new Set(value.dismissedPlanningIds).size === value.dismissedPlanningIds.length)) &&
     (!('activePlanningCategories' in value) ||
       (Array.isArray(value.activePlanningCategories) &&
         value.activePlanningCategories.every(isPlanningCategory) &&

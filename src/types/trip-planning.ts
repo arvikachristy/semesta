@@ -28,6 +28,7 @@ export interface ITripPlanningItem {
   bookingReference?: string;
   link?: string;
   dayNumber?: number;
+  endDayNumber?: number;
 }
 
 export const isPlanningStatus = (value: unknown): value is TPlanningStatus =>
@@ -101,6 +102,13 @@ export const isTripPlanningItem = (value: unknown): value is ITripPlanningItem =
   (!('dateTime' in value) || isBookingDateTime(value.dateTime)) &&
   (!('bookingReference' in value) || typeof value.bookingReference === 'string') &&
   (!('link' in value) || isBookingLink(value.link)) &&
+  (!('endDayNumber' in value) ||
+    (typeof value.endDayNumber === 'number' &&
+      Number.isInteger(value.endDayNumber) &&
+      'dayNumber' in value &&
+      typeof value.dayNumber === 'number' &&
+      value.endDayNumber > value.dayNumber &&
+      value.endDayNumber <= 365)) &&
   (!('dayNumber' in value) ||
     (typeof value.dayNumber === 'number' &&
       Number.isInteger(value.dayNumber) &&

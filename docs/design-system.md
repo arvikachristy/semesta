@@ -70,10 +70,35 @@ Token naming follows the [Design Tokens Community Group](https://www.w3.org/comm
 
 Trip Studio keeps the collection mounted and uses the existing navigation shell for
 Countries, Trips and Account access. Trip creation asks for a destination and days
-or a date range, with a generated title. The studio shows clickable transport and
-stay slots, an optional route and expandable days. Slots do not persist as bookings
-until saved. Extra journeys/stays are tucked into a disclosure. Stop editing and
+or a date range, with a generated title. The studio shows a day-aligned journey map with green Stay and terracotta Travel
+lanes. Stay ranges represent planned route nights; arrival, transfers and departure
+open the existing booking editor in one tap. Initial slots are presentation defaults;
+adding or changing a calendar block persists its planned range, never a booked status.
+The summary toggles a focus view for unfinished bookings while keeping booked
+items readable and editable. Stay + immediately fills a gap or splits the longest
+stay; Travel + immediately adds a journey on Day 1. Stay blocks fill their entire
+planned night range, with a move grip and start/end resize handles. Interact.js
+owns mouse/touch drag and resize gestures. Desktop dragging starts anywhere on a
+block except Edit/Delete and the resize edges. Touch movement starts after a 350ms
+hold; swiping before activation keeps native scrolling. The grip remains a keyboard
+alternative. Taps edit; the click following a drag is suppressed. Resize edges stay
+immediate touch targets. It auto-scrolls the studio near its edges;
+inertia is disabled. The React adapter converts movement into day ranges using
+the actual row boundaries, including during scrolling. Arrow Up/Down on a handle changes one day. Changes preview
+while dragging and save on release; Escape or pointer cancellation discards them.
+Resizing can trim a neighbouring stay but cannot silently erase one. Uncovered
+nights are counted above the map. Booking dates take precedence
+for travel on dated trips. Extra unallocated stays and out-of-range bookings remain
+visible below the map; other categories remain under Other plans. Lane colours
+identify categories, while existing semantic badges communicate booking status. Stop editing and
 booking create/edit use the existing native Overlay; forms mount only on request.
+Every journey block, including generated defaults and unplaced bookings, exposes
+Edit and Delete actions with 44px targets. The editor includes stay check-in/out
+days as an alternative to dragging. Deletion removes the block, offers Undo and
+persists dismissed default IDs so the item does not regenerate after reload.
+CRUD actions share the trip-planning domain store, persisted through useTrips and
+the existing repository; editors select by stable ID rather than copying records.
+Single-stop metadata edits preserve the stop ID and associated booking identity.
 Booking forms begin with a name-or-link field and collapse optional details. No
 readiness hero, category chooser or traveller editor is shown. Escape and Close
 dismiss overlays and restore focus. Native date/time inputs keep their usual behaviour.
