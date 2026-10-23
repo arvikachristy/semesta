@@ -29,7 +29,8 @@ Trip Studio is a **manual planning MVP**: it doesn't book travel, retrieve price
 | Journey editor | **Interact.js** for drag/resize, touch hold and auto-scroll; day snapping and stable-ID CRUD through the existing trip store |
 | Data & sign-in | Local browser storage by default; optional **Supabase** account backup using email code or Google sign-in                    |
 | Quality        | **Vitest**, **Playwright**, ESLint, Prettier and TypeScript checks                                                           |
-| State          | **Redux Toolkit** for Canary flags; trip persistence remains in feature repositories |\n| Hosting        | **Vercel**                                                                                                                   |
+| State          | **Redux Toolkit** for Canary flags; trip persistence remains in feature repositories |
+| Hosting        | **Vercel**                                                                                                                   |
 
 ## Run locally
 
