@@ -2,7 +2,7 @@
 
 _A little universe of places you've been._
 
-**Semesta** means *universe* in Bahasa Indonesia. It's an interactive travel collection where countries you've visited become miniature jelly flags in a playful 3D world.
+**Semesta** means _universe_ in Bahasa Indonesia. It's an interactive travel collection where countries you've visited become miniature jelly flags in a playful 3D world.
 
 [**Explore the live app ↗**](https://semesta-gamma.vercel.app/)
 
@@ -17,12 +17,12 @@ _A little universe of places you've been._
 
 ## Built with
 
-| | Technology |
-| --- | --- |
-| Frontend | React 19, TypeScript 6, Vite 8, React Router 8, CSS Modules |
-| 3D & interaction | Three.js (WebGL), custom CPU soft-body physics, pointer and touch controls |
-| State & storage | Redux Toolkit, browser storage, optional Supabase authentication and backup |
-| Quality & hosting | Vitest, Playwright, ESLint, Prettier, Vercel |
+|                   | Technology                                                                  |
+| ----------------- | --------------------------------------------------------------------------- |
+| Frontend          | React 19, TypeScript 6, Vite 8, React Router 8, CSS Modules                 |
+| 3D & interaction  | Three.js (WebGL), custom CPU soft-body physics, pointer and touch controls  |
+| State & storage   | Redux Toolkit, browser storage, optional Supabase authentication and backup |
+| Quality & hosting | Vitest, Playwright, ESLint, Prettier, Vercel                                |
 
 ## Run locally
 

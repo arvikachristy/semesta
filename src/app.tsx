@@ -308,7 +308,9 @@ export const App = () => {
                 ? `${added.map((country) => countries[country].name).join(', ')} added to Been to. Your world has grown.`
                 : 'Visit confirmed. Your collection is up to date.',
             );
-            navigate(withDevMode(standaloneStudioMatch ? tripStudioLandingPath : '/'), { replace: true });
+            navigate(withDevMode(standaloneStudioMatch ? tripStudioLandingPath : '/'), {
+              replace: true,
+            });
             setPanel(null);
           }}
           onBack={() => {
