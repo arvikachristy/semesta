@@ -163,11 +163,6 @@ export const App = () => {
       {!standaloneStudio && (
         <div hidden={Boolean(studioTripId)}>
           {import.meta.env.DEV && <FpsToken reading={frameReading} />}
-          <header className={styles.intro}>
-            <h1>Your world</h1>
-            <p>{showedCountries.length} countries I've been to</p>
-            <span>Tap a glass to explore</span>
-          </header>
           <ul className="visually-hidden" id="continent-descriptions">
             {continentDefinitions.map((continent) => (
               <li key={continent.id}>
