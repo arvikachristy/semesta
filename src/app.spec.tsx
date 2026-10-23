@@ -94,6 +94,7 @@ describe('visited world, wishes and trips', () => {
     expect(window.location.pathname).toBe(`/trips/${trip.id}`);
     await clickText('‹ Back to trips');
     expect(window.location.pathname).toBe('/');
+    expect(window.location.search).toBe('?devmode=true');
     expect(host.textContent).toContain('Upcoming trips');
   });
   it('serves the full-page Trip Studio route without starting the WebGL scene', async () => {
@@ -110,6 +111,7 @@ describe('visited world, wishes and trips', () => {
     ).not.toBe(null);
     await click('button[aria-label="Open Lisbon"]');
     expect(window.location.pathname).toBe(`/tripstudio/${trip.id}`);
+    expect(window.location.search).toBe('?devmode=true');
     expect(host.querySelector('section[aria-label="Trip Studio"] h1')?.textContent).toBe('Lisbon');
     expect(startPlayground).not.toHaveBeenCalled();
     await clickText('‹ Back to trips');

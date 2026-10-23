@@ -171,7 +171,7 @@ export const App = () => {
       return;
     }
     if (location.pathname !== '/' && !studioTripId && location.pathname !== tripStudioLandingPath) {
-      navigate('/', { replace: true });
+      navigate(withDevMode('/'), { replace: true });
       return;
     }
     if (
@@ -308,7 +308,7 @@ export const App = () => {
                 ? `${added.map((country) => countries[country].name).join(', ')} added to Been to. Your world has grown.`
                 : 'Visit confirmed. Your collection is up to date.',
             );
-            navigate(standaloneStudioMatch ? tripStudioLandingPath : '/', { replace: true });
+            navigate(withDevMode(standaloneStudioMatch ? tripStudioLandingPath : '/'), { replace: true });
             setPanel(null);
           }}
           onBack={() => {
@@ -316,7 +316,7 @@ export const App = () => {
               navigate(withDevMode(tripStudioLandingPath), { replace: true });
               setPanel(null);
             } else {
-              navigate('/', { replace: true });
+              navigate(withDevMode('/'), { replace: true });
               setPanel(returnPanel);
             }
           }}
