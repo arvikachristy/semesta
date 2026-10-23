@@ -1,24 +1,3 @@
-.intro {
-  position: absolute;
-  top: max(var(--space-5), env(safe-area-inset-top));
-  left: 50%;
-  transform: translateX(-50%);
-  text-align: center;
-  color: var(--color-ink);
-  pointer-events: none;
-}
-.intro h1 {
-  margin: 0;
-  font: 400 var(--text-title) / 1.2 var(--font-display);
-}
-.intro p {
-  margin: var(--space-2) 0;
-  font-size: var(--text-body);
-}
-.intro span {
-  color: var(--color-muted);
-  font-size: var(--text-small);
-}
 .message {
   position: absolute;
   left: 50%;
@@ -31,10 +10,4 @@
   color: var(--color-ink);
   text-align: center;
   font-size: var(--text-body);
-}
-@media (max-width: 600px) {
-  .intro {
-    top: 6rem;
-    width: calc(100vw - 2rem);
-  }
 }

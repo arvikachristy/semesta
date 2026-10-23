@@ -48,6 +48,7 @@ export const CountryBrowser = (props: ICountryBrowserProps) => {
   const searchInput = useRef<HTMLInputElement>(null);
   const visited = new Set(visitedCountryIds);
   const wishlist = new Set(wishlistCountryIds);
+  const wishlistMode = state.filter === CountryFilter.Wishlist;
   const continent = continents.find((item) => item.id === state.continent);
   const groups = countryGroups.filter((group) => !state.continent || group.id === state.continent);
   const total = groups.reduce((count, group) => count + group.countries.length, 0);
@@ -55,20 +56,26 @@ export const CountryBrowser = (props: ICountryBrowserProps) => {
     (sum, group) => sum + group.countries.filter((country) => visited.has(country.code)).length,
     0,
   );
-  const selected = state.selected ? countries[state.selected] : null;
-  const selectedId = state.selected;
+  const selected =
+    state.selected && (!wishlistMode || !visited.has(state.selected))
+      ? countries[state.selected]
+      : null;
+  const selectedId = selected?.code;
   const selectedTrips = selectedId
     ? props.trips.filter((trip) => trip.countryIds.includes(selectedId))
     : [];
   const visibleGroups = groups
     .map((group) => ({
       ...group,
-      countries: group.countries.filter((country) => matchesCountryQuery(country, state.query)),
+      countries: group.countries.filter(
+        (country) =>
+          (!wishlistMode || !visited.has(country.code)) &&
+          matchesCountryQuery(country, state.query),
+      ),
     }))
     .filter((group) => group.countries.length > 0);
 
   const activeChange = change?.country === state.selected ? change : null;
-  const wishlistMode = state.filter === CountryFilter.Wishlist;
   const keepSearchFocus = (event: PointerEvent<HTMLButtonElement>) => {
     // Avoid moving the tapped control before its click completes.
     if (document.activeElement === searchInput.current) {
@@ -182,14 +189,18 @@ export const CountryBrowser = (props: ICountryBrowserProps) => {
         </div>
       </div>
       <p className={styles.instruction}>
-        {wishlistMode ? 'Tap countries you’d love to visit' : 'Tap countries you’ve visited'}
+        {wishlistMode ? 'Tap countries you haven’t visited yet' : 'Tap countries you’ve visited'}
       </p>
       <div className={styles.scroll}>
         {!visibleGroups.length && (
           <p className={styles.empty}>
             {total === 0
               ? 'There are no selectable country entries for this continent yet.'
-              : 'No countries match your search.'}
+              : wishlistMode
+                ? state.query.trim()
+                  ? 'No unvisited countries match your search.'
+                  : 'You’ve visited every country in this selection.'
+                : 'No countries match your search.'}
           </p>
         )}
         {visibleGroups.map((group) => (

@@ -3,12 +3,15 @@ import { act, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CountrySelector } from './country-selector';
-import { defaultCountries, toggleCountry } from '../data/countries';
+import { countries, defaultCountries, toggleCountry } from '../data/countries';
 import { CountryList } from '../types/country';
 import { initialCountryBrowser } from './shared/country-picker/country-browser-state';
 const onPlan = vi.fn();
-const Harness = () => {
-  const [visited, setVisited] = useState([...defaultCountries]);
+interface ICountrySelectorHarnessProps {
+  initialVisited?: readonly CountryList[];
+}
+const Harness = ({ initialVisited = defaultCountries }: ICountrySelectorHarnessProps) => {
+  const [visited, setVisited] = useState([...initialVisited]);
   const [wishlist, setWishlist] = useState<CountryList[]>([]);
   const [state, setState] = useState(initialCountryBrowser);
   const [open, setOpen] = useState(false);
@@ -79,6 +82,60 @@ afterEach(async () => {
   Reflect.deleteProperty(HTMLDialogElement.prototype, 'close');
 });
 describe('visual country modal', () => {
+  it('applies search and continent filters to unvisited bucket-list options', async () => {
+    await click('Bucket list');
+    const search = host.querySelector('input[type="search"]');
+    const continent = host.querySelector('select[aria-label="Continent"]');
+    const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+    if (
+      !(search instanceof HTMLInputElement) ||
+      !(continent instanceof HTMLSelectElement) ||
+      !setValue
+    ) {
+      throw new Error('Missing country filters');
+    }
+    const query = async (value: string) => {
+      await act(async () => {
+        setValue.call(search, value);
+        search.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    };
+    await query('Indonesia');
+    expect(host.querySelector('button[aria-label="Save Indonesia to bucket list"]')).toBeNull();
+    expect(host.textContent).toContain('No unvisited countries match your search.');
+    await query('Peru');
+    expect(host.querySelector('button[aria-label="Save Peru to bucket list"]')).not.toBeNull();
+    await query('');
+    await act(async () => {
+      continent.value = 'asia';
+      continent.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    expect(host.querySelector('button[aria-label="Save Indonesia to bucket list"]')).toBeNull();
+    expect(host.querySelector('button[aria-label="Save Japan to bucket list"]')).not.toBeNull();
+    expect(host.querySelector('button[aria-label="Save Peru to bucket list"]')).toBeNull();
+    await click('Been to');
+    expect(host.querySelector('button[aria-label="Remove Indonesia from Been to"]')).not.toBeNull();
+  });
+  it('shows a useful empty state when every country has been visited', async () => {
+    await act(async () =>
+      root.render(
+        <Harness
+          key="all-visited"
+          initialVisited={Object.values(countries).map((country) => country.code)}
+        />,
+      ),
+    );
+    const trigger = host.querySelector('.country-trigger');
+    if (!(trigger instanceof HTMLButtonElement)) {
+      throw new Error('Missing trigger');
+    }
+    await act(async () => trigger.click());
+    await click('Bucket list');
+    expect(host.textContent).toContain('You’ve visited every country in this selection.');
+    expect(host.querySelector('button[aria-label^="Save "]')).toBeNull();
+    await click('Been to');
+    expect(host.querySelector('button[aria-label="Remove Indonesia from Been to"]')).not.toBeNull();
+  });
   it('dismisses search focus when a country is toggled', async () => {
     const search = host.querySelector('input[type="search"]');
     if (!(search instanceof HTMLInputElement)) {
@@ -131,20 +188,32 @@ describe('visual country modal', () => {
     expect(host.textContent).toContain('1 country visited');
     expect(labels()).toEqual(before);
   });
-  it('keeps repeat-visit wishes independent and undo restores the visit state', async () => {
+  it('excludes visited countries from bucket-list options and updates when visits change', async () => {
     await click('Bucket list');
-    await click('Save Indonesia to bucket list');
+    expect(host.querySelector('button[aria-label="Save Indonesia to bucket list"]')).toBeNull();
+    expect(host.querySelector('button[aria-label="Save Peru to bucket list"]')).not.toBeNull();
     await click('Been to');
     await click('Remove Indonesia from Been to');
-    expect(host.textContent).toContain('0 countries visited');
+    await click('Bucket list');
+    await click('Save Indonesia to bucket list');
+    expect(
+      host.querySelector('button[aria-label="Remove Indonesia from bucket list"]'),
+    ).not.toBeNull();
+    await click('Been to');
+    await click('Mark Indonesia visited');
     await click('Undo');
-    expect(host.textContent).toContain('1 country visited');
+    expect(host.textContent).toContain('0 countries visited');
     await click('Bucket list');
     expect(
       host
         .querySelector('button[aria-label="Remove Indonesia from bucket list"]')
         ?.getAttribute('aria-pressed'),
     ).toBe('true');
+    await click('Been to');
+    await click('Mark Indonesia visited');
+    await click('Bucket list');
+    expect(host.querySelector('button[aria-label="Remove Indonesia from bucket list"]')).toBeNull();
+    expect(host.querySelector('[aria-label="Country actions"]')).toBeNull();
   });
   it('dismisses the native modal and restores the opener focus', async () => {
     const dialog = host.querySelector('dialog');
