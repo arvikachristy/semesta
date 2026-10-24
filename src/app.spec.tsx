@@ -108,6 +108,30 @@ describe('visited world, wishes and trips', () => {
     expect(host.querySelector('[data-country-open="true"]')).toBeNull();
     expect(host.querySelector('canvas')).toBe(canvas);
   });
+
+  it('shows live visited and unvisited bucket-list totals in the scene header', async () => {
+    localStorage.setItem(
+      selectionStorage.key,
+      JSON.stringify({ version: 1, selectedCountryIds: [CountryList.France] }),
+    );
+    localStorage.setItem(
+      wishlistStorage.key,
+      JSON.stringify({ version: 1, countryIds: [CountryList.France, CountryList.Peru] }),
+    );
+    await renderApp();
+
+    const header = host.querySelector('header[aria-label="Collection summary"]');
+    expect(header?.textContent).toContain('Semesta');
+    expect(header?.textContent).toContain('1Country visited');
+    expect(header?.textContent).toContain('1Bucket list');
+
+    await act(async () =>
+      vi.mocked(startPlayground).mock.calls[0][1]?.onContinentSelect?.(ContinentId.SouthAmerica),
+    );
+    await click('button[aria-label="Mark Peru visited"]');
+    expect(header?.textContent).toContain('2Country visited');
+    expect(header?.textContent).toContain('0Bucket list');
+  });
   it('opens account and countries from the desktop icon rail and retains mobile navigation on resize', async () => {
     await renderApp();
     const rail = host.querySelector('nav[aria-label="Desktop navigation"]');
@@ -161,6 +185,7 @@ describe('visited world, wishes and trips', () => {
 
     expect(startPlayground).not.toHaveBeenCalled();
     expect(host.querySelector('canvas')).toBeNull();
+    expect(host.querySelector('header[aria-label="Collection summary"]')).toBeNull();
     expect(
       host.querySelector('aside[aria-label="Upcoming trips"][data-full-page="true"]'),
     ).not.toBe(null);

@@ -23,6 +23,8 @@
     "test:browser": "node scripts/check-countries.mjs"
   },
   "dependencies": {
+    "@fontsource/lora": "^5.3.0",
+    "@fontsource/work-sans": "^5.3.0",
     "@reduxjs/toolkit": "^2.13.0",
     "@supabase/supabase-js": "^2.117.3",
     "interactjs": "^1.10.28",
