@@ -74,6 +74,23 @@ export const CountryBrowser = (props: ICountryBrowserProps) => {
       ),
     }))
     .filter((group) => group.countries.length > 0);
+  const pinnedCountries = wishlistMode
+    ? visibleGroups
+        .flatMap((group) => group.countries.filter((country) => wishlist.has(country.code)))
+        .sort((a, b) => a.name.localeCompare(b.name))
+    : [];
+  const displayGroups =
+    wishlistMode && pinnedCountries.length > 0
+      ? [
+          { id: 'pinned', name: `Pinned · ${pinnedCountries.length}`, countries: pinnedCountries },
+          ...visibleGroups
+            .map((group) => ({
+              ...group,
+              countries: group.countries.filter((country) => !wishlist.has(country.code)),
+            }))
+            .filter((group) => group.countries.length > 0),
+        ]
+      : visibleGroups;
 
   const activeChange = change?.country === state.selected ? change : null;
   const keepSearchFocus = (event: PointerEvent<HTMLButtonElement>) => {
@@ -203,9 +220,13 @@ export const CountryBrowser = (props: ICountryBrowserProps) => {
                 : 'No countries match your search.'}
           </p>
         )}
-        {visibleGroups.map((group) => (
-          <section key={group.id} className={styles.group} aria-label={group.name}>
-            {!state.continent && <h3>{group.name}</h3>}
+        {displayGroups.map((group) => (
+          <section
+            key={group.id}
+            className={styles.group}
+            aria-label={group.id === 'pinned' ? 'Pinned bucket-list countries' : group.name}
+          >
+            {(group.id === 'pinned' || !state.continent) && <h3>{group.name}</h3>}
             <div className={styles.grid}>
               {group.countries.map((country) => {
                 const checked = wishlistMode
@@ -242,7 +263,11 @@ export const CountryBrowser = (props: ICountryBrowserProps) => {
                       )}
                     </span>
                     <span className={styles.name}>{country.name}</span>
-                    <span className={styles.continent}>{group.name}</span>
+                    <span className={styles.continent}>
+                      {group.id === 'pinned'
+                        ? continents.find((item) => item.id === country.continent)?.name
+                        : group.name}
+                    </span>
                   </Button>
                 );
               })}
