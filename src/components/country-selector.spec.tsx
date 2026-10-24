@@ -181,6 +181,8 @@ describe('visual country modal', () => {
     await act(async () => {
       setValue.call(search, '');
       search.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await act(async () => {
       continent.value = 'asia';
       continent.dispatchEvent(new Event('change', { bubbles: true }));
     });
