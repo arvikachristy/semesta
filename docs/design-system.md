@@ -141,12 +141,14 @@ Account backup uses the same controls and surfaces. Desktop opens a native modal
 
 ## Country browser
 
-Desktop opens `CountryBrowser` by default in a non-modal right-hand panel using the
-shared Overlay with `modal={false}`. It can be closed or reopened with All countries;
-Escape closes it without blocking canvas gestures. The glasses occupy the left-hand
-scene area while the panel is open. Canvas ResizeObserver updates renderer dimensions
-and camera framing when the available area changes, without recreating the scene or
-resetting the collection. Upcoming trips remains reachable at the bottom left.
+Desktop starts with the country browser closed and opens it from the navigation rail
+in a non-modal right-hand panel using the shared Overlay with `modal={false}`.
+Escape closes it without blocking canvas gestures. On wider screens the glasses shift
+with a short CSS transform while the WebGL drawing buffer keeps its size. Narrower
+desktop widths resize the scene once to keep the collection visible. The canvas
+ResizeObserver updates renderer dimensions and camera framing when needed, without
+recreating the scene or resetting the collection. Reduced-motion preferences disable
+the shift animation. Upcoming trips remains reachable from the navigation rail.
 Mobile places country content
 inside the existing MobilePanels dialog. Never nest another country dialog. The
 header shows the continent and visited progress, followed by native search/select
