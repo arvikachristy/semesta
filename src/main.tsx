@@ -4,7 +4,7 @@ import { App } from './app';
 import { AccountProvider } from './account/account-provider';
 import { BrowserRouter } from 'react-router';
 import { Provider } from 'react-redux';
-import { store } from './app/store';
+import { store } from './redux/store';
 import { applyTheme } from './styles/theme';
 import './styles/tokens.css';
 import './styles/themes/rose.css';

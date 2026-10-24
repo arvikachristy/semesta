@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { CanaryID } from './canary-registry';
-import type { TCanaryOverrides } from './canary-storage';
+import type { CanaryID } from '../../features/canary/canary-registry';
+import type { TCanaryOverrides } from '../../features/canary/canary-storage';
 
 export interface ICanaryState {
   overrides: TCanaryOverrides;

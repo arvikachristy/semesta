@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createAppStore } from './store';
-import { setTheme } from '../styles/theme-slice';
+import { setTheme } from './theme/slice';
 import { themeStorage, ThemeId } from '../styles/theme';
 
 beforeEach(() => localStorage.clear());

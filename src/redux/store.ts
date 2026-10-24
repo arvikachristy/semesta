@@ -1,8 +1,8 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { canaryReducer } from '../features/canary/canary-slice';
+import { canaryReducer } from './canary/slice';
 import { readCanaryOverrides, saveCanaryOverrides } from '../features/canary/canary-storage';
 import { readStoredTheme, saveStoredTheme } from '../styles/theme';
-import { themeReducer } from '../styles/theme-slice';
+import { themeReducer } from './theme/slice';
 
 export const createAppStore = () => {
   const store = configureStore({

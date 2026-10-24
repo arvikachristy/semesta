@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createAppStore } from '../../app/store';
+import { createAppStore } from '../../redux/store';
 import { CanaryIDs } from './canary-registry';
-import { selectCanaryEnabled } from './canary-selectors';
-import { setCanary } from './canary-slice';
+import { selectCanaryEnabled } from '../../redux/canary/selectors';
+import { setCanary } from '../../redux/canary/slice';
 import { canaryStorage, readCanaryOverrides } from './canary-storage';
 import { isDevMode } from './use-dev-mode';
 
