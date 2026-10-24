@@ -1,10 +1,12 @@
-# Rose Glass
+# Semesta design system: Rose Glass & Midnight Navy
 
 Semesta's small DOM design system: warm translucent surfaces, burgundy ink, quiet serif headings, and precise, comfortable controls. The cups remain the visual centre. This is the pattern for current and future interface work.
 
 ## Sources of truth
 
-- `src/styles/tokens.css`: named colours, spacing, type, radii, heights, shadows and motion.
+- `src/styles/tokens.css`: theme-independent spacing, typography, sizing and interaction decisions.
+- `src/styles/themes/rose.css` and `src/styles/themes/midnight.css`: the complete, matching semantic colour palettes, including Three.js scene colours and shadows.
+- `src/three/scene-palette.ts`: the CSS-to-Three.js colour adapter; use it for scene materials instead of embedding hex codes.
 - `src/components/ui/ui.module.css`: surfaces, fields, focus, action rows and interaction states.
 - `src/components/ui/button.tsx`: native React button with shared variants and ref support.
 - Existing examples: `trip-editor.tsx` for a form, `upcoming-trips.tsx` for a panel, `country-selector.tsx` for the shared flag-grid country modal.
@@ -102,7 +104,7 @@ Single-stop metadata edits preserve the stop ID and associated booking identity.
 Booking forms begin with a name-or-link field and collapse optional details. No
 readiness hero, category chooser or traveller editor is shown. Escape and Close
 dismiss overlays and restore focus. Native date/time inputs keep their usual behaviour.
-Use the existing tokens and controls; the MVP adds no image service or new theme.
+Use the existing tokens and controls; no feature CSS should define a separate palette.
 
 Trip setup uses DayDial and DateRangeCalendar. The SVG dial handles pointer capture,
 continuous rotation across twelve o'clock, arrow/page/home/end keys, direct numeric

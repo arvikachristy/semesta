@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { jellyParameters } from './jelly-parameters';
+import { readScenePalette } from '../scene-palette';
+import type { IScenePalette } from '../scene-palette';
 
 // The thickness attribute is measured between embedded front/back volume probes each frame.
 // This is a local-volume approximation, not a screen-space back-depth render pass.
@@ -15,9 +17,10 @@ export const createJellyMaterial = (pattern: THREE.Texture, scale = 1) => {
     clearcoat: 0.18,
     clearcoatRoughness: 0.25,
     envMapIntensity: 0.45,
-    attenuationColor: '#fff2f6',
+    attenuationColor: readScenePalette().jellyTint,
     attenuationDistance: 1 / p.absorption,
   });
+  material.userData.semestaJelly = true;
   material.onBeforeCompile = (shader) => {
     shader.uniforms.jellyAbsorption = { value: p.absorption / scale };
     shader.vertexShader = shader.vertexShader
@@ -55,4 +58,10 @@ export const createJellyMaterial = (pattern: THREE.Texture, scale = 1) => {
     );
   };
   return material;
+};
+
+export const updateJellyMaterial = (material: THREE.MeshPhysicalMaterial, palette: IScenePalette) => {
+  if (material.userData.semestaJelly === true) {
+    material.attenuationColor.set(palette.jellyTint);
+  }
 };

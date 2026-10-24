@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 import { glassDimensions, glassParameters } from './glass-parameters';
+import { readScenePalette } from '../scene-palette';
+import type { IScenePalette } from '../scene-palette';
+
+const bottomTints = new WeakMap<THREE.MeshPhysicalMaterial, THREE.Color>();
 
 const shaderIncludes = {
   common: '#include <common>',
@@ -20,9 +24,13 @@ export const getGlassTint = (height: number) => {
 };
 
 // Transmission keeps the object optically clear while thickness adds refraction.
-export const createGlassMaterial = (height = glassDimensions.outerHeight) => {
+export const createGlassMaterial = (
+  height = glassDimensions.outerHeight,
+  palette: IScenePalette = readScenePalette(),
+) => {
+  const tint = new THREE.Color(palette.glassBottom);
   const material = new THREE.MeshPhysicalMaterial({
-    color: glassParameters.gradient.clearColor,
+    color: palette.glassClear,
     metalness: 0,
     roughness: 0.025,
     transmission: 1,
@@ -32,16 +40,14 @@ export const createGlassMaterial = (height = glassDimensions.outerHeight) => {
     depthWrite: false,
     thickness: glassParameters.wallThickness,
     ior: 1.45,
-    attenuationColor: glassParameters.gradient.clearColor,
+    attenuationColor: palette.glassClear,
     attenuationDistance: 10,
     envMapIntensity: 0.2,
     clearcoat: 0.1,
     clearcoatRoughness: 0.04,
   });
   material.onBeforeCompile = (shader) => {
-    shader.uniforms.glassBottomTint = {
-      value: new THREE.Color(glassParameters.gradient.bottomColor),
-    };
+    shader.uniforms.glassBottomTint = { value: tint };
     shader.uniforms.glassFadeHeight = { value: glassParameters.gradient.fadeHeight };
     shader.uniforms.glassHeight = { value: height };
     shader.vertexShader = shader.vertexShader
@@ -65,5 +71,12 @@ export const createGlassMaterial = (height = glassDimensions.outerHeight) => {
           '\ndiffuseColor.rgb *= mix(glassBottomTint, vec3(1.0), smoothstep(0.0, glassFadeHeight, vGlassHeight));',
       );
   };
+  bottomTints.set(material, tint);
   return material;
+};
+
+export const updateGlassMaterial = (material: THREE.MeshPhysicalMaterial, palette: IScenePalette) => {
+  material.color.set(palette.glassClear);
+  material.attenuationColor.set(palette.glassClear);
+  bottomTints.get(material)?.set(palette.glassBottom);
 };
