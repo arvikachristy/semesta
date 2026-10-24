@@ -1,21 +1,27 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { canaryReducer } from '../features/canary/canary-slice';
 import { readCanaryOverrides, saveCanaryOverrides } from '../features/canary/canary-storage';
+import { readStoredTheme, saveStoredTheme } from '../styles/theme';
+import { themeReducer } from '../styles/theme-slice';
 
 export const createAppStore = () => {
   const store = configureStore({
-    reducer: { canary: canaryReducer },
+    reducer: { canary: canaryReducer, theme: themeReducer },
     preloadedState: {
       canary: {
         overrides: readCanaryOverrides(),
       },
+      theme: { current: readStoredTheme() },
     },
   });
-  let previous = store.getState().canary;
+  let previous = store.getState();
   store.subscribe(() => {
-    const current = store.getState().canary;
-    if (current.overrides !== previous.overrides) {
-      saveCanaryOverrides(current.overrides);
+    const current = store.getState();
+    if (current.canary.overrides !== previous.canary.overrides) {
+      saveCanaryOverrides(current.canary.overrides);
+    }
+    if (current.theme.current !== previous.theme.current) {
+      saveStoredTheme(current.theme.current);
     }
     previous = current;
   });

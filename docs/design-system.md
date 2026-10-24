@@ -7,6 +7,7 @@ Semesta's small DOM design system: warm translucent surfaces, burgundy ink, quie
 - `src/styles/tokens.css`: theme-independent spacing, typography, sizing and interaction decisions.
 - `src/styles/themes/rose.css` and `src/styles/themes/midnight.css`: the complete, matching semantic colour palettes, including Three.js scene colours and shadows.
 - `src/three/scene-palette.ts`: the CSS-to-Three.js colour adapter; use it for scene materials instead of embedding hex codes.
+- `src/styles/theme-slice.ts`: the active theme in Redux. Rose is the default; the existing per-device storage key restores an explicit choice on the next visit.
 - `src/components/ui/ui.module.css`: surfaces, fields, focus, action rows and interaction states.
 - `src/components/ui/button.tsx`: native React button with shared variants and ref support.
 - Existing examples: `trip-editor.tsx` for a form, `upcoming-trips.tsx` for a panel, `country-selector.tsx` for the shared flag-grid country modal.

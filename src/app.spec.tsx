@@ -16,6 +16,8 @@ import { selectionStorage } from './storage/country-selection';
 import { wishlistStorage } from './storage/country-wishlist';
 import { tripStorage } from './storage/trips';
 import { emptyTripDetails } from './types/trip';
+import { ThemeId } from './styles/theme';
+import { setTheme } from './styles/theme-slice';
 vi.mock('./three/playground', () => ({ startPlayground: vi.fn() }));
 const host = document.createElement('div');
 let root: ReturnType<typeof createRoot>;
@@ -90,16 +92,27 @@ describe('theme switcher', () => {
     await renderApp();
     const canvas = host.querySelector('canvas');
     expect(document.documentElement.dataset.theme).toBe('rose');
+    expect(store.getState().theme.current).toBe(ThemeId.Rose);
     await click('button[aria-label="Switch to Midnight Navy"]');
     expect(document.documentElement.dataset.theme).toBe('midnight');
+    expect(store.getState().theme.current).toBe(ThemeId.Midnight);
     expect(localStorage.getItem('semesta.theme.v1')).toBe('midnight');
     expect(setSceneTheme).toHaveBeenCalledOnce();
     expect(startPlayground).toHaveBeenCalledOnce();
     expect(host.querySelector('canvas')).toBe(canvas);
     await click('button[aria-label="Switch to Rose"]');
     expect(document.documentElement.dataset.theme).toBe('rose');
+    expect(store.getState().theme.current).toBe(ThemeId.Rose);
     expect(startPlayground).toHaveBeenCalledOnce();
     expect(setSceneTheme).toHaveBeenCalledTimes(2);
+  });
+
+  it('applies a theme dispatched elsewhere without recreating the scene', async () => {
+    await renderApp();
+    await act(async () => store.dispatch(setTheme(ThemeId.Midnight)));
+    expect(document.documentElement.dataset.theme).toBe(ThemeId.Midnight);
+    expect(setSceneTheme).toHaveBeenCalledOnce();
+    expect(startPlayground).toHaveBeenCalledOnce();
   });
 });
 
