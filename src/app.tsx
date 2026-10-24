@@ -1,7 +1,12 @@
 import { useAccount, guestRepositories } from './account/account-context';
 import { FpsToken } from './components/fps-token';
 import type { IFrameReading } from './performance/frame-monitor';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { ThemeToggle } from './components/ui/theme-toggle';
+import { applyTheme, ThemeId } from './styles/theme';
+import { setTheme } from './redux/theme/slice';
+import { useAppDispatch, useAppSelector } from './redux/hooks';
+import { readScenePalette } from './three/scene-palette';
 import { CanaryIDs } from './features/canary/canary-registry';
 import { CanaryLabs } from './features/canary/canary-labs';
 import { useCanary } from './features/canary/use-canary';
@@ -36,6 +41,9 @@ import styles from './app.module.css';
 
 export const App = () => {
   const location = useLocation();
+  const theme = useAppSelector((state) => state.theme.current);
+  const dispatch = useAppDispatch();
+  const previousTheme = useRef(theme);
   const navigate = useNavigate();
   const devMode = useDevMode();
   const withDevMode = (path: string) => (devMode ? `${path}?devmode=true` : path);
@@ -91,12 +99,24 @@ export const App = () => {
     setPanel(null);
     navigate(withDevMode(standalone ? standaloneTripStudioPath(trip.id) : tripStudioPath(trip.id)));
   };
+  const toggleTheme = () => {
+    const next = theme === ThemeId.Rose ? ThemeId.Midnight : ThemeId.Rose;
+    dispatch(setTheme(next));
+  };
   const markVisited = (country: CountryList, visited: boolean) => {
     onToggle(country, visited);
     if (visited) {
       wishlist.onToggle(country, false);
     }
   };
+
+  useLayoutEffect(() => {
+    applyTheme(theme);
+    if (previousTheme.current !== theme) {
+      playgroundRef.current?.setTheme(readScenePalette());
+      previousTheme.current = theme;
+    }
+  }, [theme]);
 
   useEffect(() => {
     if (!tripStudioEnabled && panel === MobilePanel.Trips) {
@@ -198,6 +218,14 @@ export const App = () => {
 
   return (
     <main>
+      {!standaloneStudio && (
+        <ThemeToggle
+          theme={theme}
+          onToggle={toggleTheme}
+          placement="floating"
+          studioOpen={Boolean(studioTripId)}
+        />
+      )}
       <CanaryLabs />
       {!standaloneStudio && (
         <div
@@ -232,6 +260,8 @@ export const App = () => {
       )}
       {!standaloneStudio && (
         <MobilePanels
+          theme={theme}
+          onThemeToggle={toggleTheme}
           tripStudioEnabled={tripStudioEnabled}
           tripSession={tripSession}
           panel={panel}

@@ -1,10 +1,13 @@
 import * as THREE from 'three';
+import { readScenePalette } from '../scene-palette';
+import type { IScenePalette } from '../scene-palette';
 import type { IContinent } from './continents';
 import { glassDimensions, glassParameters } from './glass-parameters';
 
-export const createGoldMaterial = () =>
+export const createGoldMaterial = (palette: IScenePalette = readScenePalette()) =>
   new THREE.MeshStandardMaterial({
     ...glassParameters.gold,
+    color: palette.glassMetal,
   });
 
 export const createArtworkGeometry = (
@@ -27,16 +30,21 @@ export const createArtworkGeometry = (
   return geometry;
 };
 
-export const createContinentArtwork = (continent: IContinent, geometry: THREE.BufferGeometry) => {
+export const createContinentArtwork = (
+  continent: IContinent,
+  geometry: THREE.BufferGeometry,
+  palette: IScenePalette = readScenePalette(),
+) => {
   const texture = new THREE.TextureLoader().load(continent.artwork);
   texture.colorSpace = THREE.NoColorSpace;
-  const material = createGoldMaterial();
+  const material = createGoldMaterial(palette);
   material.alphaMap = texture;
   material.alphaTest = 0.35;
   const object = new THREE.Mesh(geometry, material);
   object.position.y = glassDimensions.outerHeight * glassParameters.artwork.centreHeight;
   return {
     object,
+    setTheme: (next: IScenePalette) => material.color.set(next.glassMetal),
     dispose: () => {
       texture.dispose();
       material.dispose();

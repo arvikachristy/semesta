@@ -1,4 +1,8 @@
+import * as THREE from 'three';
 import { createFrameMonitor } from '../performance/frame-monitor';
+import { readScenePalette } from './scene-palette';
+import type { IScenePalette } from './scene-palette';
+import { updateJellyMaterial } from './jelly-flags/jelly-material';
 import { jellyPerformance } from './jelly-flags/jelly-performance';
 import type { IFrameReading } from '../performance/frame-monitor';
 import { createCamera } from './camera';
@@ -29,15 +33,16 @@ export const startPlayground = (
   // React supplies the canvas. These are the raw Three.js pieces inside it.
   const renderer = createRenderer(canvas);
   const quality = createRenderQuality();
-  const scene = createScene();
-  const glasses = createGlassSet();
+  const palette = readScenePalette();
+  const scene = createScene(palette);
+  const glasses = createGlassSet(palette);
   const { camera, cameraTarget, cameraOffset, zoomBy, panBetween, fitViewport } = createCamera(
     glasses.bounds,
   );
-  const lighting = createLights(renderer);
+  const lighting = createLights(renderer, palette);
   const { ambientLight, directionalLight } = lighting;
   scene.environment = lighting.environment;
-  const floor = createFloor();
+  const floor = createFloor(palette);
   let input: ReturnType<typeof bindPointerEvents> | null = null;
   const collection = createCountryCollection({
     glasses,
@@ -134,6 +139,20 @@ export const startPlayground = (
 
   animate();
 
+  const setTheme = (next: IScenePalette) => {
+    scene.background = new THREE.Color(next.world);
+    floor.material.color.set(next.shadow);
+    scene.environment = lighting.setTheme(next);
+    glasses.setTheme(next);
+    scene.traverse((object) => {
+      if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshPhysicalMaterial) {
+        updateJellyMaterial(object.material, next);
+      }
+    });
+    renderer.shadowMap.needsUpdate = true;
+    shadowDirty = true;
+  };
+
   // React calls this when the canvas unmounts (and during Strict Mode checks).
   const dispose = () => {
     cancelAnimationFrame(frameId);
@@ -154,6 +173,7 @@ export const startPlayground = (
 
   return {
     setCountries: collection.setCountries,
+    setTheme,
     dispose,
   };
 };

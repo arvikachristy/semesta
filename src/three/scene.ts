@@ -1,8 +1,9 @@
 import * as THREE from 'three';
+import { readScenePalette } from './scene-palette';
+import type { IScenePalette } from './scene-palette';
 
-// The scene holds all objects and sets the clear colour behind the floor.
-export const createScene = () => {
+export const createScene = (palette: IScenePalette = readScenePalette()) => {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#f3c9c7');
+  scene.background = new THREE.Color(palette.world);
   return scene;
 };

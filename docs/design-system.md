@@ -1,10 +1,13 @@
-# Rose Glass
+# Semesta design system: Rose Glass & Midnight Navy
 
 Semesta's small DOM design system: warm translucent surfaces, burgundy ink, quiet serif headings, and precise, comfortable controls. The cups remain the visual centre. This is the pattern for current and future interface work.
 
 ## Sources of truth
 
-- `src/styles/tokens.css`: named colours, spacing, type, radii, heights, shadows and motion.
+- `src/styles/tokens.css`: theme-independent spacing, typography, sizing and interaction decisions.
+- `src/styles/themes/rose.css` and `src/styles/themes/midnight.css`: the complete, matching semantic colour palettes, including Three.js scene colours and shadows.
+- `src/three/scene-palette.ts`: the CSS-to-Three.js colour adapter; use it for scene materials instead of embedding hex codes.
+- `src/redux/theme/slice.ts`: the active theme in Redux. Rose is the default; the existing per-device storage key restores an explicit choice on the next visit.
 - `src/components/ui/ui.module.css`: surfaces, fields, focus, action rows and interaction states.
 - `src/components/ui/button.tsx`: native React button with shared variants and ref support.
 - Existing examples: `trip-editor.tsx` for a form, `upcoming-trips.tsx` for a panel, `country-selector.tsx` for the shared flag-grid country modal.
@@ -102,7 +105,7 @@ Single-stop metadata edits preserve the stop ID and associated booking identity.
 Booking forms begin with a name-or-link field and collapse optional details. No
 readiness hero, category chooser or traveller editor is shown. Escape and Close
 dismiss overlays and restore focus. Native date/time inputs keep their usual behaviour.
-Use the existing tokens and controls; the MVP adds no image service or new theme.
+Use the existing tokens and controls; no feature CSS should define a separate palette.
 
 Trip setup uses DayDial and DateRangeCalendar. The SVG dial handles pointer capture,
 continuous rotation across twelve o'clock, arrow/page/home/end keys, direct numeric
@@ -131,7 +134,7 @@ search without submitting; Use “…” keeps a typed city. The input stays mou
 throughout, preserving keyboard focus. The form and mobile sheet share the visual
 viewport hook so keyboard resize and scrolling constrain the available height.
 
-At 600px and below, route the Countries, Trips and Account interfaces through `MobilePanels`. It owns the single active sheet and bottom navigation. Keep feature components mounted so closing a sheet or switching tabs preserves drafts. Desktop uses standalone left-side navigation icons, without a full-height strip: Countries and Canary-enabled Trips above, Account below. Use 44px shared icon buttons with accessible labels, open styling and a short tooltip on hover or keyboard focus. Escape dismisses the tooltip. The icons control the existing country/account dialogs and a trip panel beside them, without duplicate floating launchers. Preserve the existing SEMESTA wordmark and fonts. Studio keeps its existing navigation.
+At 600px and below, route the Countries, Trips and Account interfaces through `MobilePanels`. It owns the single active sheet and bottom navigation. Keep feature components mounted so closing a sheet or switching tabs preserves drafts. Desktop uses standalone left-side navigation icons, without a full-height strip: Countries and Canary-enabled Trips above, with Theme directly above Account at the bottom. Use 44px shared icon buttons with accessible labels, open styling and a short tooltip on hover or keyboard focus. Escape dismisses the tooltip. The icons control the existing country/account dialogs and a trip panel beside them, without duplicate floating launchers. Mobile and full-screen Studio retain a floating theme toggle where the desktop rail is absent. Preserve the existing SEMESTA wordmark and fonts. Studio keeps its existing navigation.
 
 Use the native dialog modal state for focus containment and scene input blocking. Countries use the expanded sheet with a scrolling flag grid and compact feedback actions. Trip lists use the short sheet; editing expands it. Use explicit Close and backdrop dismissal; no draggable heights in the MVP. The form fields scroll while actions and navigation remain visible. `visualViewport` sizes the sheet above the mobile keyboard; include safe-area padding. Use `--color-sheet` for mobile readability.
 

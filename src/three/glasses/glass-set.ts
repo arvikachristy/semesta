@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import { readScenePalette } from '../scene-palette';
+import type { IScenePalette } from '../scene-palette';
+import { updateGlassMaterial } from './glass-material';
 import { glassParameters } from './glass-parameters';
 import { continents } from './continents';
 import type { TContinentId } from '../../types/continent';
@@ -7,11 +10,11 @@ import { getGlassDefinition } from './glass-definitions';
 import type { IGlassDefinition } from './glass-definitions';
 import { createGlassResources } from './glass-resources';
 
-export const createGlassSet = () => {
+export const createGlassSet = (palette: IScenePalette = readScenePalette()) => {
   const object = new THREE.Group();
   const containers = new Map<TContinentId, THREE.Group>();
   const resources = new Map<IGlassDefinition, ReturnType<typeof createGlassResources>>();
-  const goldMaterial = createGoldMaterial();
+  const goldMaterial = createGoldMaterial(palette);
   const artworkResources: ReturnType<typeof createContinentArtwork>[] = [];
   const worldPosition = new THREE.Vector3();
   const cameraPosition = new THREE.Vector3();
@@ -20,13 +23,13 @@ export const createGlassSet = () => {
     const definition = getGlassDefinition(continent.id);
     let shared = resources.get(definition);
     if (!shared) {
-      shared = createGlassResources(definition);
+      shared = createGlassResources(definition, palette);
       resources.set(definition, shared);
     }
     const glass = new THREE.Mesh(shared.geometry, shared.material);
     glass.name = continent.id;
     const markings = shared.markings.map(({ geometry, y }, index) => {
-      const artwork = createContinentArtwork(continent, geometry);
+      const artwork = createContinentArtwork(continent, geometry, palette);
       artwork.object.position.y = y;
       artwork.object.renderOrder = 2 + index;
       artworkResources.push(artwork);
@@ -92,6 +95,11 @@ export const createGlassSet = () => {
           Math.atan2(cameraPosition.x - worldPosition.x, cameraPosition.z - worldPosition.z) -
           object.rotation.y;
       });
+    },
+    setTheme: (next: IScenePalette) => {
+      goldMaterial.color.set(next.glassMetal);
+      resources.forEach((resource) => updateGlassMaterial(resource.material, next));
+      artworkResources.forEach((artwork) => artwork.setTheme(next));
     },
     dispose: () => {
       artworkResources.forEach((artwork) => artwork.dispose());

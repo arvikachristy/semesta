@@ -3,8 +3,8 @@ import { act, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import { Provider } from 'react-redux';
-import { createAppStore } from './app/store';
-import { setCanary } from './features/canary/canary-slice';
+import { createAppStore } from './redux/store';
+import { setCanary } from './redux/canary/slice';
 import { CanaryIDs } from './features/canary/canary-registry';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './app';
@@ -16,12 +16,15 @@ import { selectionStorage } from './storage/country-selection';
 import { wishlistStorage } from './storage/country-wishlist';
 import { tripStorage } from './storage/trips';
 import { emptyTripDetails } from './types/trip';
+import { ThemeId } from './styles/theme';
+import { setTheme } from './redux/theme/slice';
 vi.mock('./three/playground', () => ({ startPlayground: vi.fn() }));
 const host = document.createElement('div');
 let root: ReturnType<typeof createRoot>;
 let store: ReturnType<typeof createAppStore>;
 const setCountries = vi.fn(async () => {});
 const dispose = vi.fn();
+const setSceneTheme = vi.fn();
 const click = async (selector: string) => {
   const item = host.querySelector(selector);
   if (!(item instanceof HTMLElement)) {
@@ -68,18 +71,51 @@ beforeEach(() => {
   store.dispatch(setCanary({ id: CanaryIDs.TRIP_STUDIO, enabled: true }));
   vi.stubGlobal('innerWidth', 1280);
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
-  vi.mocked(startPlayground).mockReturnValue({ setCountries, dispose });
+  document.documentElement.removeAttribute('data-theme');
+  vi.mocked(startPlayground).mockReturnValue({ setCountries, dispose, setTheme: setSceneTheme });
   document.body.append(host);
   root = createRoot(host);
 });
 afterEach(async () => {
   await act(async () => root.unmount());
   host.remove();
+  document.documentElement.removeAttribute('data-theme');
   for (const method of ['show', 'showModal', 'close']) {
     Reflect.deleteProperty(HTMLDialogElement.prototype, method);
   }
   vi.clearAllMocks();
   vi.unstubAllGlobals();
+});
+
+describe('theme switcher', () => {
+  it('switches the current page between Rose and Midnight without rebuilding Three.js', async () => {
+    await renderApp();
+    const canvas = host.querySelector('canvas');
+    expect(document.documentElement.dataset.theme).toBe('rose');
+    expect(store.getState().theme.current).toBe(ThemeId.Rose);
+    await click(
+      'nav[aria-label="Desktop navigation"] button[aria-label="Switch to Midnight Navy"]',
+    );
+    expect(document.documentElement.dataset.theme).toBe('midnight');
+    expect(store.getState().theme.current).toBe(ThemeId.Midnight);
+    expect(localStorage.getItem('semesta.theme.v1')).toBe('midnight');
+    expect(setSceneTheme).toHaveBeenCalledOnce();
+    expect(startPlayground).toHaveBeenCalledOnce();
+    expect(host.querySelector('canvas')).toBe(canvas);
+    await click('nav[aria-label="Desktop navigation"] button[aria-label="Switch to Rose"]');
+    expect(document.documentElement.dataset.theme).toBe('rose');
+    expect(store.getState().theme.current).toBe(ThemeId.Rose);
+    expect(startPlayground).toHaveBeenCalledOnce();
+    expect(setSceneTheme).toHaveBeenCalledTimes(2);
+  });
+
+  it('applies a theme dispatched elsewhere without recreating the scene', async () => {
+    await renderApp();
+    await act(async () => store.dispatch(setTheme(ThemeId.Midnight)));
+    expect(document.documentElement.dataset.theme).toBe(ThemeId.Midnight);
+    expect(setSceneTheme).toHaveBeenCalledOnce();
+    expect(startPlayground).toHaveBeenCalledOnce();
+  });
 });
 
 describe('visited world, wishes and trips', () => {
@@ -111,7 +147,9 @@ describe('visited world, wishes and trips', () => {
   it('opens account and countries from the desktop icon rail and retains mobile navigation on resize', async () => {
     await renderApp();
     const rail = host.querySelector('nav[aria-label="Desktop navigation"]');
-    expect(rail?.querySelectorAll('button svg')).toHaveLength(3);
+    expect([...(rail?.querySelectorAll('button') ?? [])].map((button) => button.ariaLabel)).toEqual(
+      ['Countries', 'Trips', 'Switch to Midnight Navy', 'Account'],
+    );
     expect(host.querySelector('.country-selector')?.hasAttribute('hidden')).toBe(true);
     await click('nav[aria-label="Desktop navigation"] button[aria-label="Account"]');
     const accountDialog = host.querySelector('dialog[aria-label="Account backup"]');
@@ -134,6 +172,9 @@ describe('visited world, wishes and trips', () => {
       window.dispatchEvent(new Event('resize'));
     });
     expect(host.querySelector('nav[aria-label="Desktop navigation"]')).toBeNull();
+    expect(
+      host.querySelector('button[data-studio-open="false"][aria-label="Switch to Midnight Navy"]'),
+    ).not.toBeNull();
     const mobileBar = host.querySelector('nav[aria-label="Explore and plan"]');
     expect(mobileBar?.hasAttribute('hidden')).toBe(false);
     expect(mobileBar?.textContent).toContain('Account');

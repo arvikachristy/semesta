@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { useAppDispatch, useAppSelector } from '../../app/hooks';
+import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { Button, ButtonVariant } from '../../components/ui/button';
 import { canary_registry } from './canary-registry';
 import { useDevMode } from './use-dev-mode';
-import { setCanary } from './canary-slice';
+import { setCanary } from '../../redux/canary/slice';
 import styles from './canary-labs.module.css';
 
 export const CanaryLabs = () => {

@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { readScenePalette } from '../scene-palette';
+import type { IScenePalette } from '../scene-palette';
 import { GlassShape } from './glass-definitions';
 import type { IGlassDefinition } from './glass-definitions';
 import { createGlassGeometry } from './glass-geometry';
@@ -25,7 +27,10 @@ interface IMeshPlacement {
 }
 
 // One owned resource set per resolved definition, shared by vessels with identical dimensions.
-export const createGlassResources = (definition: IGlassDefinition) => {
+export const createGlassResources = (
+  definition: IGlassDefinition,
+  palette: IScenePalette = readScenePalette(),
+) => {
   let geometry: THREE.BufferGeometry;
   let markings: IMeshPlacement[];
   const accents: IMeshPlacement[] = [];
@@ -88,7 +93,7 @@ export const createGlassResources = (definition: IGlassDefinition) => {
       ];
       break;
   }
-  const material = createGlassMaterial(definition.height);
+  const material = createGlassMaterial(definition.height, palette);
   const rim = new THREE.TorusGeometry(
     definition.innerRadius + glassParameters.wallThickness / 2,
     0.012,

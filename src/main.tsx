@@ -4,8 +4,11 @@ import { App } from './app';
 import { AccountProvider } from './account/account-provider';
 import { BrowserRouter } from 'react-router';
 import { Provider } from 'react-redux';
-import { store } from './app/store';
+import { store } from './redux/store';
+import { applyTheme } from './styles/theme';
 import './styles/tokens.css';
+import './styles/themes/rose.css';
+import './styles/themes/midnight.css';
 import './style.css';
 
 const root = document.getElementById('root');
@@ -13,6 +16,8 @@ const root = document.getElementById('root');
 if (!root) {
   throw new Error('Missing React root element');
 }
+
+applyTheme(store.getState().theme.current);
 
 createRoot(root).render(
   <StrictMode>
