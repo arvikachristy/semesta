@@ -21,8 +21,8 @@
   --color-error: #943a48;
   --color-error-surface: #ffe8eb;
   --color-backdrop: rgb(85 61 60 / 22%);
-  --font-body: 'Farro', system-ui, sans-serif;
-  --font-display: 'Farro', system-ui, sans-serif;
+  --font-body: 'Work Sans', system-ui, sans-serif;
+  --font-display: 'Lora', Georgia, serif;
   --text-small: 0.75rem;
   --text-label: 0.8125rem;
   --text-body: 0.875rem;
