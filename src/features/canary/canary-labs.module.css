@@ -1,6 +1,6 @@
 .root {
   position: fixed;
-  top: max(var(--space-4), env(safe-area-inset-top));
+  top: calc(max(var(--space-4), env(safe-area-inset-top)) + var(--control-height) + var(--space-2));
   right: max(var(--space-4), env(safe-area-inset-right));
   z-index: 12;
   color: var(--color-ink);

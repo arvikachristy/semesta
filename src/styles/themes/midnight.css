@@ -1,0 +1,38 @@
+/* Midnight Navy: a cool, low-glare treatment using the same component recipes. */
+:root[data-theme='midnight'] {
+  color-scheme: dark;
+  --color-world: #0b1220;
+  --color-ink: #e8eefa;
+  --color-muted: #b3c1d8;
+  --color-accent: #a8c2fa;
+  --color-on-accent: #0b1220;
+  --color-border: rgb(193 211 243 / 34%);
+  --color-glass-edge: rgb(193 211 243 / 27%);
+  --color-glass: rgb(38 54 79 / 50%);
+  --color-glass-raised: rgb(45 63 91 / 78%);
+  --color-sheet: rgb(24 37 58 / 97%);
+  --color-solid: #1c2940;
+  --color-control: rgb(193 211 243 / 11%);
+  --color-hover: rgb(193 211 243 / 19%);
+  --color-success: #9be2ba;
+  --color-success-surface: #1c3d31;
+  --color-warning: #f3cd87;
+  --color-warning-surface: #45371f;
+  --color-error: #ffabb6;
+  --color-error-surface: #492b39;
+  --color-backdrop: rgb(2 6 15 / 68%);
+  --lane-stay: #9be2ba;
+  --lane-travel: #f3ad90;
+  --scene-shadow: #050914;
+  --scene-reflection-background: #0a1327;
+  --scene-reflection-warm: #7799d9;
+  --scene-reflection-cool: #c5d9ff;
+  --scene-jelly-tint: #c6d7ff;
+  --scene-glass-bottom: #b99f7d;
+  --scene-glass-clear: #d9e9ff;
+  --scene-glass-metal: #d8bd87;
+  --shadow-small: 0 2px 12px rgb(0 0 0 / 30%);
+  --shadow-glass:
+    inset 0 1px 0 rgb(218 229 255 / 16%), inset 0 -1px 0 rgb(160 189 230 / 8%),
+    0 12px 32px rgb(0 0 0 / 35%);
+}

@@ -22,6 +22,7 @@ let root: ReturnType<typeof createRoot>;
 let store: ReturnType<typeof createAppStore>;
 const setCountries = vi.fn(async () => {});
 const dispose = vi.fn();
+const setSceneTheme = vi.fn();
 const click = async (selector: string) => {
   const item = host.querySelector(selector);
   if (!(item instanceof HTMLElement)) {
@@ -68,18 +69,38 @@ beforeEach(() => {
   store.dispatch(setCanary({ id: CanaryIDs.TRIP_STUDIO, enabled: true }));
   vi.stubGlobal('innerWidth', 1280);
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
-  vi.mocked(startPlayground).mockReturnValue({ setCountries, dispose });
+  document.documentElement.removeAttribute('data-theme');
+  vi.mocked(startPlayground).mockReturnValue({ setCountries, dispose, setTheme: setSceneTheme });
   document.body.append(host);
   root = createRoot(host);
 });
 afterEach(async () => {
   await act(async () => root.unmount());
   host.remove();
+  document.documentElement.removeAttribute('data-theme');
   for (const method of ['show', 'showModal', 'close']) {
     Reflect.deleteProperty(HTMLDialogElement.prototype, method);
   }
   vi.clearAllMocks();
   vi.unstubAllGlobals();
+});
+
+describe('theme switcher', () => {
+  it('switches the current page between Rose and Midnight without rebuilding Three.js', async () => {
+    await renderApp();
+    const canvas = host.querySelector('canvas');
+    expect(document.documentElement.dataset.theme).toBe('rose');
+    await click('button[aria-label="Switch to Midnight Navy"]');
+    expect(document.documentElement.dataset.theme).toBe('midnight');
+    expect(localStorage.getItem('semesta.theme.v1')).toBe('midnight');
+    expect(setSceneTheme).toHaveBeenCalledOnce();
+    expect(startPlayground).toHaveBeenCalledOnce();
+    expect(host.querySelector('canvas')).toBe(canvas);
+    await click('button[aria-label="Switch to Rose"]');
+    expect(document.documentElement.dataset.theme).toBe('rose');
+    expect(startPlayground).toHaveBeenCalledOnce();
+    expect(setSceneTheme).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('visited world, wishes and trips', () => {

@@ -1,0 +1,13 @@
+.toggle {
+  position: fixed;
+  top: max(var(--space-4), env(safe-area-inset-top));
+  right: max(var(--space-4), env(safe-area-inset-right));
+  z-index: 9;
+  display: grid;
+  place-items: center;
+  background: var(--color-glass-raised);
+  border-color: var(--color-glass-edge);
+  color: var(--color-ink);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--shadow-small);
+}

@@ -1,26 +1,5 @@
-/* Rose Glass: shared DOM design decisions. See docs/design-system.md. */
+/* Shared, theme-independent spacing, typography and sizing. */
 :root {
-  color-scheme: light;
-  --color-world: #f3c9c7;
-  --color-ink: #553d3c;
-  --color-muted: #725956;
-  --color-accent: #63323a;
-  --color-on-accent: #fff9f8;
-  --color-border: rgb(99 50 58 / 28%);
-  --color-glass-edge: rgb(255 249 248 / 75%);
-  --color-glass: rgb(255 249 248 / 28%);
-  --color-glass-raised: rgb(255 249 248 / 62%);
-  --color-sheet: rgb(249 228 225 / 96%);
-  --color-solid: #f9e4e1;
-  --color-control: rgb(255 249 248 / 32%);
-  --color-hover: rgb(255 249 248 / 55%);
-  --color-success: #285b3b;
-  --color-success-surface: #eef7ee;
-  --color-warning: #805016;
-  --color-warning-surface: #fff3d9;
-  --color-error: #943a48;
-  --color-error-surface: #ffe8eb;
-  --color-backdrop: rgb(85 61 60 / 22%);
   --font-body: system-ui, sans-serif;
   --font-display: Georgia, 'Times New Roman', serif;
   --text-small: 0.75rem;
@@ -42,9 +21,5 @@
   --radius-round: 999px;
   --focus-ring: 2px solid var(--color-accent);
   --glass-filter: blur(18px) saturate(115%);
-  --shadow-small: 0 2px 8px rgb(99 50 58 / 8%);
-  --shadow-glass:
-    inset 0 1px 0 rgb(255 255 255 / 65%), inset 0 -1px 0 rgb(255 249 248 / 20%),
-    0 12px 32px rgb(99 50 58 / 9%);
   --transition-control: 120ms ease;
 }

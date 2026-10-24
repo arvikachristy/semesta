@@ -2,6 +2,9 @@ import { useAccount, guestRepositories } from './account/account-context';
 import { FpsToken } from './components/fps-token';
 import type { IFrameReading } from './performance/frame-monitor';
 import { useEffect, useRef, useState } from 'react';
+import { ThemeToggle } from './components/ui/theme-toggle';
+import { applyTheme, readStoredTheme, ThemeId } from './styles/theme';
+import { readScenePalette } from './three/scene-palette';
 import { CanaryIDs } from './features/canary/canary-registry';
 import { CanaryLabs } from './features/canary/canary-labs';
 import { useCanary } from './features/canary/use-canary';
@@ -36,6 +39,7 @@ import styles from './app.module.css';
 
 export const App = () => {
   const location = useLocation();
+  const [theme, setTheme] = useState(readStoredTheme);
   const navigate = useNavigate();
   const devMode = useDevMode();
   const withDevMode = (path: string) => (devMode ? `${path}?devmode=true` : path);
@@ -91,12 +95,22 @@ export const App = () => {
     setPanel(null);
     navigate(withDevMode(standalone ? standaloneTripStudioPath(trip.id) : tripStudioPath(trip.id)));
   };
+  const toggleTheme = () => {
+    const next = theme === ThemeId.Rose ? ThemeId.Midnight : ThemeId.Rose;
+    applyTheme(next);
+    playgroundRef.current?.setTheme(readScenePalette());
+    setTheme(next);
+  };
   const markVisited = (country: CountryList, visited: boolean) => {
     onToggle(country, visited);
     if (visited) {
       wishlist.onToggle(country, false);
     }
   };
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
 
   useEffect(() => {
     if (!tripStudioEnabled && panel === MobilePanel.Trips) {
@@ -198,6 +212,7 @@ export const App = () => {
 
   return (
     <main>
+      {!standaloneStudio && <ThemeToggle theme={theme} onToggle={toggleTheme} />}
       <CanaryLabs />
       {!standaloneStudio && (
         <div
