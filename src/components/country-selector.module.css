@@ -1,7 +1,12 @@
 .modal {
-  width: min(40rem, calc(100vw - 2rem));
-  height: min(48rem, calc(100dvh - 2rem));
-  max-height: calc(100dvh - 2rem);
+  position: fixed;
+  inset: var(--space-4) var(--space-4) var(--space-4) auto;
+  margin: 0;
+  width: var(--country-sidebar-width);
+  max-width: none;
+  height: calc(100dvh - 2 * var(--space-4));
+  max-height: none;
+  z-index: 3;
   padding: 0;
   overflow: hidden;
 }

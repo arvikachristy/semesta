@@ -32,6 +32,7 @@ export const CountrySelector = ({
           aria-expanded={open}
           disabled={props.disabled}
           onClick={onOpen}
+          hidden={open}
         >
           All countries <span>{props.visitedCountryIds.length} visited</span>
         </Button>
@@ -40,10 +41,11 @@ export const CountrySelector = ({
         <Overlay
           title={props.state.continent ? 'Continent countries' : 'All countries'}
           hideHeader
+          modal={false}
           className={modalStyles.modal}
           onDismiss={props.onClose}
         >
-          <div className={styles.browser}>
+          <div className={styles.browser} data-country-sidebar>
             <CountryBrowser {...props} />
           </div>
         </Overlay>

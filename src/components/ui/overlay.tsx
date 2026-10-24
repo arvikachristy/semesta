@@ -9,6 +9,7 @@ interface IOverlayProps {
   children: ReactNode;
   className?: string;
   hideHeader?: boolean;
+  modal?: boolean;
 }
 export const Overlay = ({
   title,
@@ -16,24 +17,37 @@ export const Overlay = ({
   children,
   className = '',
   hideHeader = false,
+  modal = true,
 }: IOverlayProps) => {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const element = ref.current;
     const previous = document.activeElement;
-    element?.showModal();
+    if (modal) {
+      element?.showModal();
+    } else {
+      element?.show();
+    }
     return () => {
       element?.close();
       if (previous instanceof HTMLElement && previous.isConnected) {
         previous.focus();
       }
     };
-  }, []);
+  }, [modal]);
   return (
     <dialog
       ref={ref}
       className={`${ui.surface} ${ui.raised} ${ui.dialog} ${className}`}
       aria-label={title}
+      aria-modal={modal || undefined}
+      onKeyDown={(event) => {
+        if (!modal && event.key === 'Escape') {
+          event.preventDefault();
+          event.stopPropagation();
+          onDismiss();
+        }
+      }}
       onCancel={(event) => {
         event.preventDefault();
         onDismiss();

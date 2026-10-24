@@ -83,6 +83,31 @@ afterEach(async () => {
 });
 
 describe('visited world, wishes and trips', () => {
+  it('keeps the desktop country sidebar beside the live scene', async () => {
+    await renderApp();
+    const canvas = host.querySelector('canvas');
+    expect(host.querySelector('nav[aria-label="Desktop navigation"]')).not.toBeNull();
+    expect(host.querySelector('dialog[aria-label="All countries"]')).toBeNull();
+    expect(host.querySelector('[data-country-open="true"]')).toBeNull();
+
+    await click('nav[aria-label="Desktop navigation"] button[aria-label="Countries"]');
+    const sidebar = host.querySelector('dialog[aria-label="All countries"]');
+    expect(sidebar?.getAttribute('aria-modal')).toBeNull();
+    expect(sidebar?.querySelector('[data-country-sidebar]')).not.toBeNull();
+    expect(host.querySelector('[data-country-open="true"]')).not.toBeNull();
+
+    await click('button[aria-label="Mark Peru visited"]');
+    expect(setCountries).toHaveBeenLastCalledWith(
+      expect.arrayContaining([CountryList.Peru]),
+      false,
+    );
+    expect(host.querySelector('canvas')).toBe(canvas);
+    expect(startPlayground).toHaveBeenCalledOnce();
+
+    await click('button[aria-label="Close countries"]');
+    expect(host.querySelector('[data-country-open="true"]')).toBeNull();
+    expect(host.querySelector('canvas')).toBe(canvas);
+  });
   it('opens account and countries from the desktop icon rail and retains mobile navigation on resize', async () => {
     await renderApp();
     const rail = host.querySelector('nav[aria-label="Desktop navigation"]');

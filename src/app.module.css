@@ -11,3 +11,36 @@
   text-align: center;
   font-size: var(--text-body);
 }
+.scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.scene[hidden] {
+  display: none;
+}
+.scene canvas {
+  width: 100%;
+  height: 100%;
+}
+@media (min-width: 601px) {
+  .scene canvas {
+    transition: transform 220ms ease;
+  }
+  .scene[data-country-open='true'] canvas {
+    transform: translateX(calc(0px - clamp(10rem, 16vw, 15rem) - var(--space-3)));
+  }
+}
+@media (min-width: 601px) and (max-width: 899px) {
+  .scene[data-country-open='true'] {
+    width: calc(100% - var(--country-sidebar-width) - var(--space-5));
+  }
+  .scene[data-country-open='true'] canvas {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene canvas {
+    transition: none;
+  }
+}

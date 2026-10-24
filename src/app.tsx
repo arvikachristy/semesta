@@ -200,7 +200,11 @@ export const App = () => {
     <main>
       <CanaryLabs />
       {!standaloneStudio && (
-        <div hidden={Boolean(studioTripId)}>
+        <div
+          className={styles.scene}
+          data-country-open={panel === MobilePanel.Countries}
+          hidden={Boolean(studioTripId)}
+        >
           {import.meta.env.DEV && <FpsToken reading={frameReading} />}
           <ul className="visually-hidden" id="continent-descriptions">
             {continentDefinitions.map((continent) => (

@@ -6,15 +6,14 @@ export const resize = (
   renderer: Pick<THREE.WebGLRenderer, 'setPixelRatio' | 'setSize'>,
   camera: THREE.PerspectiveCamera,
   resolutionScale = 1,
+  canvas?: HTMLCanvasElement,
 ) => {
-  camera.aspect = window.innerWidth / window.innerHeight;
+  const width = canvas?.clientWidth || window.innerWidth;
+  const height = canvas?.clientHeight || window.innerHeight;
+  camera.aspect = width / height;
   camera.updateProjectionMatrix();
   renderer.setPixelRatio(
-    getRenderPixelRatio(
-      window.devicePixelRatio,
-      window.innerWidth * window.innerHeight,
-      resolutionScale,
-    ),
+    getRenderPixelRatio(window.devicePixelRatio, width * height, resolutionScale),
   );
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(width, height, false);
 };

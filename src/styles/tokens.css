@@ -36,6 +36,7 @@
   --space-5: 1.5rem;
   --space-6: 2rem;
   --control-height: 2.75rem;
+  --country-sidebar-width: clamp(20rem, 32vw, 30rem);
   --radius-control: 0.875rem;
   --radius-panel: 2rem;
   --radius-round: 999px;

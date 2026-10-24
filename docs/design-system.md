@@ -131,7 +131,7 @@ search without submitting; Use “…” keeps a typed city. The input stays mou
 throughout, preserving keyboard focus. The form and mobile sheet share the visual
 viewport hook so keyboard resize and scrolling constrain the available height.
 
-At 600px and below, route the Countries, Trips and Account interfaces through `MobilePanels`. It owns the single active sheet and bottom navigation. Keep feature components mounted so closing a sheet or switching tabs preserves drafts. Desktop uses a narrow left icon rail: Countries and Canary-enabled Trips above, Account below. Use 44px shared icon buttons with accessible labels, open styling and a short tooltip on hover or keyboard focus. Escape dismisses the tooltip. The rail controls the existing country/account dialogs and a trip panel beside the rail, without duplicate floating launchers. Preserve the existing SEMESTA wordmark and fonts. Studio keeps its existing navigation.
+At 600px and below, route the Countries, Trips and Account interfaces through `MobilePanels`. It owns the single active sheet and bottom navigation. Keep feature components mounted so closing a sheet or switching tabs preserves drafts. Desktop uses standalone left-side navigation icons, without a full-height strip: Countries and Canary-enabled Trips above, Account below. Use 44px shared icon buttons with accessible labels, open styling and a short tooltip on hover or keyboard focus. Escape dismisses the tooltip. The icons control the existing country/account dialogs and a trip panel beside them, without duplicate floating launchers. Preserve the existing SEMESTA wordmark and fonts. Studio keeps its existing navigation.
 
 Use the native dialog modal state for focus containment and scene input blocking. Countries use the expanded sheet with a scrolling flag grid and compact feedback actions. Trip lists use the short sheet; editing expands it. Use explicit Close and backdrop dismissal; no draggable heights in the MVP. The form fields scroll while actions and navigation remain visible. `visualViewport` sizes the sheet above the mobile keyboard; include safe-area padding. Use `--color-sheet` for mobile readability.
 
@@ -141,7 +141,15 @@ Account backup uses the same controls and surfaces. Desktop opens a native modal
 
 ## Country browser
 
-Desktop wraps `CountryBrowser` in the shared native Overlay; mobile places its content
+Desktop starts with the country browser closed and opens it from the navigation rail
+in a non-modal right-hand panel using the shared Overlay with `modal={false}`.
+Escape closes it without blocking canvas gestures. On wider screens the glasses shift
+with a short CSS transform while the WebGL drawing buffer keeps its size. Narrower
+desktop widths resize the scene once to keep the collection visible. The canvas
+ResizeObserver updates renderer dimensions and camera framing when needed, without
+recreating the scene or resetting the collection. Reduced-motion preferences disable
+the shift animation. Upcoming trips remains reachable from the navigation rail.
+Mobile places country content
 inside the existing MobilePanels dialog. Never nest another country dialog. The
 header shows the continent and visited progress, followed by native search/select
 controls and Been to / Bucket list editing modes. Been to shows the full searchable
