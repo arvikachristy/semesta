@@ -116,6 +116,79 @@ describe('visual country modal', () => {
     await click('Been to');
     expect(host.querySelector('button[aria-label="Remove Indonesia from Been to"]')).not.toBeNull();
   });
+  it('pins selected bucket-list countries at the top across continents, without duplicates', async () => {
+    await click('Bucket list');
+    expect(host.querySelector('section[aria-label="Pinned bucket-list countries"]')).toBeNull();
+
+    await click('Save Peru to bucket list');
+    await click('Save Japan to bucket list');
+
+    const sections = [
+      ...host.querySelectorAll('section[aria-label="Country collection"] section[aria-label]'),
+    ];
+    expect(sections[0]?.getAttribute('aria-label')).toBe('Pinned bucket-list countries');
+    const pinned = host.querySelector('section[aria-label="Pinned bucket-list countries"]');
+    expect(
+      [...(pinned?.querySelectorAll('button[aria-label]') ?? [])].map((item) =>
+        item.getAttribute('aria-label'),
+      ),
+    ).toEqual(['Remove Japan from bucket list', 'Remove Peru from bucket list']);
+    expect(host.querySelectorAll('button[aria-label="Remove Peru from bucket list"]')).toHaveLength(
+      1,
+    );
+    expect(host.querySelectorAll('button[aria-label="Remove Japan from bucket list"]')).toHaveLength(
+      1,
+    );
+    expect(host.querySelector('button[aria-label="Save Indonesia to bucket list"]')).toBeNull();
+
+    await click('Remove Peru from bucket list');
+    expect(
+      host.querySelector('section[aria-label="Pinned bucket-list countries"]')?.textContent,
+    ).toContain('Japan');
+    expect(
+      host.querySelector('section[aria-label="Pinned bucket-list countries"]')?.textContent,
+    ).not.toContain('Peru');
+    expect(host.querySelector('section[aria-label="South America"]')?.textContent).toContain(
+      'Peru',
+    );
+
+    await click('Remove Japan from bucket list');
+    expect(host.querySelector('section[aria-label="Pinned bucket-list countries"]')).toBeNull();
+    expect(host.querySelectorAll('button[aria-label="Save Japan to bucket list"]')).toHaveLength(
+      1,
+    );
+  });
+
+  it('keeps pinned and unselected destinations subject to search and continent filters', async () => {
+    await click('Bucket list');
+    await click('Save Peru to bucket list');
+    await click('Save Japan to bucket list');
+
+    const search = host.querySelector('input[type="search"]');
+    const continent = host.querySelector('select[aria-label="Continent"]');
+    const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+    if (!(search instanceof HTMLInputElement) || !(continent instanceof HTMLSelectElement) || !setValue) {
+      throw new Error('Missing country filters');
+    }
+
+    await act(async () => {
+      setValue.call(search, 'Peru');
+      search.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    expect(host.querySelector('section[aria-label="Pinned bucket-list countries"]')?.textContent).toContain('Peru');
+    expect(host.querySelector('button[aria-label="Remove Japan from bucket list"]')).toBeNull();
+
+    await act(async () => {
+      setValue.call(search, '');
+      search.dispatchEvent(new Event('input', { bubbles: true }));
+      continent.value = 'asia';
+      continent.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    expect(host.querySelector('section[aria-label="Pinned bucket-list countries"]')?.textContent).toContain('Japan');
+    expect(host.querySelector('button[aria-label="Remove Peru from bucket list"]')).toBeNull();
+    expect(host.querySelector('button[aria-label="Save Indonesia to bucket list"]')).toBeNull();
+  });
+
   it('shows a useful empty state when every country has been visited', async () => {
     await act(async () =>
       root.render(
