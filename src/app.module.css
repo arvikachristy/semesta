@@ -3,7 +3,7 @@
   z-index: 1;
   top: max(var(--space-5), env(safe-area-inset-top));
   right: var(--space-5);
-  left: calc(var(--space-4) * 2 + var(--control-height) + var(--space-5));
+  left: var(--space-5);
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -114,6 +114,12 @@
   }
 }
 @media (min-width: 601px) and (max-width: 899px) {
+  .scene[data-country-open='true'] .wordmark {
+    font-size: 1.5rem;
+  }
+  .scene[data-country-open='true'] .summary {
+    display: none;
+  }
   .scene[data-country-open='true'] {
     width: calc(100% - var(--country-sidebar-width) - var(--space-5));
   }
