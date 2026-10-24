@@ -83,6 +83,36 @@ afterEach(async () => {
 });
 
 describe('visited world, wishes and trips', () => {
+  it('opens account and countries from the desktop icon rail and retains mobile navigation on resize', async () => {
+    await renderApp();
+    const rail = host.querySelector('nav[aria-label="Desktop navigation"]');
+    expect(rail?.querySelectorAll('button svg')).toHaveLength(3);
+    expect(host.querySelector('.country-selector')?.hasAttribute('hidden')).toBe(true);
+    await click('nav[aria-label="Desktop navigation"] button[aria-label="Account"]');
+    const accountDialog = host.querySelector('dialog[aria-label="Account backup"]');
+    expect(accountDialog?.hasAttribute('open')).toBe(true);
+    await clickText('Close');
+    expect(accountDialog?.hasAttribute('open')).toBe(false);
+    await click('nav[aria-label="Desktop navigation"] button[aria-label="Countries"]');
+    expect(host.querySelector('dialog[aria-label="All countries"]')).not.toBeNull();
+    await click('button[aria-label="Close countries"]');
+    await click('nav[aria-label="Desktop navigation"] button[aria-label="Trips"]');
+    expect(host.querySelector('aside[aria-label="Upcoming trips"]')?.hasAttribute('hidden')).toBe(
+      false,
+    );
+    await click('button[aria-label="Close trips"]');
+    expect(host.querySelector('aside[aria-label="Upcoming trips"]')?.hasAttribute('hidden')).toBe(
+      true,
+    );
+    await act(async () => {
+      vi.stubGlobal('innerWidth', 390);
+      window.dispatchEvent(new Event('resize'));
+    });
+    expect(host.querySelector('nav[aria-label="Desktop navigation"]')).toBeNull();
+    const mobileBar = host.querySelector('nav[aria-label="Explore and plan"]');
+    expect(mobileBar?.hasAttribute('hidden')).toBe(false);
+    expect(mobileBar?.textContent).toContain('Account');
+  });
   it('opens a saved trip directly from its Studio URL', async () => {
     const trip = { ...emptyTripDetails, id: 'deep-link-trip', name: 'Lisbon' };
     localStorage.setItem(tripStorage.key, JSON.stringify({ version: 1, trips: [trip] }));

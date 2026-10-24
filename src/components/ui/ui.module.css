@@ -81,6 +81,29 @@
   color: var(--color-muted);
   font: 400 var(--text-label) / 1.4 var(--font-body);
 }
+.tooltipAnchor {
+  position: relative;
+  display: inline-flex;
+}
+.tooltip {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%);
+  display: none;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-solid);
+  color: var(--color-ink);
+  font: 400 var(--text-label) / 1.4 var(--font-body);
+  white-space: nowrap;
+}
+.tooltipAnchor:not([data-dismissed='true']):hover > .tooltip,
+.tooltipAnchor:not([data-dismissed='true']):has(> button:focus-visible) > .tooltip {
+  display: block;
+}
 .control {
   box-sizing: border-box;
   width: 100%;

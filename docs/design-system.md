@@ -131,13 +131,13 @@ search without submitting; Use “…” keeps a typed city. The input stays mou
 throughout, preserving keyboard focus. The form and mobile sheet share the visual
 viewport hook so keyboard resize and scrolling constrain the available height.
 
-At 600px and below, route the Countries, Trips and Account interfaces through `MobilePanels`. It owns the single active sheet and bottom navigation. Keep feature components mounted so closing a sheet or switching tabs preserves drafts. Desktop keeps its existing floating controls.
+At 600px and below, route the Countries, Trips and Account interfaces through `MobilePanels`. It owns the single active sheet and bottom navigation. Keep feature components mounted so closing a sheet or switching tabs preserves drafts. Desktop uses a narrow left icon rail: Countries and Canary-enabled Trips above, Account below. Use 44px shared icon buttons with accessible labels, open styling and a short tooltip on hover or keyboard focus. Escape dismisses the tooltip. The rail controls the existing country/account dialogs and a trip panel beside the rail, without duplicate floating launchers. Preserve the existing SEMESTA wordmark and fonts. Studio keeps its existing navigation.
 
 Use the native dialog modal state for focus containment and scene input blocking. Countries use the expanded sheet with a scrolling flag grid and compact feedback actions. Trip lists use the short sheet; editing expands it. Use explicit Close and backdrop dismissal; no draggable heights in the MVP. The form fields scroll while actions and navigation remain visible. `visualViewport` sizes the sheet above the mobile keyboard; include safe-area padding. Use `--color-sheet` for mobile readability.
 
 Check Escape and focus return, switching tabs, a nested confirmation dialog, draft retention and keyboard-sized viewport changes when modifying this shell. Do not give individual features independent mobile overlays.
 
-Account backup uses the same controls and surfaces. Desktop opens a native modal from the quiet top-left entry; mobile uses the shared Account sheet. Keep email-code fields labelled, asynchronous status in live regions, and destructive account actions behind explicit confirmation.
+Account backup uses the same controls and surfaces. Desktop opens a native modal from the left rail; mobile uses the shared Account sheet. Keep email-code fields labelled, asynchronous status in live regions, and destructive account actions behind explicit confirmation.
 
 ## Country browser
 

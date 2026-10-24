@@ -10,15 +10,22 @@ export interface ICountrySelectorProps extends ICountryBrowserProps {
   mobilePanel?: IMobilePanelState;
   open: boolean;
   onOpen: () => void;
+  hideLauncher?: boolean;
 }
 
-export const CountrySelector = ({ mobilePanel, open, onOpen, ...props }: ICountrySelectorProps) => {
+export const CountrySelector = ({
+  mobilePanel,
+  open,
+  onOpen,
+  hideLauncher = false,
+  ...props
+}: ICountrySelectorProps) => {
   if (mobilePanel) {
     return <CountryBrowser {...props} onClose={mobilePanel.onClose} />;
   }
   return (
     <>
-      <div className="country-selector">
+      <div className="country-selector" hidden={hideLauncher}>
         <Button
           className="country-trigger"
           aria-haspopup="dialog"
