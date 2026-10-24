@@ -136,9 +136,9 @@ describe('visual country modal', () => {
     expect(host.querySelectorAll('button[aria-label="Remove Peru from bucket list"]')).toHaveLength(
       1,
     );
-    expect(host.querySelectorAll('button[aria-label="Remove Japan from bucket list"]')).toHaveLength(
-      1,
-    );
+    expect(
+      host.querySelectorAll('button[aria-label="Remove Japan from bucket list"]'),
+    ).toHaveLength(1);
     expect(host.querySelector('button[aria-label="Save Indonesia to bucket list"]')).toBeNull();
 
     await click('Remove Peru from bucket list');
@@ -154,9 +154,7 @@ describe('visual country modal', () => {
 
     await click('Remove Japan from bucket list');
     expect(host.querySelector('section[aria-label="Pinned bucket-list countries"]')).toBeNull();
-    expect(host.querySelectorAll('button[aria-label="Save Japan to bucket list"]')).toHaveLength(
-      1,
-    );
+    expect(host.querySelectorAll('button[aria-label="Save Japan to bucket list"]')).toHaveLength(1);
   });
 
   it('keeps pinned and unselected destinations subject to search and continent filters', async () => {
@@ -167,7 +165,11 @@ describe('visual country modal', () => {
     const search = host.querySelector('input[type="search"]');
     const continent = host.querySelector('select[aria-label="Continent"]');
     const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
-    if (!(search instanceof HTMLInputElement) || !(continent instanceof HTMLSelectElement) || !setValue) {
+    if (
+      !(search instanceof HTMLInputElement) ||
+      !(continent instanceof HTMLSelectElement) ||
+      !setValue
+    ) {
       throw new Error('Missing country filters');
     }
 
@@ -175,7 +177,9 @@ describe('visual country modal', () => {
       setValue.call(search, 'Peru');
       search.dispatchEvent(new Event('input', { bubbles: true }));
     });
-    expect(host.querySelector('section[aria-label="Pinned bucket-list countries"]')?.textContent).toContain('Peru');
+    expect(
+      host.querySelector('section[aria-label="Pinned bucket-list countries"]')?.textContent,
+    ).toContain('Peru');
     expect(host.querySelector('button[aria-label="Remove Japan from bucket list"]')).toBeNull();
 
     await act(async () => {
@@ -186,7 +190,9 @@ describe('visual country modal', () => {
       continent.value = 'asia';
       continent.dispatchEvent(new Event('change', { bubbles: true }));
     });
-    expect(host.querySelector('section[aria-label="Pinned bucket-list countries"]')?.textContent).toContain('Japan');
+    expect(
+      host.querySelector('section[aria-label="Pinned bucket-list countries"]')?.textContent,
+    ).toContain('Japan');
     expect(host.querySelector('button[aria-label="Remove Peru from bucket list"]')).toBeNull();
     expect(host.querySelector('button[aria-label="Save Indonesia to bucket list"]')).toBeNull();
   });
