@@ -171,7 +171,7 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
         </div>
       </div>
       {!mobile && (
-        <nav className={`${ui.surface} ${styles.rail}`} aria-label="Desktop navigation">
+        <nav className={styles.rail} aria-label="Desktop navigation">
           {Object.values(MobilePanel)
             .filter((panel) => props.tripStudioEnabled || panel !== MobilePanel.Trips)
             .map((panel) => (
