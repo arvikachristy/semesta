@@ -60,7 +60,10 @@ export const createJellyMaterial = (pattern: THREE.Texture, scale = 1) => {
   return material;
 };
 
-export const updateJellyMaterial = (material: THREE.MeshPhysicalMaterial, palette: IScenePalette) => {
+export const updateJellyMaterial = (
+  material: THREE.MeshPhysicalMaterial,
+  palette: IScenePalette,
+) => {
   if (material.userData.semestaJelly === true) {
     material.attenuationColor.set(palette.jellyTint);
   }

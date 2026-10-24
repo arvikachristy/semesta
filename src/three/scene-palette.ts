@@ -13,7 +13,8 @@ export interface IScenePalette {
 
 export const readScenePalette = (): IScenePalette => {
   // Headless geometry tests need neutral values; the browser reads theme CSS.
-  const styles = typeof document === 'undefined' ? null : getComputedStyle(document.documentElement);
+  const styles =
+    typeof document === 'undefined' ? null : getComputedStyle(document.documentElement);
   const read = (token: string) => styles?.getPropertyValue(token).trim() || '#ffffff';
   return {
     world: read('--color-world'),

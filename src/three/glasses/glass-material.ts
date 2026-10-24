@@ -75,7 +75,10 @@ export const createGlassMaterial = (
   return material;
 };
 
-export const updateGlassMaterial = (material: THREE.MeshPhysicalMaterial, palette: IScenePalette) => {
+export const updateGlassMaterial = (
+  material: THREE.MeshPhysicalMaterial,
+  palette: IScenePalette,
+) => {
   material.color.set(palette.glassClear);
   material.attenuationColor.set(palette.glassClear);
   bottomTints.get(material)?.set(palette.glassBottom);
