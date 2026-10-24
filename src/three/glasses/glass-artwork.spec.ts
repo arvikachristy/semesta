@@ -1,10 +1,14 @@
 import * as THREE from 'three';
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { continents } from './continents';
 import { createArtworkGeometry } from './glass-artwork';
 import { glassDimensions, glassParameters } from './glass-parameters';
 import { getGlassTint } from './glass-material';
+
+vi.mock('../theme', () => ({
+  readScenePalette: () => ({ glassBottom: '#d6a058', glassClear: '#ffffff' }),
+}));
 
 describe('continent plating and amber glass', () => {
   it('has seven unique continent identifiers, names and local artwork assets', () => {
@@ -34,8 +38,8 @@ describe('continent plating and amber glass', () => {
   });
 
   it('fades from amber at the base to clear by 45% height and remains clear above', () => {
-    const base = new THREE.Color(glassParameters.gradient.bottomColor);
-    const clear = new THREE.Color(glassParameters.gradient.clearColor);
+    const base = new THREE.Color('#d6a058');
+    const clear = new THREE.Color('#ffffff');
     expect(getGlassTint(0).equals(base)).toBe(true);
     expect(getGlassTint(glassDimensions.outerHeight * 0.45).equals(clear)).toBe(true);
     expect(getGlassTint(glassDimensions.outerHeight).equals(clear)).toBe(true);
