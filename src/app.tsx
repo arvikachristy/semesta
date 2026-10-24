@@ -218,7 +218,14 @@ export const App = () => {
 
   return (
     <main>
-      {!standaloneStudio && <ThemeToggle theme={theme} onToggle={toggleTheme} />}
+      {!standaloneStudio && (
+        <ThemeToggle
+          theme={theme}
+          onToggle={toggleTheme}
+          placement="floating"
+          studioOpen={Boolean(studioTripId)}
+        />
+      )}
       <CanaryLabs />
       {!standaloneStudio && (
         <div
@@ -253,6 +260,8 @@ export const App = () => {
       )}
       {!standaloneStudio && (
         <MobilePanels
+          theme={theme}
+          onThemeToggle={toggleTheme}
           tripStudioEnabled={tripStudioEnabled}
           tripSession={tripSession}
           panel={panel}

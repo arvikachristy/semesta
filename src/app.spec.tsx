@@ -93,14 +93,16 @@ describe('theme switcher', () => {
     const canvas = host.querySelector('canvas');
     expect(document.documentElement.dataset.theme).toBe('rose');
     expect(store.getState().theme.current).toBe(ThemeId.Rose);
-    await click('button[aria-label="Switch to Midnight Navy"]');
+    await click(
+      'nav[aria-label="Desktop navigation"] button[aria-label="Switch to Midnight Navy"]',
+    );
     expect(document.documentElement.dataset.theme).toBe('midnight');
     expect(store.getState().theme.current).toBe(ThemeId.Midnight);
     expect(localStorage.getItem('semesta.theme.v1')).toBe('midnight');
     expect(setSceneTheme).toHaveBeenCalledOnce();
     expect(startPlayground).toHaveBeenCalledOnce();
     expect(host.querySelector('canvas')).toBe(canvas);
-    await click('button[aria-label="Switch to Rose"]');
+    await click('nav[aria-label="Desktop navigation"] button[aria-label="Switch to Rose"]');
     expect(document.documentElement.dataset.theme).toBe('rose');
     expect(store.getState().theme.current).toBe(ThemeId.Rose);
     expect(startPlayground).toHaveBeenCalledOnce();
@@ -145,7 +147,9 @@ describe('visited world, wishes and trips', () => {
   it('opens account and countries from the desktop icon rail and retains mobile navigation on resize', async () => {
     await renderApp();
     const rail = host.querySelector('nav[aria-label="Desktop navigation"]');
-    expect(rail?.querySelectorAll('button svg')).toHaveLength(3);
+    expect([...(rail?.querySelectorAll('button') ?? [])].map((button) => button.ariaLabel)).toEqual(
+      ['Countries', 'Trips', 'Switch to Midnight Navy', 'Account'],
+    );
     expect(host.querySelector('.country-selector')?.hasAttribute('hidden')).toBe(true);
     await click('nav[aria-label="Desktop navigation"] button[aria-label="Account"]');
     const accountDialog = host.querySelector('dialog[aria-label="Account backup"]');
@@ -168,6 +172,9 @@ describe('visited world, wishes and trips', () => {
       window.dispatchEvent(new Event('resize'));
     });
     expect(host.querySelector('nav[aria-label="Desktop navigation"]')).toBeNull();
+    expect(
+      host.querySelector('button[data-studio-open="false"][aria-label="Switch to Midnight Navy"]'),
+    ).not.toBeNull();
     const mobileBar = host.querySelector('nav[aria-label="Explore and plan"]');
     expect(mobileBar?.hasAttribute('hidden')).toBe(false);
     expect(mobileBar?.textContent).toContain('Account');

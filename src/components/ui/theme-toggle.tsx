@@ -6,13 +6,21 @@ import styles from './theme-toggle.module.css';
 interface IThemeToggleProps {
   theme: TTheme;
   onToggle: () => void;
+  placement: 'rail' | 'floating';
+  studioOpen?: boolean;
 }
 
-export const ThemeToggle = ({ theme, onToggle }: IThemeToggleProps) => (
+export const ThemeToggle = ({
+  theme,
+  onToggle,
+  placement,
+  studioOpen = false,
+}: IThemeToggleProps) => (
   <Button
     icon
     variant={ButtonVariant.Quiet}
-    className={styles.toggle}
+    className={`${styles.toggle} ${placement === 'floating' ? styles.floating : styles.rail}`}
+    data-studio-open={studioOpen}
     onClick={onToggle}
     aria-label={theme === ThemeId.Rose ? 'Switch to Midnight Navy' : 'Switch to Rose'}
     title={theme === ThemeId.Rose ? 'Midnight Navy' : 'Rose Glass'}

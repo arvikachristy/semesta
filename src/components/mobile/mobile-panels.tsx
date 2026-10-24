@@ -9,13 +9,17 @@ import type { ICountryBrowserProps } from '../shared/country-picker/country-brow
 import { UpcomingTrips } from '../trips/upcoming-trips';
 import { Button, ButtonVariant } from '../ui/button';
 import { TooltipButton } from '../ui/tooltip-button';
+import { ThemeToggle } from '../ui/theme-toggle';
 import { PanelIcon } from './panel-icon';
 import ui from '../ui/ui.module.css';
 import styles from './mobile-panels.module.css';
 import type { ITrip } from '../../types/trip';
 import type { useTrips } from '../../hooks/use-trips';
+import type { TTheme } from '../../styles/theme';
 
 interface IMobilePanelsProps {
+  theme: TTheme;
+  onThemeToggle: () => void;
   countries: ICountryBrowserProps;
   panel: TMobilePanel | null;
   onPanelChange: (panel: TMobilePanel | null) => void;
@@ -52,6 +56,25 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
   const triggers = useRef<Partial<Record<TMobilePanel, HTMLButtonElement | null>>>({});
   const previous = useRef<TMobilePanel | null>(null);
   const dismiss = () => setActive(null);
+  const desktopPanelButton = (panel: TMobilePanel) => (
+    <TooltipButton
+      key={panel}
+      label={panelConfig.labels[panel]}
+      variant={active === panel ? ButtonVariant.Primary : ButtonVariant.Quiet}
+      aria-haspopup={panel === MobilePanel.Trips ? undefined : 'dialog'}
+      aria-expanded={active === panel}
+      disabled={panel === MobilePanel.Countries && props.countries.disabled}
+      onClick={() => {
+        if (panel === MobilePanel.Countries && active !== panel) {
+          props.onBrowseAll();
+        } else {
+          setActive(active === panel ? null : panel);
+        }
+      }}
+    >
+      <PanelIcon panel={panel} />
+    </TooltipButton>
+  );
   useEffect(() => {
     const resize = () => setNarrow(window.innerWidth <= panelConfig.breakpoint);
     window.addEventListener(panelConfig.resizeEvent, resize);
@@ -173,26 +196,16 @@ export const MobilePanels = memo((props: IMobilePanelsProps) => {
       {!mobile && (
         <nav className={styles.rail} aria-label="Desktop navigation">
           {Object.values(MobilePanel)
-            .filter((panel) => props.tripStudioEnabled || panel !== MobilePanel.Trips)
-            .map((panel) => (
-              <TooltipButton
-                key={panel}
-                label={panelConfig.labels[panel]}
-                variant={active === panel ? ButtonVariant.Primary : ButtonVariant.Quiet}
-                aria-haspopup={panel === MobilePanel.Trips ? undefined : 'dialog'}
-                aria-expanded={active === panel}
-                disabled={panel === MobilePanel.Countries && props.countries.disabled}
-                onClick={() => {
-                  if (panel === MobilePanel.Countries && active !== panel) {
-                    props.onBrowseAll();
-                  } else {
-                    setActive(active === panel ? null : panel);
-                  }
-                }}
-              >
-                <PanelIcon panel={panel} />
-              </TooltipButton>
-            ))}
+            .filter(
+              (panel) =>
+                panel !== MobilePanel.Account &&
+                (props.tripStudioEnabled || panel !== MobilePanel.Trips),
+            )
+            .map(desktopPanelButton)}
+          <div className={styles.railBottom}>
+            <ThemeToggle theme={props.theme} onToggle={props.onThemeToggle} placement="rail" />
+            {desktopPanelButton(MobilePanel.Account)}
+          </div>
         </nav>
       )}
       <nav className={styles.bar} aria-label="Explore and plan" hidden={!mobile}>
