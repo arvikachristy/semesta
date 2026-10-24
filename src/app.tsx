@@ -65,6 +65,9 @@ export const App = () => {
     initialCountries: emptyWishlist,
     limit: Infinity,
   });
+  const bucketListCount = wishlist.showedCountries.filter(
+    (country) => !showedCountries.includes(country),
+  ).length;
   const [statuses, setStatuses] = useState<Partial<Record<CountryList, CountryStatus>>>({});
   const openTrips = () => {
     if (!tripStudioEnabled) {
@@ -205,6 +208,19 @@ export const App = () => {
           data-country-open={panel === MobilePanel.Countries}
           hidden={Boolean(studioTripId)}
         >
+          <header className={styles.sceneHeader} aria-label="Collection summary">
+            <span className={styles.wordmark}>Semesta</span>
+            <div className={styles.summary}>
+              <div className={styles.summaryItem}>
+                <span className={styles.summaryValue}>{showedCountries.length}</span>
+                <span className={styles.summaryLabel}>Country visited</span>
+              </div>
+              <div className={styles.summaryItem}>
+                <span className={styles.summaryValue}>{bucketListCount}</span>
+                <span className={styles.summaryLabel}>Bucket list</span>
+              </div>
+            </div>
+          </header>
           {import.meta.env.DEV && <FpsToken reading={frameReading} />}
           <ul className="visually-hidden" id="continent-descriptions">
             {continentDefinitions.map((continent) => (
