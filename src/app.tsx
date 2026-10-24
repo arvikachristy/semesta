@@ -48,9 +48,7 @@ export const App = () => {
   const studioTripId = tripStudioEnabled
     ? (studioMatch?.params.tripId ?? standaloneStudioMatch?.params.tripId ?? null)
     : null;
-  const [panel, setPanel] = useState<TMobilePanel | null>(() =>
-    window.innerWidth > 600 && !studioTripId && !standaloneStudio ? MobilePanel.Countries : null,
-  );
+  const [panel, setPanel] = useState<TMobilePanel | null>(null);
   const [returnPanel, setReturnPanel] = useState<TMobilePanel>(MobilePanel.Trips);
   const [browser, setBrowser] = useState<ICountryBrowserState>(initialCountryBrowser);
   const [sceneMessage, setSceneMessage] = useState('');
