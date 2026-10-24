@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { glassDimensions, glassParameters } from './glass-parameters';
+import { readScenePalette } from '../theme';
 
 const shaderIncludes = {
   common: '#include <common>',
@@ -13,16 +14,16 @@ export const getGlassTint = (height: number) => {
     0,
     glassParameters.gradient.fadeHeight,
   );
-  return new THREE.Color(glassParameters.gradient.bottomColor).lerp(
-    new THREE.Color(glassParameters.gradient.clearColor),
-    blend,
-  );
+  const palette = readScenePalette();
+  return new THREE.Color(palette.glassBottom).lerp(new THREE.Color(palette.glassClear), blend);
 };
 
 // Transmission keeps the object optically clear while thickness adds refraction.
 export const createGlassMaterial = (height = glassDimensions.outerHeight) => {
+  const palette = readScenePalette();
+  const glassBottomTint = new THREE.Color(palette.glassBottom);
   const material = new THREE.MeshPhysicalMaterial({
-    color: glassParameters.gradient.clearColor,
+    color: palette.glassClear,
     metalness: 0,
     roughness: 0.025,
     transmission: 1,
@@ -32,16 +33,16 @@ export const createGlassMaterial = (height = glassDimensions.outerHeight) => {
     depthWrite: false,
     thickness: glassParameters.wallThickness,
     ior: 1.45,
-    attenuationColor: glassParameters.gradient.clearColor,
+    attenuationColor: palette.glassClear,
     attenuationDistance: 10,
     envMapIntensity: 0.2,
     clearcoat: 0.1,
     clearcoatRoughness: 0.04,
   });
+  material.userData.themeGlass = true;
+  material.userData.glassBottomTint = glassBottomTint;
   material.onBeforeCompile = (shader) => {
-    shader.uniforms.glassBottomTint = {
-      value: new THREE.Color(glassParameters.gradient.bottomColor),
-    };
+    shader.uniforms.glassBottomTint = { value: glassBottomTint };
     shader.uniforms.glassFadeHeight = { value: glassParameters.gradient.fadeHeight };
     shader.uniforms.glassHeight = { value: height };
     shader.vertexShader = shader.vertexShader

@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { createFrameMonitor } from '../performance/frame-monitor';
 import { jellyPerformance } from './jelly-flags/jelly-performance';
 import type { IFrameReading } from '../performance/frame-monitor';
@@ -15,6 +16,8 @@ import { createRenderQuality, getRenderPixelRatio } from './render-parameters';
 import { resize } from './resize';
 import { createScene } from './scene';
 import { getWheelZoomFactor } from './zoom';
+import { themeStorage } from '../styles/theme';
+import { readScenePalette, recolorSceneMaterials } from './theme';
 
 interface IPlaygroundOptions {
   onFrameReading?: (reading: IFrameReading) => void;
@@ -34,8 +37,7 @@ export const startPlayground = (
   const { camera, cameraTarget, cameraOffset, zoomBy, panBetween, fitViewport } = createCamera(
     glasses.bounds,
   );
-  const lighting = createLights(renderer);
-  const { ambientLight, directionalLight } = lighting;
+  let lighting = createLights(renderer);
   scene.environment = lighting.environment;
   const floor = createFloor();
   let input: ReturnType<typeof bindPointerEvents> | null = null;
@@ -44,7 +46,7 @@ export const startPlayground = (
     onStatus: onCountryStatus,
     onRemove: (block) => input?.releaseBlock(block),
   });
-  scene.add(ambientLight, directionalLight, floor, glasses.object);
+  scene.add(lighting.ambientLight, lighting.directionalLight, floor, glasses.object);
   input = bindPointerEvents({
     canvas,
     camera,
@@ -83,6 +85,23 @@ export const startPlayground = (
     }
     onFrameReading?.(reading);
   });
+  const onThemeChange = () => {
+    const palette = readScenePalette();
+    scene.background = new THREE.Color(palette.world);
+    floor.material.color.set(palette.shadow);
+    recolorSceneMaterials(scene, palette);
+
+    // Rebuild the small reflection map, but preserve glass geometry and jelly physics.
+    const previous = lighting;
+    lighting = createLights(renderer);
+    scene.remove(previous.ambientLight, previous.directionalLight);
+    scene.add(lighting.ambientLight, lighting.directionalLight);
+    scene.environment = lighting.environment;
+    previous.dispose();
+    renderer.shadowMap.needsUpdate = true;
+    shadowDirty = true;
+  };
+  window.addEventListener(themeStorage.event, onThemeChange);
   const visibilityEvent = 'visibilitychange';
   document.addEventListener(visibilityEvent, frameMonitor.reset);
   let previousTime = performance.now();
@@ -135,6 +154,7 @@ export const startPlayground = (
   const dispose = () => {
     cancelAnimationFrame(frameId);
     document.removeEventListener(visibilityEvent, frameMonitor.reset);
+    window.removeEventListener(themeStorage.event, onThemeChange);
     window.removeEventListener('resize', onResize);
     canvas.removeEventListener('wheel', onWheel);
     input?.unbind();

@@ -1,11 +1,16 @@
 import * as THREE from 'three';
 import type { IContinent } from './continents';
 import { glassDimensions, glassParameters } from './glass-parameters';
+import { readScenePalette } from '../theme';
 
-export const createGoldMaterial = () =>
-  new THREE.MeshStandardMaterial({
+export const createGoldMaterial = () => {
+  const material = new THREE.MeshStandardMaterial({
     ...glassParameters.gold,
+    color: readScenePalette().glassMetal,
   });
+  material.userData.themeGold = true;
+  return material;
+};
 
 export const createArtworkGeometry = (
   width = glassParameters.artwork.width,

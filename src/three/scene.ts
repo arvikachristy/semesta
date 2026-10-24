@@ -1,8 +1,9 @@
 import * as THREE from 'three';
+import { readScenePalette } from './theme';
 
-// The scene holds all objects and sets the clear colour behind the floor.
+// Background shares the active CSS theme with the DOM.
 export const createScene = () => {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#f3c9c7');
+  scene.background = new THREE.Color(readScenePalette().world);
   return scene;
 };

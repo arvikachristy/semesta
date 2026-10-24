@@ -12,8 +12,8 @@ export const glassParameters = {
   wallThickness: 0.045,
   baseThickness: 0.07,
   widthMultiplier: 1.25,
-  gradient: { bottomColor: '#d6a058', clearColor: '#ffffff', fadeHeight: 0.45 },
-  gold: { color: '#d7a357', metalness: 0.62, roughness: 0.32, envMapIntensity: 1 },
+  gradient: { fadeHeight: 0.45 },
+  gold: { metalness: 0.62, roughness: 0.32, envMapIntensity: 1 },
   artwork: { width: 1.8, height: 1.9, centreHeight: 0.56, surfaceOffset: 0.003 },
 };
 
