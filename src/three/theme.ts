@@ -36,7 +36,8 @@ export const readScenePalette = (): IScenePalette => {
   if (cachedTheme === theme && cachedPalette) {
     return cachedPalette;
   }
-  const styles = typeof document === 'undefined' ? null : getComputedStyle(document.documentElement);
+  const styles =
+    typeof document === 'undefined' ? null : getComputedStyle(document.documentElement);
   const read = (name: string) => {
     const value = styles?.getPropertyValue(name).trim();
     if (value) {
