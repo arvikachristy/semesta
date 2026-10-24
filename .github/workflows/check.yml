@@ -25,6 +25,12 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - run: npm run format
+      - name: Print formatted bucket-list test
+        run: |
+          echo BEGIN_PRETTIER:src/components/country-selector.spec.tsx
+          cat src/components/country-selector.spec.tsx
+          echo END_PRETTIER:src/components/country-selector.spec.tsx
       - run: npm run check
       - run: npm run build
       - uses: actions/upload-artifact@v7.0.2
