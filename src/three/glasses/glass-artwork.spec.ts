@@ -19,6 +19,7 @@ describe('continent plating and amber glass', () => {
       expect(svg).toContain('width="1024" height="1024"');
       expect(svg).toContain(continent.name.toUpperCase());
       expect(svg).toContain('<path fill="white"');
+      expect(svg).toContain('font-family="Farro, Arial, sans-serif"');
     });
   });
 
