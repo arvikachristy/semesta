@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useAccount } from '../../account/account-context';
 import { accountClient } from '../../account/client';
 import { accountConfig, BackupStatus } from '../../account/account-config';
+import { ThemeId, setTheme } from '../../styles/theme';
+import { useTheme } from '../../hooks/use-theme';
 import { Button, ButtonVariant } from '../ui/button';
 import ui from '../ui/ui.module.css';
 import styles from './account.module.css';
@@ -19,6 +21,7 @@ const actionText = {
 
 export const AccountContent = () => {
   const account = useAccount();
+  const theme = useTheme();
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [sentTo, setSentTo] = useState('');
@@ -64,6 +67,23 @@ export const AccountContent = () => {
   const signedIn = account.userId !== accountConfig.guestId;
   return (
     <div className={styles.content}>
+      <label className={ui.field}>
+        Appearance
+        <select
+          className={ui.control}
+          aria-label="Appearance"
+          value={theme}
+          onChange={(event) => {
+            const selected = event.currentTarget.value;
+            if (selected === ThemeId.Rose || selected === ThemeId.Midnight) {
+              setTheme(selected);
+            }
+          }}
+        >
+          <option value={ThemeId.Rose}>Rose Glass</option>
+          <option value={ThemeId.Midnight}>Midnight Navy</option>
+        </select>
+      </label>
       {signedIn ? (
         <>
           <p className={styles.email}>{account.email}</p>

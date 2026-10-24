@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccountContent } from './account-content';
 import { AccountContext, guestRepositories } from '../../account/account-context';
 import { accountConfig, BackupStatus } from '../../account/account-config';
+import { ThemeId, themeStorage } from '../../styles/theme';
 
 const auth = vi.hoisted(() => ({
   signInWithOtp: vi.fn(async () => ({ error: null })),
@@ -50,14 +51,39 @@ beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.useFakeTimers();
   vi.clearAllMocks();
+  localStorage.removeItem(themeStorage.key);
+  document.documentElement.dataset.theme = ThemeId.Rose;
   document.body.append(host);
   root = createRoot(host);
 });
 afterEach(async () => {
   await act(async () => root.unmount());
   host.remove();
+  document.documentElement.dataset.theme = ThemeId.Rose;
   vi.useRealTimers();
   vi.unstubAllGlobals();
+});
+describe('account appearance', () => {
+  it('switches to Midnight Navy and saves the device preference', async () => {
+    await act(async () =>
+      root.render(
+        <AccountContext value={context}>
+          <AccountContent />
+        </AccountContext>,
+      ),
+    );
+    const select = host.querySelector('select[aria-label="Appearance"]');
+    if (!(select instanceof HTMLSelectElement)) {
+      throw new Error('Missing Appearance');
+    }
+    expect(select.value).toBe(ThemeId.Rose);
+    await act(async () => {
+      select.value = ThemeId.Midnight;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    expect(document.documentElement.dataset.theme).toBe(ThemeId.Midnight);
+    expect(localStorage.getItem(themeStorage.key)).toBe(ThemeId.Midnight);
+  });
 });
 describe('account sign-in form', () => {
   it('sends an email code, throttles resend, and verifies against the address that received it', async () => {

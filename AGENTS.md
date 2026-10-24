@@ -17,6 +17,7 @@
 - Country names, continents and flag artwork share `src/data/countries.ts`, keyed by `CountryList`. Derive checklist groups from that registry and keep selected countries as enum IDs, not duplicated country objects.
 
 - Keep selection persistence behind `ICountrySelectionRepository`; components and Three.js must not access browser or account storage directly. Persist country IDs only.
+- Put UI and scene colour values in `src/styles/themes/*.css`; React components consume semantic tokens and Three.js reads the current palette through `src/three/theme.ts`. Do not hard-code new palette colours in feature styles or WebGL materials.
 - Keep performance controls in `jelly-performance.ts`, and benchmark large catalogue changes with `npm run benchmark`. Do not claim GPU timings from render submission time or assume that sleeping jellies stop costing GPU work.
 
 ## User-owned data and CRUD

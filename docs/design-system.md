@@ -1,10 +1,13 @@
-# Rose Glass
+# Semesta design system — Rose Glass & Midnight Navy
 
-Semesta's small DOM design system: warm translucent surfaces, burgundy ink, quiet serif headings, and precise, comfortable controls. The cups remain the visual centre. This is the pattern for current and future interface work.
+Semesta's shared DOM design system: translucent surfaces, quiet serif headings, and precise controls. Rose Glass is the default light palette; Midnight Navy is a dark alternative using the same component recipes. The cups remain the visual centre. This is the pattern for current and future interface work.
 
 ## Sources of truth
 
-- `src/styles/tokens.css`: named colours, spacing, type, radii, heights, shadows and motion.
+- `src/styles/tokens.css`: spacing, typography, radii, heights and motion shared by every palette.
+- `src/styles/themes/rose.css` and `midnight.css`: semantic colour, glass, state and Three.js palette tokens. To add a theme, create one stylesheet defining the same variables.
+- `src/styles/theme.ts`: browser preference and theme switch. The Account panel exposes Appearance on mobile and desktop.
+- `src/three/theme.ts`: the WebGL adapter reads active CSS colours; existing glass and jelly materials are recoloured in place when the theme changes.
 - `src/components/ui/ui.module.css`: surfaces, fields, focus, action rows and interaction states.
 - `src/components/ui/button.tsx`: native React button with shared variants and ref support.
 - Existing examples: `trip-editor.tsx` for a form, `upcoming-trips.tsx` for a panel, `country-selector.tsx` for the shared flag-grid country modal.

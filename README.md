@@ -13,6 +13,7 @@ _A little universe of places you've been._
 - **Collect countries.** Browse 199 travel destinations and mark the places you've visited.
 - **Build your bucket list.** Save destinations you want to explore without adding them to your visited collection.
 - **Play with your collection.** Watch soft-body flag jellies settle into seven continent glasses. Rotate, pan, zoom and interact with the 3D scene.
+- **Choose your atmosphere.** Switch between Rose Glass and Midnight Navy under Account → Appearance.
 - **Take it with you.** Use the responsive interface on desktop or mobile; save locally or optionally back up your collection to an account.
 
 ## Built with
