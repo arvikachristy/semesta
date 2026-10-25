@@ -144,10 +144,6 @@
   color: var(--color-muted);
   font-size: var(--text-small);
 }
-.continent {
-  color: var(--color-muted);
-  font-size: var(--text-small);
-}
 .feedback {
   display: flex;
   align-items: center;
@@ -198,9 +194,6 @@
   .flag {
     width: 2rem;
     height: 1.4rem;
-  }
-  .continent {
-    display: none;
   }
   .name {
     display: -webkit-box;
