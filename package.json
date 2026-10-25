@@ -20,7 +20,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "benchmark": "node scripts/benchmark-countries.mjs",
-    "test:browser": "node scripts/check-countries.mjs"
+    "test:browser": "node scripts/check-countries.mjs",
+    "test:browser:idle": "node scripts/check-idle-rendering.mjs"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.13.0",

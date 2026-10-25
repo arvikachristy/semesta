@@ -32,10 +32,14 @@ export const startPlayground = (
 ) => {
   // React supplies the canvas. These are the raw Three.js pieces inside it.
   const renderer = createRenderer(canvas);
+  let renderDirty = true;
+  const invalidate = () => {
+    renderDirty = true;
+  };
   const quality = createRenderQuality();
   const palette = readScenePalette();
   const scene = createScene(palette);
-  const glasses = createGlassSet(palette);
+  const glasses = createGlassSet(palette, invalidate);
   const { camera, cameraTarget, cameraOffset, zoomBy, panBetween, fitViewport } = createCamera(
     glasses.bounds,
   );
@@ -68,6 +72,7 @@ export const startPlayground = (
   const onResize = () => {
     resize(renderer, camera, quality.getScale(), canvas);
     fitViewport();
+    invalidate();
   };
   const onWheel = (event: WheelEvent) => {
     event.preventDefault();
@@ -78,16 +83,20 @@ export const startPlayground = (
   resizeObserver.observe(canvas);
   onResize();
   canvas.addEventListener('wheel', onWheel, { passive: false });
+  const contextRestoredEvent = 'webglcontextrestored';
+  canvas.addEventListener(contextRestoredEvent, invalidate);
 
   // The render loop keeps the camera, hover, and composition rotation in sync.
+  let frameChanged = true;
   const frameMonitor = createFrameMonitor((reading) => {
     const ratio = getRenderPixelRatio(
       window.devicePixelRatio,
       (canvas.clientWidth || window.innerWidth) * (canvas.clientHeight || window.innerHeight),
-      quality.sample(reading.fps),
+      frameChanged ? quality.sample(reading.fps) : quality.getScale(),
     );
     if (renderer.getPixelRatio() !== ratio) {
       renderer.setPixelRatio(ratio);
+      invalidate();
     }
     onFrameReading?.(reading);
   });
@@ -95,7 +104,7 @@ export const startPlayground = (
   document.addEventListener(visibilityEvent, frameMonitor.reset);
   let previousTime = performance.now();
   let frameId = 0;
-  const previousCameraPosition = camera.position.clone();
+  const previousCameraMatrix = camera.matrixWorld.clone();
   let previousGlassRotation = glasses.object.rotation.y;
   let shadowDirty = true;
   let previousShadowTime = 0;
@@ -104,15 +113,11 @@ export const startPlayground = (
     frameId = requestAnimationFrame(animate);
 
     const now = performance.now();
-    if (canvas.closest('[hidden]')) {
+    if (document.hidden || canvas.closest('[hidden]')) {
       previousTime = now;
       frameMonitor.reset();
+      invalidate();
       return;
-    }
-    if (document.hidden) {
-      frameMonitor.reset();
-    } else {
-      frameMonitor.sample(now);
     }
     const delta = Math.min((now - previousTime) / 1000, 0.05);
     previousTime = now;
@@ -122,19 +127,26 @@ export const startPlayground = (
     camera.updateMatrixWorld();
     glasses.updateFacing(camera);
     const surfacesChanged = collection.update(delta);
-    shadowDirty ||=
-      surfacesChanged ||
-      !previousCameraPosition.equals(camera.position) ||
+    const viewChanged =
+      !previousCameraMatrix.equals(camera.matrixWorld) ||
       previousGlassRotation !== glasses.object.rotation.y;
+    shadowDirty ||= surfacesChanged || viewChanged;
     if (shadowDirty && now - previousShadowTime >= 1000 / jellyPerformance.shadowUpdatesPerSecond) {
       renderer.shadowMap.needsUpdate = true;
       previousShadowTime = now;
       shadowDirty = false;
     }
-    previousCameraPosition.copy(camera.position);
+    previousCameraMatrix.copy(camera.matrixWorld);
     previousGlassRotation = glasses.object.rotation.y;
 
-    renderer.render(scene, camera);
+    frameChanged = renderDirty || surfacesChanged || viewChanged || renderer.shadowMap.needsUpdate;
+    // Preserve the loop-cadence indicator, but idle samples do not change render quality.
+    frameMonitor.sample(now);
+    // Keep polling input/loading/physics, but submit no GPU work for an unchanged scene.
+    if (frameChanged || renderDirty) {
+      renderer.render(scene, camera);
+      renderDirty = false;
+    }
   }
 
   animate();
@@ -151,6 +163,7 @@ export const startPlayground = (
     });
     renderer.shadowMap.needsUpdate = true;
     shadowDirty = true;
+    invalidate();
   };
 
   // React calls this when the canvas unmounts (and during Strict Mode checks).
@@ -160,6 +173,7 @@ export const startPlayground = (
     window.removeEventListener('resize', onResize);
     resizeObserver.disconnect();
     canvas.removeEventListener('wheel', onWheel);
+    canvas.removeEventListener(contextRestoredEvent, invalidate);
     input?.unbind();
     collection.dispose();
     glasses.dispose();

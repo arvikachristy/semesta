@@ -10,7 +10,10 @@ import { getGlassDefinition } from './glass-definitions';
 import type { IGlassDefinition } from './glass-definitions';
 import { createGlassResources } from './glass-resources';
 
-export const createGlassSet = (palette: IScenePalette = readScenePalette()) => {
+export const createGlassSet = (
+  palette: IScenePalette = readScenePalette(),
+  onArtworkLoad?: () => void,
+) => {
   const object = new THREE.Group();
   const containers = new Map<TContinentId, THREE.Group>();
   const resources = new Map<IGlassDefinition, ReturnType<typeof createGlassResources>>();
@@ -29,7 +32,7 @@ export const createGlassSet = (palette: IScenePalette = readScenePalette()) => {
     const glass = new THREE.Mesh(shared.geometry, shared.material);
     glass.name = continent.id;
     const markings = shared.markings.map(({ geometry, y }, index) => {
-      const artwork = createContinentArtwork(continent, geometry, palette);
+      const artwork = createContinentArtwork(continent, geometry, palette, onArtworkLoad);
       artwork.object.position.y = y;
       artwork.object.renderOrder = 2 + index;
       artworkResources.push(artwork);
