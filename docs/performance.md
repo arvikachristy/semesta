@@ -13,7 +13,8 @@ The selector covers 195 states (193 UN members plus the Holy See and Palestine).
 - A vertical sweep narrows body collision candidates. Conservative bounds contacts stabilize dense piles; these approximate contacts do not model detailed interlocking surfaces. This is the main physics compromise.
 - Artwork is rasterized at 128 pixels high. Six atlas textures occupy under 32 MiB of base RGBA storage at full selection, versus roughly 390 MiB for 195 independent 768 × 512 textures with mipmaps. This is a calculated texture budget, not total GPU memory. Original canvases and physics also use CPU memory. Fine emblems lose detail when zoomed in.
 - Loading is serialized with short yields. Saved selections appear already stacked and sleeping inside their glasses on first load, avoiding a long physics-heavy shower of drops. Countries added afterward still drop, targeting at most 12 awake bodies globally with a bounded pause to ensure progress. Collisions and grabs may wake more bodies; interactive bodies are never forcibly frozen.
-- Shadows refresh at most 15 times per second while changing. Smaller high-density viewports now render above 1× pixel ratio, up to 2×, with the extra detail limited to roughly one million drawing pixels. Viewports already larger than that keep the previous 1× baseline. Sustained slow frames can reduce the chosen ratio to 75%. HTML stays sharp. The internal refraction buffer uses half resolution.
+- Shadows refresh at most 15 times per second while changing. Smaller high-density viewports render above 1× pixel ratio, up to 2×, with drawing pixels capped at roughly one million. Larger viewports use a ratio below 1× to respect the same budget, including 4K displays. Sustained slow animation frames can reduce the chosen ratio to 75%. HTML stays sharp. The internal refraction buffer uses half resolution.
+- Settled scenes retain their last frame without submitting new WebGL draws. The lightweight animation loop still checks input, loading and physics. Surface changes, camera movement, carousel rotation, delayed artwork, resize, theme changes and the last throttled shadow refresh trigger redraws. Hidden tabs and hidden collection panels skip simulation and rendering. Idle samples do not change adaptive render quality. The FPS indicator measures animation-loop cadence, including idle polling; it does not measure scene redraws or GPU utilization.
 
 ## Measurement
 
@@ -44,6 +45,8 @@ After changing saved selections to start at rest, a 60-country desktop run on 20
 ## Verification and limits
 
 `npm run test:browser` checks the 195 options, search, persistence across both routes, intentionally empty selections, the mobile checklist layout, and Escape dismissal. Unit specs cover atlas tile boundaries, per-body render updates, raycasting hidden source meshes, batch compaction/disposal, selection migration/validation, load scheduling, collisions and adaptive resolution.
+
+`npm run test:browser:idle` checks zero scene redraws after settling, delayed continent artwork, theme/resize/zoom invalidation, country insertion/removal and the pixel cap at 4K. It instruments served development modules only. Set `BROWSER_URL` for the running local server and `CHROMIUM_PATH` if needed. These checks count render submissions; they do not claim zero browser/compositor GPU usage.
 
 The material remains native WebGL physical transmission. Refraction through several overlapping transmissive objects is approximate. Physics stays on the CPU; this does not add WebGPU, FEM or a new rendering framework. The existing Three.js bundle still produces Vite's large-chunk warning (about 224 kB gzipped application JavaScript).
 

@@ -34,8 +34,9 @@ export const createContinentArtwork = (
   continent: IContinent,
   geometry: THREE.BufferGeometry,
   palette: IScenePalette = readScenePalette(),
+  onLoad?: () => void,
 ) => {
-  const texture = new THREE.TextureLoader().load(continent.artwork);
+  const texture = new THREE.TextureLoader().load(continent.artwork, onLoad);
   texture.colorSpace = THREE.NoColorSpace;
   const material = createGoldMaterial(palette);
   material.alphaMap = texture;

@@ -18,7 +18,7 @@ export const getRenderPixelRatio = (
   Math.min(
     devicePixelRatio,
     renderParameters.maxPixelRatio,
-    Math.max(1, Math.sqrt(renderParameters.maxCanvasPixels / viewportPixels)),
+    Math.sqrt(renderParameters.maxCanvasPixels / viewportPixels),
   ) * resolutionScale;
 
 // Sustained slow frames reduce canvas pixels. Long headroom restores resolution;
