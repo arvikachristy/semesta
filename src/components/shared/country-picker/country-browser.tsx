@@ -263,11 +263,6 @@ export const CountryBrowser = (props: ICountryBrowserProps) => {
                       )}
                     </span>
                     <span className={styles.name}>{country.name}</span>
-                    <span className={styles.continent}>
-                      {group.id === 'pinned'
-                        ? continents.find((item) => item.id === country.continent)?.name
-                        : group.name}
-                    </span>
                   </Button>
                 );
               })}
