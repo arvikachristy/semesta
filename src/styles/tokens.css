@@ -1,7 +1,7 @@
 /* Shared, theme-independent spacing, typography and sizing. */
 :root {
-  --font-body: system-ui, sans-serif;
-  --font-display: Georgia, 'Times New Roman', serif;
+  --font-body: 'Work Sans', system-ui, sans-serif;
+  --font-display: 'Lora', Georgia, serif;
   --text-small: 0.75rem;
   --text-label: 0.8125rem;
   --text-body: 0.875rem;

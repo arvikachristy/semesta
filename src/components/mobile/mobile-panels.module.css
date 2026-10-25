@@ -4,7 +4,7 @@
 .rail {
   position: fixed;
   z-index: 3;
-  top: var(--space-4);
+  top: calc(var(--space-5) + 2.25rem + var(--space-3));
   bottom: var(--space-4);
   left: calc(var(--space-4) + var(--space-2));
   display: flex;

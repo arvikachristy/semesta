@@ -93,16 +93,14 @@ describe('theme switcher', () => {
     const canvas = host.querySelector('canvas');
     expect(document.documentElement.dataset.theme).toBe('rose');
     expect(store.getState().theme.current).toBe(ThemeId.Rose);
-    await click(
-      'nav[aria-label="Desktop navigation"] button[aria-label="Switch to Midnight Navy"]',
-    );
+    await click('nav[aria-label="Desktop navigation"] button[aria-label="Switch to Dusk"]');
     expect(document.documentElement.dataset.theme).toBe('midnight');
     expect(store.getState().theme.current).toBe(ThemeId.Midnight);
     expect(localStorage.getItem('semesta.theme.v1')).toBe('midnight');
     expect(setSceneTheme).toHaveBeenCalledOnce();
     expect(startPlayground).toHaveBeenCalledOnce();
     expect(host.querySelector('canvas')).toBe(canvas);
-    await click('nav[aria-label="Desktop navigation"] button[aria-label="Switch to Rose"]');
+    await click('nav[aria-label="Desktop navigation"] button[aria-label="Switch to Dawn"]');
     expect(document.documentElement.dataset.theme).toBe('rose');
     expect(store.getState().theme.current).toBe(ThemeId.Rose);
     expect(startPlayground).toHaveBeenCalledOnce();
@@ -144,11 +142,35 @@ describe('visited world, wishes and trips', () => {
     expect(host.querySelector('[data-country-open="true"]')).toBeNull();
     expect(host.querySelector('canvas')).toBe(canvas);
   });
+
+  it('shows live visited and unvisited bucket-list totals in the scene header', async () => {
+    localStorage.setItem(
+      selectionStorage.key,
+      JSON.stringify({ version: 1, selectedCountryIds: [CountryList.France] }),
+    );
+    localStorage.setItem(
+      wishlistStorage.key,
+      JSON.stringify({ version: 1, countryIds: [CountryList.France, CountryList.Peru] }),
+    );
+    await renderApp();
+
+    const header = host.querySelector('header[aria-label="Collection summary"]');
+    expect(header?.textContent).toContain('Semesta');
+    expect(header?.textContent).toContain('1Country visited');
+    expect(header?.textContent).toContain('1Bucket list');
+
+    await act(async () =>
+      vi.mocked(startPlayground).mock.calls[0][1]?.onContinentSelect?.(ContinentId.SouthAmerica),
+    );
+    await click('button[aria-label="Mark Peru visited"]');
+    expect(header?.textContent).toContain('2Country visited');
+    expect(header?.textContent).toContain('0Bucket list');
+  });
   it('opens account and countries from the desktop icon rail and retains mobile navigation on resize', async () => {
     await renderApp();
     const rail = host.querySelector('nav[aria-label="Desktop navigation"]');
     expect([...(rail?.querySelectorAll('button') ?? [])].map((button) => button.ariaLabel)).toEqual(
-      ['Countries', 'Trips', 'Switch to Midnight Navy', 'Account'],
+      ['Countries', 'Trips', 'Switch to Dusk', 'Account'],
     );
     expect(host.querySelector('.country-selector')?.hasAttribute('hidden')).toBe(true);
     await click('nav[aria-label="Desktop navigation"] button[aria-label="Account"]');
@@ -173,7 +195,7 @@ describe('visited world, wishes and trips', () => {
     });
     expect(host.querySelector('nav[aria-label="Desktop navigation"]')).toBeNull();
     expect(
-      host.querySelector('button[data-studio-open="false"][aria-label="Switch to Midnight Navy"]'),
+      host.querySelector('button[data-studio-open="false"][aria-label="Switch to Dusk"]'),
     ).not.toBeNull();
     const mobileBar = host.querySelector('nav[aria-label="Explore and plan"]');
     expect(mobileBar?.hasAttribute('hidden')).toBe(false);
@@ -202,6 +224,7 @@ describe('visited world, wishes and trips', () => {
 
     expect(startPlayground).not.toHaveBeenCalled();
     expect(host.querySelector('canvas')).toBeNull();
+    expect(host.querySelector('header[aria-label="Collection summary"]')).toBeNull();
     expect(
       host.querySelector('aside[aria-label="Upcoming trips"][data-full-page="true"]'),
     ).not.toBe(null);

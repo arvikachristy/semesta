@@ -1,6 +1,7 @@
 /* CSS theme variables are the only source of scene colour values. */
 export interface IScenePalette {
   world: string;
+  worldSky: string;
   shadow: string;
   reflectionBackground: string;
   reflectionWarm: string;
@@ -18,6 +19,7 @@ export const readScenePalette = (): IScenePalette => {
   const read = (token: string) => styles?.getPropertyValue(token).trim() || '#ffffff';
   return {
     world: read('--color-world'),
+    worldSky: read('--color-world-sky'),
     shadow: read('--scene-shadow'),
     reflectionBackground: read('--scene-reflection-background'),
     reflectionWarm: read('--scene-reflection-warm'),
