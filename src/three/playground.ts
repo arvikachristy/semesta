@@ -17,7 +17,7 @@ import { bindPointerEvents } from './pointer';
 import { createRenderer } from './renderer';
 import { createRenderQuality, getRenderPixelRatio } from './render-parameters';
 import { resize } from './resize';
-import { createScene } from './scene';
+import { createScene, createSceneBackground } from './scene';
 import { getWheelZoomFactor } from './zoom';
 
 interface IPlaygroundOptions {
@@ -34,7 +34,7 @@ export const startPlayground = (
   const renderer = createRenderer(canvas);
   const quality = createRenderQuality();
   const palette = readScenePalette();
-  const scene = createScene();
+  const scene = createScene(palette);
   const glasses = createGlassSet(palette);
   const { camera, cameraTarget, cameraOffset, zoomBy, panBetween, fitViewport } = createCamera(
     glasses.bounds,
@@ -140,6 +140,11 @@ export const startPlayground = (
   animate();
 
   const setTheme = (next: IScenePalette) => {
+    const previousBackground = scene.background;
+    scene.background = createSceneBackground(next);
+    if (previousBackground instanceof THREE.Texture) {
+      previousBackground.dispose();
+    }
     floor.material.color.set(next.shadow);
     scene.environment = lighting.setTheme(next);
     glasses.setTheme(next);
@@ -165,6 +170,9 @@ export const startPlayground = (
     floor.geometry.dispose();
     floor.material.dispose();
     lighting.dispose();
+    if (scene.background instanceof THREE.Texture) {
+      scene.background.dispose();
+    }
     renderer.dispose();
     scene.clear();
     canvas.style.cursor = '';

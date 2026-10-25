@@ -12,7 +12,7 @@ Semesta's small DOM design system: warm translucent surfaces, burgundy ink, calm
 - `src/components/ui/button.tsx`: native React button with shared variants and ref support.
 - Existing examples: `trip-editor.tsx` for a form, `upcoming-trips.tsx` for a panel, `country-selector.tsx` for the shared flag-grid country modal.
 
-The collection scene uses a vertical background gradient. Each theme defines `--color-world-sky` for the light upper sky and `--color-world` for the darker floor. The WebGL canvas is transparent so the gradient remains visible behind the cups and their shadows.
+The collection scene uses a vertical background gradient. Each theme defines `--color-world-sky` for the light upper sky and `--color-world` for the darker floor. Three.js renders the gradient as the scene background so the transmissive cups refract the same colours; CSS provides a fallback while WebGL loads.
 
 Read these before making a component. Feature CSS Modules arrange content; shared recipes define how controls look. Do not copy the old feature-specific button/field rules or introduce a second palette.
 
