@@ -9,6 +9,7 @@ export const accountConfig = {
   requestTimeout: 15_000,
   signOutScope: 'local',
   retryDelay: 30_000,
+  errorCodes: { revisionConflict: 'PT409', legacyRevisionConflict: '40001' },
   resendSeconds: 60,
   guestId: 'guest',
   events: { online: 'online' },
