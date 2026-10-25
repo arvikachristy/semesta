@@ -6,7 +6,9 @@ _A little universe of places you've been._
 
 [**Explore the live app ↗**](https://semesta-gamma.vercel.app/)
 
-![Semesta's interactive continent-glass collection](https://image.thum.io/get/noanimate/width/1200/crop/760/https://semesta-gamma.vercel.app/)
+![Semesta's interactive continent-glass collection](docs/assets/semesta-preview.png)
+
+_Snapshot of the deployed app. Use the live link above for the current view._
 
 ## Explore your world
 
@@ -37,6 +39,8 @@ npm run dev
 npm run check
 npm run build
 ```
+
+After a visual change is deployed, refresh the README snapshot with `npm run capture:readme`.
 
 Supabase is optional; see [account setup](docs/account-setup.md) to configure it.
 

@@ -16,6 +16,7 @@
     "format:check": "prettier --check .",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run test",
     "build": "vite build",
+    "capture:readme": "node scripts/capture-readme-preview.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
