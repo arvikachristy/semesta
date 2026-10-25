@@ -37,7 +37,10 @@ export const createCloudWorkspace = (client: SupabaseClient, userId: string): IC
         next_payload: workspace,
       })
       .abortSignal(AbortSignal.timeout(accountConfig.requestTimeout));
-    if (error?.code === '40001') {
+    if (
+      error?.code === accountConfig.errorCodes.revisionConflict ||
+      error?.code === accountConfig.errorCodes.legacyRevisionConflict
+    ) {
       throw new BackupConflict();
     }
     if (error) {

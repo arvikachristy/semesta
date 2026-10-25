@@ -4,7 +4,7 @@ Semesta stays usable as a guest. Email codes and Google use Supabase Auth; accou
 
 ## Connect the services
 
-1. Create a Supabase Free project. Run `supabase/migrations/202610100001_accounts.sql` in its SQL editor. This creates a private workspace table, an atomic revision-checked save function, and authenticated self-deletion. Do not disable RLS.
+1. Create a Supabase Free project. Run the SQL files in `supabase/migrations/` in filename order in its SQL editor. These create a private workspace table, an atomic revision-checked save function with non-retryable conflicts, and authenticated self-deletion. Do not disable RLS.
 2. Copy `.env.example` to `.env.local`. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` using the project's public URL and publishable key. Set the same variables in Vercel, then redeploy. Never add a secret/service-role key to Vite variables.
 3. In Supabase Authentication → URL Configuration, set Site URL to your production origin. Add exact allowed redirect URLs for your production `/` and `/countryjellies` routes, plus `http://localhost:5173/` and `http://localhost:5173/countryjellies` for development. Add a preview URL explicitly when testing a preview; avoid an unrestricted wildcard.
 4. Enable Email authentication. Change the **Magic Link** email template to include the verification code: `<p>Your Semesta sign-in code is: {{ .Token }}</p>`. This is one signup/sign-in flow with no password. Configure a short code expiry, rate limits, and resend protection in Supabase. The UI also has a 60-second resend cooldown.
@@ -39,6 +39,42 @@ flowchart TD
 - Deleting an account removes its Auth user and cloud workspace through an authenticated self-deletion function. Guest plans stay separate. There are no shared trips, profile setup, or account linking controls. Users should use the same sign-in identity on their devices; do not manually merge unrelated identities by email.
 
 ## Release checks that need a real project
+
+### Revision-conflict CPU fix for existing projects
+
+`202610250001_workspace_conflict.sql` replaces `save_workspace` without changing rows,
+its signature, authentication checks or execute privileges. Deploy the frontend
+that recognizes `PT409` first, then apply this migration to the existing project.
+The client also recognizes the old `40001` response during staged deployment.
+
+The original migration used `40001` for a permanent revision mismatch. That code
+means a retryable serialization failure. PostgREST 14 can retry it indefinitely,
+repeating the request-setup query and consuming CPU even after the browser times
+out. The replacement uses `PT409`, which returns HTTP 409 to the client. The backup
+session keeps local edits and stops automatic writes until the conflict is resolved.
+See [Supabase's documented issue and recovery steps](https://supabase.com/kb/troubleshooting/high-cpu-and-infinite-transaction-retries-when-using-custom-error-codes-in-rpc-functions).
+
+Applying the migration alone does not clear already-looping transactions. In
+Postgres Logs, look for `Backup revision conflict` with SQLSTATE `40001` and record
+the exact `process_id`. Inspect candidate connections with this read-only query:
+
+```sql
+select pid, usename, application_name, state, query_start, left(query, 160) as query
+from pg_stat_activity
+where usename = 'authenticator'
+order by query_start;
+```
+
+Match the PID against the error log before terminating that specific backend;
+do not terminate every authenticator connection. Supabase also documents a project
+restart as an alternative that interrupts all connections. After clearing confirmed
+stuck work, compare CPU and the setup-query call counter over a new one-minute
+window. SQL execution totals and the 98% query-time share are not CPU percentages.
+
+The migrations must be applied to the hosted database separately; a frontend
+deployment or merged PR does not change an existing database function.
+
+### Account behavior
 
 Local tests use mocked Auth/cloud responses. Before release, verify:
 
