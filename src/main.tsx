@@ -8,6 +8,7 @@ import { store } from './redux/store';
 import { applyTheme } from './styles/theme';
 import '@fontsource/lora/400.css';
 import '@fontsource/lora/500.css';
+import '@fontsource/work-sans/300.css';
 import '@fontsource/work-sans/400.css';
 import '@fontsource/work-sans/500.css';
 import '@fontsource/work-sans/600.css';

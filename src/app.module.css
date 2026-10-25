@@ -13,7 +13,7 @@
 }
 
 .wordmark {
-  font: 400 2.25rem / 1 var(--font-body);
+  font: 300 2.25rem / 1 var(--font-body);
   letter-spacing: 0.42em;
   text-transform: uppercase;
   white-space: nowrap;
