@@ -1,4 +1,4 @@
-# Semesta design system: Rose Glass & Midnight Navy
+# Semesta design system: Dawn & Dusk
 
 Semesta's small DOM design system: warm translucent surfaces, burgundy ink, calm serif headings with clear sans-serif controls, and precise, comfortable controls. The cups remain the visual centre. This is the pattern for current and future interface work.
 
@@ -6,6 +6,7 @@ Semesta's small DOM design system: warm translucent surfaces, burgundy ink, calm
 
 - `src/styles/tokens.css`: theme-independent spacing, typography, sizing and interaction decisions.
 - `src/styles/themes/rose.css` and `src/styles/themes/midnight.css`: the complete, matching semantic colour palettes, including Three.js scene colours and shadows.
+- Dawn is the pink theme and Dusk is the blue theme. The `rose` and `midnight` IDs stay stable for saved preferences.
 - `src/three/scene-palette.ts`: the CSS-to-Three.js colour adapter; use it for scene materials instead of embedding hex codes.
 - `src/redux/theme/slice.ts`: the active theme in Redux. Rose is the default; the existing per-device storage key restores an explicit choice on the next visit.
 - `src/components/ui/ui.module.css`: surfaces, fields, focus, action rows and interaction states.
@@ -18,7 +19,7 @@ Read these before making a component. Feature CSS Modules arrange content; share
 
 ## Visual rules
 
-When an interaction is needed by multiple features, build it once under `src/components/shared/` and compose it into each feature. Keep filtering, search and selection behavior in that shared component; wrappers may choose different layouts or modes. Shared controls must use the Rose Glass primitives and tokens below, while feature CSS controls only local layout.
+When an interaction is needed by multiple features, build it once under `src/components/shared/` and compose it into each feature. Keep filtering, search and selection behavior in that shared component; wrappers may choose different layouts or modes. Shared controls must use the Dawn and Dusk primitives and tokens below, while feature CSS controls only local layout.
 
 | Element     | Rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

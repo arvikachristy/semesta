@@ -93,16 +93,14 @@ describe('theme switcher', () => {
     const canvas = host.querySelector('canvas');
     expect(document.documentElement.dataset.theme).toBe('rose');
     expect(store.getState().theme.current).toBe(ThemeId.Rose);
-    await click(
-      'nav[aria-label="Desktop navigation"] button[aria-label="Switch to Midnight Navy"]',
-    );
+    await click('nav[aria-label="Desktop navigation"] button[aria-label="Switch to Dusk"]');
     expect(document.documentElement.dataset.theme).toBe('midnight');
     expect(store.getState().theme.current).toBe(ThemeId.Midnight);
     expect(localStorage.getItem('semesta.theme.v1')).toBe('midnight');
     expect(setSceneTheme).toHaveBeenCalledOnce();
     expect(startPlayground).toHaveBeenCalledOnce();
     expect(host.querySelector('canvas')).toBe(canvas);
-    await click('nav[aria-label="Desktop navigation"] button[aria-label="Switch to Rose"]');
+    await click('nav[aria-label="Desktop navigation"] button[aria-label="Switch to Dawn"]');
     expect(document.documentElement.dataset.theme).toBe('rose');
     expect(store.getState().theme.current).toBe(ThemeId.Rose);
     expect(startPlayground).toHaveBeenCalledOnce();
@@ -172,7 +170,7 @@ describe('visited world, wishes and trips', () => {
     await renderApp();
     const rail = host.querySelector('nav[aria-label="Desktop navigation"]');
     expect([...(rail?.querySelectorAll('button') ?? [])].map((button) => button.ariaLabel)).toEqual(
-      ['Countries', 'Trips', 'Switch to Midnight Navy', 'Account'],
+      ['Countries', 'Trips', 'Switch to Dusk', 'Account'],
     );
     expect(host.querySelector('.country-selector')?.hasAttribute('hidden')).toBe(true);
     await click('nav[aria-label="Desktop navigation"] button[aria-label="Account"]');
@@ -197,7 +195,7 @@ describe('visited world, wishes and trips', () => {
     });
     expect(host.querySelector('nav[aria-label="Desktop navigation"]')).toBeNull();
     expect(
-      host.querySelector('button[data-studio-open="false"][aria-label="Switch to Midnight Navy"]'),
+      host.querySelector('button[data-studio-open="false"][aria-label="Switch to Dusk"]'),
     ).not.toBeNull();
     const mobileBar = host.querySelector('nav[aria-label="Explore and plan"]');
     expect(mobileBar?.hasAttribute('hidden')).toBe(false);

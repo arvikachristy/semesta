@@ -22,8 +22,8 @@ export const ThemeToggle = ({
     className={`${styles.toggle} ${placement === 'floating' ? styles.floating : styles.rail}`}
     data-studio-open={studioOpen}
     onClick={onToggle}
-    aria-label={theme === ThemeId.Rose ? 'Switch to Midnight Navy' : 'Switch to Rose'}
-    title={theme === ThemeId.Rose ? 'Midnight Navy' : 'Rose Glass'}
+    aria-label={theme === ThemeId.Rose ? 'Switch to Dusk' : 'Switch to Dawn'}
+    title={theme === ThemeId.Rose ? 'Dusk' : 'Dawn'}
   >
     {theme === ThemeId.Rose ? (
       <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none">
