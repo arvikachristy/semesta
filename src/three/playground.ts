@@ -34,7 +34,7 @@ export const startPlayground = (
   const renderer = createRenderer(canvas);
   const quality = createRenderQuality();
   const palette = readScenePalette();
-  const scene = createScene(palette);
+  const scene = createScene();
   const glasses = createGlassSet(palette);
   const { camera, cameraTarget, cameraOffset, zoomBy, panBetween, fitViewport } = createCamera(
     glasses.bounds,
@@ -140,7 +140,6 @@ export const startPlayground = (
   animate();
 
   const setTheme = (next: IScenePalette) => {
-    scene.background = new THREE.Color(next.world);
     floor.material.color.set(next.shadow);
     scene.environment = lighting.setTheme(next);
     glasses.setTheme(next);

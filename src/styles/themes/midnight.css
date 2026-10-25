@@ -2,6 +2,7 @@
 :root[data-theme='midnight'] {
   color-scheme: dark;
   --color-world: #0b1220;
+  --color-world-sky: #263b5c;
   --color-ink: #e8eefa;
   --color-muted: #b3c1d8;
   --color-accent: #a8c2fa;

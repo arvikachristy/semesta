@@ -2,6 +2,7 @@
 :root[data-theme='rose'] {
   color-scheme: light;
   --color-world: #f3c9c7;
+  --color-world-sky: #fbe6e4;
   --color-ink: #553d3c;
   --color-muted: #725956;
   --color-accent: #63323a;

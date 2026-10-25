@@ -3,7 +3,7 @@ import * as THREE from 'three';
 
 // The renderer owns the WebGL canvas and draws the scene through the camera.
 export const createRenderer = (canvas: HTMLCanvasElement) => {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   const width = canvas.clientWidth || window.innerWidth;
   const height = canvas.clientHeight || window.innerHeight;
   renderer.transmissionResolutionScale = renderParameters.transmissionResolutionScale;

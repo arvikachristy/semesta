@@ -99,6 +99,12 @@
   position: relative;
   width: 100%;
   height: 100%;
+  background: linear-gradient(
+    180deg,
+    var(--color-world-sky) 0%,
+    color-mix(in srgb, var(--color-world-sky) 42%, var(--color-world)) 55%,
+    var(--color-world) 100%
+  );
 }
 .scene[hidden] {
   display: none;
